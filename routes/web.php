@@ -12,6 +12,7 @@ use App\Http\Controllers\SolicitudController;
 use App\Http\Controllers\EmpresaTiendaController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\MarcaController;
+use App\Http\Controllers\RegistroController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -42,6 +43,15 @@ Route::get('/marcas/store-from-form', [MarcaController::class, 'storeFromForm'])
 
 Route::post('/productos/reiniciar-proceso', [ProductoController::class, 'reiniciarProceso'])
     ->name('productos.reiniciar');
+
+Route::get('/registro-completo', [RegistroController::class, 'showForm'])->name('registro.completo');
+
+// Nueva ruta para el almacenamiento de todos los datos en un solo envío
+Route::post('/registro-completo', [RegistroController::class, 'store'])->name('registro.store');
+
+// Mantén la ruta de consulta del DNI, ya que la vista la necesita para el primer paso.
+Route::post('/afiliados/query', [AfiliadoController::class, 'query'])->name('afiliados.query');
+
      
 Route::middleware('auth')->group(function () {
     // **RUTAS PROTEGIDAS (REQUIEREN AUTENTICACIÓN)**

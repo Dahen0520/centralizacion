@@ -20,7 +20,7 @@
                     {{-- Botón para registrar un afiliado --}}
                     @guest
                         <a
-                            href="{{ route('afiliados.registro') }}"
+                            href="{{ url('/registro-completo') }}"
                             class="inline-block px-6 py-2 text-blue-300 border border-blue-400 rounded-md text-sm font-medium leading-normal hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 btn-hover-scale"
                         >
                             Registrar Empresa

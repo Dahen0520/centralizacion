@@ -12,9 +12,6 @@ use Illuminate\Http\JsonResponse;
 
 class AfiliadoController extends Controller
 {
-    /**
-     * URL base de la API y credenciales.
-     */
     private $coreUrl;
     private $coreUsername;
     private $corePassword;
@@ -28,17 +25,11 @@ class AfiliadoController extends Controller
         $this->coreAppId    = env('CORE_APP_ID');
     }
 
-    /**
-     * Muestra el formulario de consulta.
-     */
     public function index()
     {
         return view('afiliados.registro-afiliado');
     }
 
-    /**
-     * Procesa la consulta, busca en la base de datos y/o llama a la API y muestra los datos del afiliado.
-     */
     public function query(Request $request)
     {
         try {
@@ -52,11 +43,9 @@ class AfiliadoController extends Controller
 
         $dni = $request->input('dni');
 
-        // 1. Buscar en la base de datos local incluyendo la relación.
         $afiliado = Afiliado::with('municipio.departamento')->where('dni', $dni)->first();
         
         if ($afiliado) {
-            // El afiliado existe en la base de datos.
             $afiliadoData = [
                 'nombre_afiliado'       => $afiliado->nombre,
                 'genero'                => $afiliado->genero,
@@ -64,7 +53,7 @@ class AfiliadoController extends Controller
                 'correo_electronico'    => $afiliado->email,
                 'telefono'              => $afiliado->telefono,
                 'nombre_municipio'      => optional($afiliado->municipio)->nombre,
-                'nombre_departamento'   => optional($afiliado->municipio->departamento)->nombre, // Agregado
+                'nombre_departamento'   => optional($afiliado->municipio->departamento)->nombre,
                 'nombre_barrio'         => $afiliado->barrio,
                 'rtn'                   => $afiliado->rtn,
                 'numero_cuenta'         => $afiliado->numero_cuenta,
@@ -72,28 +61,22 @@ class AfiliadoController extends Controller
             
             return response()->json([
                 'afiliado' => $afiliadoData,
-                'source'   => 'database' // Bandera para saber el origen
+                'source'   => 'database'
             ]);
         }
         
-        // 2. Si no se encontró en la base de datos, buscar en la API.
         $afiliadoApi = $this->getAfiliadoFromApi($dni);
         
         if (isset($afiliadoApi['error'])) {
-            // La API retornó un error o no encontró el afiliado.
             return response()->json(['error' => $afiliadoApi['error']]);
         }
         
-        // La API encontró al afiliado, retornar sus datos.
         return response()->json([
             'afiliado' => $afiliadoApi,
-            'source'   => 'api' // Bandera para saber el origen
+            'source'   => 'api'
         ]);
     }
 
-    /**
-     * Llama a la API de CORE para obtener los datos de un afiliado.
-     */
     private function getAfiliadoFromApi(string $dni): array
     {
         try {
@@ -117,86 +100,11 @@ class AfiliadoController extends Controller
         }
     }
     
-    /**
-     * Almacena o edita un nuevo afiliado en la base de datos.
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function registerFromQuery(Request $request)
-    {
-        try {
-            $request->validate([
-                'dni'                 => 'required|string',
-                'nombre'              => 'required|string|max:255',
-                'genero'              => 'nullable|string|in:MASCULINO,FEMENINO',
-                'fecha_nacimiento'    => 'nullable|date',
-                'email'               => 'nullable|string',
-                'telefono'            => 'nullable|string|max:20',
-                'departamento_nombre' => 'nullable|string', // Se valida solo el nombre
-                'municipio_nombre'    => 'nullable|string', // Se valida solo el nombre
-                'barrio'              => 'nullable|string|max:255',
-                'rtn'                 => 'nullable|string|max:255',
-                'numero_cuenta'       => 'required|string|max:255',
-            ]);
-        } catch (ValidationException $e) {
-            return response()->json(['errors' => $e->errors()], 422);
-        }
-
-        $municipioId = null;
-        if ($request->filled('municipio_nombre') && $request->filled('departamento_nombre')) {
-            $municipio = Municipio::where('nombre', $request->input('municipio_nombre'))
-                ->whereHas('departamento', function ($query) use ($request) {
-                    $query->where('nombre', $request->input('departamento_nombre'));
-                })->first();
-
-            if ($municipio) {
-                $municipioId = $municipio->id;
-            }
-        }
-        
-        $data = [
-            'dni'              => $request->input('dni'),
-            'nombre'           => $request->input('nombre'),
-            'genero'           => $request->input('genero'),
-            'fecha_nacimiento' => $request->input('fecha_nacimiento') ? Carbon::parse($request->input('fecha_nacimiento')) : null,
-            'email'            => $request->input('email'),
-            'telefono'         => $request->input('telefono'),
-            'municipio_id'     => $municipioId,
-            'barrio'           => $request->input('barrio'),
-            'rtn'              => $request->input('rtn'),
-            'numero_cuenta'    => $request->input('numero_cuenta'),
-            'status'           => 0,
-        ];
-
-        try {
-            $afiliado = Afiliado::updateOrCreate(['dni' => $request->input('dni')], $data);
-            
-            $message = $afiliado->wasRecentlyCreated ? 'Afiliado registrado exitosamente.' : 'Afiliado actualizado exitosamente.';
-
-            return response()->json([
-                'message'     => $message,
-                'afiliado'    => $afiliado,
-                'afiliado_id' => $afiliado->id
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Ocurrió un error al guardar el afiliado.',
-                'error'   => $e->getMessage()
-            ], 500);
-        }
-    }
-    
-    /**
-     * Muestra la vista de la lista de afiliados.
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse
-     */
     public function list(Request $request)
     {
         $query = $request->input('search');
 
-        $afiliados = Afiliado::with('municipio.departamento') // Se agregó la carga de la relación.
+        $afiliados = Afiliado::with('municipio.departamento')
             ->when($query, function ($q) use ($query) {
                 $q->where('nombre', 'like', "%{$query}%")
                   ->orWhere('dni', 'like', "%{$query}%");
@@ -216,26 +124,17 @@ class AfiliadoController extends Controller
 
     public function show(Afiliado $afiliado)
     {
-        // Cargar la relación para mostrar el nombre del departamento
         $afiliado->load('municipio.departamento');
         return view('afiliados.show', compact('afiliado'));
     }
 
     public function edit(Afiliado $afiliado)
     {
-        // Cargar la relación para mostrar el nombre del departamento
         $afiliado->load('municipio.departamento');
         $municipios = Municipio::all();
         return view('afiliados.edit', compact('afiliado', 'municipios'));
     }
 
-    /**
-     * Actualiza un afiliado existente en la base de datos.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Afiliado  $afiliado
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function update(Request $request, Afiliado $afiliado)
     {
         $request->validate([
@@ -255,13 +154,6 @@ class AfiliadoController extends Controller
                          ->with('success', 'Afiliado actualizado exitosamente.');
     }
 
-    /**
-     * Elimina un afiliado de la base de datos.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Afiliado  $afiliado
-     * @return \Illuminate\Http\RedirectResponse|JsonResponse
-     */
     public function destroy(Request $request, Afiliado $afiliado)
     {
         try {
