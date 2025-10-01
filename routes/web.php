@@ -8,7 +8,7 @@ use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\SubcategoriaController;
 use App\Http\Controllers\TiendaController;
-use App\Http\Controllers\SolicitudController;
+use App\Http\Controllers\SolicitudController; // Importación necesaria
 use App\Http\Controllers\EmpresaTiendaController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\MarcaController;
@@ -55,6 +55,19 @@ Route::post('/afiliados/query', [AfiliadoController::class, 'query'])->name('afi
      
 Route::middleware('auth')->group(function () {
     // **RUTAS PROTEGIDAS (REQUIEREN AUTENTICACIÓN)**
+    
+    // =========================================================
+    // NUEVAS RUTAS DE GESTIÓN DE SOLICITUDES
+    // =========================================================
+    Route::prefix('solicitudes')->name('solicitud.')->group(function () {
+        Route::get('/', [SolicitudController::class, 'index'])->name('index');         // Listado de solicitudes pendientes
+        Route::get('/{empresa}', [SolicitudController::class, 'show'])->name('show');   // Ver detalle de una solicitud
+        
+        // Rutas de gestión (POST para acciones de estado)
+        Route::post('/{empresa}/aprobar', [SolicitudController::class, 'aprobar'])->name('aprobar');
+        Route::post('/{empresa}/rechazar', [SolicitudController::class, 'rechazar'])->name('rechazar');
+    });
+    // =========================================================
     
     // Rutas del perfil de usuario
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

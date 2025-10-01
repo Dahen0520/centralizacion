@@ -6,6 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+// Asegúrate de importar todos los modelos relacionados
+use App\Models\Afiliado;
+use App\Models\Rubro;
+use App\Models\TipoOrganizacion;
+use App\Models\Pais;
+use App\Models\Tienda;
+use App\Models\Producto;
+
 class Empresa extends Model
 {
     use HasFactory;
@@ -31,7 +39,7 @@ class Empresa extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        // 'estado' => \App\Enums\EstadoEmpresa::class, // Se remueve la asignación de tipo para evitar el error de casting
+        // ...
     ];
 
     /**
@@ -66,10 +74,23 @@ class Empresa extends Model
         return $this->belongsTo(Pais::class, 'pais_exportacion_id');
     }
 
+    // =======================================================
+    // RELACIÓN CON PRODUCTOS A TRAVÉS DE LA TABLA PIVOT 'MARCAS'
+    // Importante: Quitamos ->using(Marca::class)
+    // =======================================================
+    public function productos()
+    {
+        return $this->belongsToMany(Producto::class, 'marcas', 'empresa_id', 'producto_id')
+                    ->withPivot('estado', 'codigo_marca'); // Campos extra de la pivot
+    }
+
+    // =======================================================
+    // RELACIÓN CON TIENDAS A TRAVÉS DE LA TABLA PIVOT 'EMPRESA_TIENDA'
+    // Importante: Quitamos ->using(EmpresaTienda::class)
+    // =======================================================
     public function tiendas()
     {
         return $this->belongsToMany(Tienda::class, 'empresa_tienda', 'empresa_id', 'tienda_id')
-                    ->using(EmpresaTienda::class)
-                    ->withPivot('estado');
+                    ->withPivot('estado', 'codigo_asociacion'); // Campos extra de la pivot
     }
 }

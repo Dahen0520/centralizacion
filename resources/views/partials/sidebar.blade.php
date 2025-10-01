@@ -41,6 +41,15 @@
                 {{ __('Afiliados') }}
             </x-nav-link>
 
+            {{-- ========================================================= --}}
+            {{-- NUEVA OPCIÓN: SOLICITUDES DE EMPRESAS --}}
+            {{-- ========================================================= --}}
+            <x-nav-link :href="route('solicitud.index')" :active="request()->routeIs('solicitud.*')"
+                        class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center font-bold bg-chorotega-blue-light/50">
+                <i class="fas fa-clipboard-check mr-3"></i>
+                {{ __('Solicitudes') }}
+            </x-nav-link>
+
             {{-- Menú de Categorías --}}
             <x-nav-link :href="route('categorias.index')" :active="request()->routeIs('categorias.*')"
                         class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400  transition duration-200 ease-in-out text-white flex items-center">
