@@ -1,9 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight text-center">
             {{ __('Revisión de Solicitud:') }} <span class="font-extrabold text-blue-600 dark:text-blue-400">{{ $empresa->nombre_negocio }}</span>
         </h2>
     </x-slot>
+
+    {{-- 1. INCLUSIÓN DE SWEETALERT2 VIA CDN --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     @php
         $estado = $empresa->estado;
@@ -33,9 +36,10 @@
                     
                     <div class="flex space-x-3">
                         @if ($estado != 'aprobado')
-                            <form method="POST" action="{{ route('solicitud.aprobar', $empresa) }}">
+                            {{-- Modificado: Agregado ID al form y llamado a la función JS --}}
+                            <form id="approve-form" method="POST" action="{{ route('solicitud.aprobar', $empresa) }}">
                                 @csrf
-                                <button type="submit" onclick="return confirm('¿Confirma APROBAR esta empresa, sus marcas y tiendas?')" 
+                                <button type="button" onclick="confirmAction('approve')" 
                                         class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 shadow-md disabled:opacity-50"
                                         @if ($estado == 'aprobado') disabled @endif>
                                     <i class="fas fa-check-circle mr-2"></i> Aprobar Todo
@@ -44,9 +48,10 @@
                         @endif
 
                         @if ($estado != 'rechazado')
-                            <form method="POST" action="{{ route('solicitud.rechazar', $empresa) }}">
+                            {{-- Modificado: Agregado ID al form y llamado a la función JS --}}
+                            <form id="reject-form" method="POST" action="{{ route('solicitud.rechazar', $empresa) }}">
                                 @csrf
-                                <button type="submit" onclick="return confirm('¿Confirma RECHAZAR esta empresa, sus marcas y tiendas?')" 
+                                <button type="button" onclick="confirmAction('reject')" 
                                         class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 shadow-md disabled:opacity-50"
                                         @if ($estado == 'rechazado') disabled @endif>
                                     <i class="fas fa-times-circle mr-2"></i> Rechazar Todo
@@ -169,4 +174,71 @@
             </div>
         </div>
     </div>
+
+    {{-- 2. SCRIPT DE SWEETALERT2 PARA CONFIRMACIONES Y NOTIFICACIONES --}}
+    <script>
+        // Función para manejar la confirmación de Aprobar/Rechazar
+        function confirmAction(type) {
+            const isApprove = type === 'approve';
+            const title = isApprove ? '¿Aprobar Solicitud?' : '¿Rechazar Solicitud?';
+            const text = isApprove 
+                ? "Esta acción aprobará la empresa, sus marcas y tiendas. ¡No podrás deshacerlo fácilmente!" 
+                : "Esta acción rechazará la empresa, sus marcas y tiendas. ¡No podrás deshacerlo fácilmente!";
+            const icon = isApprove ? 'question' : 'warning';
+            const confirmButtonColor = isApprove ? '#10B981' : '#EF4444'; // green-600 o red-600
+            const confirmButtonText = isApprove ? 'Sí, ¡Aprobar Todo!' : 'Sí, ¡Rechazar Todo!';
+            const formId = isApprove ? 'approve-form' : 'reject-form';
+
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: icon,
+                showCancelButton: true,
+                confirmButtonColor: confirmButtonColor,
+                cancelButtonColor: '#6B7280', // gray-500
+                confirmButtonText: confirmButtonText,
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Si el usuario confirma, envía el formulario
+                    document.getElementById(formId).submit();
+                }
+            });
+        }
+
+        // Script para mostrar notificaciones de sesión (success, warning, error)
+        document.addEventListener('DOMContentLoaded', function() {
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: '{{ session('success') }}',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    toast: true,
+                    position: 'top-end'
+                });
+            @endif
+
+            @if (session('warning'))
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atención',
+                    text: '{{ session('warning') }}',
+                    showConfirmButton: true,
+                    confirmButtonText: 'Entendido'
+                });
+            @endif
+
+            @if (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: '{{ session('error') }}',
+                    showConfirmButton: true,
+                    confirmButtonText: 'Cerrar'
+                });
+            @endif
+        });
+    </script>
 </x-app-layout>

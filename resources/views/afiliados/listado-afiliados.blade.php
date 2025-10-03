@@ -1,60 +1,81 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight text-center">
-            {{ __('Lista de Afiliados') }}
+            {{ __('Gestión de Afiliados') }}
         </h2>
     </x-slot>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <div class="py-12">
         <div class="w-full max-w-full mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg p-8 border-t-8 border-blue-600">
+            <div class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 
+                        rounded-2xl shadow-3xl p-8 lg:p-10 
+                        border-t-4 border-blue-600 dark:border-blue-500">
 
-                {{-- BARRA DE BÚSQUEDA FLOTANTE (SOLO) A LA IZQUIERDA --}}
-                <div class="mb-6 flex justify-start">
-                    <div class="relative max-w-sm w-full">
+                {{-- HEADER DE ACCIONES Y BÚSQUEDA ESTILIZADA --}}
+                <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                    
+                    {{-- Botón Crear (Ejemplo, si lo necesitas) --}}
+                    {{-- Si hay una ruta de creación, descomenta y usa el estilo coherente: --}}
+                    {{-- Barra de búsqueda (Estilo compacto y elegante) --}}
+                    <div class="relative w-full max-w-lg md:max-w-md">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400"></i>
                         <input type="text" id="search-input" placeholder="Buscar DNI o nombre..."
-                               class="block w-full pl-10 pr-4 py-2 text-sm text-gray-700 dark:text-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out placeholder-gray-500 dark:placeholder-gray-400">
-                        {{-- Icono de lupa --}}
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                            <svg class="w-4 h-4 text-gray-400 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                            </svg>
-                        </div>
+                               class="pl-12 py-3.5 shadow-md border border-gray-300 dark:border-gray-600 rounded-xl w-full 
+                                      text-gray-900 dark:text-gray-100 dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400
+                                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150">
                     </div>
                 </div>
-                {{-- FIN BARRA DE BÚSQUEDA --}}
 
-                @if (session('success'))
-                    <div id="success-alert" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
-                        <strong class="font-bold">¡Éxito!</strong>
-                        <span class="block sm:inline">{{ session('success') }}</span>
-                    </div>
-                @endif
-
-                <div class="overflow-x-auto">
+                {{-- CONTENEDOR DE LA TABLA --}}
+                <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
+                        <thead class="bg-gray-100 dark:bg-gray-700">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">DNI</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nombre</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Teléfono</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Municipio</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Barrio</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">RTN</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nº Cuenta</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Acciones</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-16">
+                                    #
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                    <i class="fas fa-id-card mr-1"></i> DNI
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                    <i class="fas fa-user mr-1"></i> Nombre
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                    <i class="fas fa-phone-alt mr-1"></i> Teléfono
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                    <i class="fas fa-envelope mr-1"></i> Email
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                    <i class="fas fa-city mr-1"></i> Municipio
+                                </th>
+
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                    RTN
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                    <i class="fas fa-wallet mr-1"></i> Nº Cuenta
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-24">
+                                    <i class="fas fa-cogs mr-1"></i> Acciones
+                                </th>
                             </tr>
                         </thead>
-                        <tbody id="afiliados-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            {{-- Los afiliados se cargarán aquí --}}
+                        <tbody id="afiliados-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                             @include('afiliados.partials.table_rows')
                         </tbody>
                     </table>
+                    
+                    <div id="no-results-message" class="hidden p-10 text-center bg-white dark:bg-gray-800">
+                        <i class="fas fa-box-open text-5xl text-blue-400 dark:text-blue-600 mb-3"></i>
+                        <p class="font-extrabold text-xl text-gray-900 dark:text-white">¡Vaya! No se encontraron afiliados.</p>
+                        <p class="text-gray-500 dark:text-gray-400 mt-2">Intenta ajustar tu búsqueda.</p>
+                    </div>
                 </div>
 
-                {{-- Enlaces de paginación --}}
-                <div id="pagination-links" class="mt-4">
+                <div id="pagination-links" class="mt-8">
                     {{ $afiliados->links() }}
                 </div>
             </div>
@@ -62,39 +83,43 @@
     </div>
 </x-app-layout>
 
-{{-- El script JS se mantiene, ya que sigue funcionando correctamente con el nuevo input --}}
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Oculta la alerta de éxito después de 3 segundos
-        const successAlert = document.getElementById('success-alert');
-        if (successAlert) {
-            setTimeout(function() {
-                successAlert.style.display = 'none';
-            }, 3000);
+        
+        const successMessage = '{{ session('success') }}';
+        if (successMessage) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Operación Exitosa!',
+                text: successMessage,
+                showConfirmButton: false,
+                timer: 3000,
+                toast: true,
+                position: 'top-end'
+            });
         }
 
         const searchInput = document.getElementById('search-input');
         const afiliadosTableBody = document.getElementById('afiliados-table-body');
         const paginationLinksContainer = document.getElementById('pagination-links');
-
+        const noResultsMessage = document.getElementById('no-results-message');
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
         let searchTimeout;
 
-        // Función para manejar el clic en el botón de eliminar
         function handleDeleteClick(e) {
             e.preventDefault();
             const form = this.closest('form');
-            const afiliadoId = this.getAttribute('data-id');
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const afiliadoName = this.getAttribute('data-name') || 'este afiliado'; 
 
             Swal.fire({
-                title: '¿Estás seguro?',
-                text: '¡No podrás revertir esto!',
+                title: '¿Eliminar ' + afiliadoName + '?',
+                text: '¡Esta acción es irreversible! Se eliminarán todos los registros asociados.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Sí, eliminarlo',
+                confirmButtonColor: '#EF4444', 
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Sí, ¡Eliminar!',
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
@@ -114,64 +139,52 @@
                     })
                     .then(data => {
                         if (data.success) {
-                            Swal.fire(
-                                '¡Eliminado!',
-                                data.message,
-                                'success'
-                            );
-                            fetchAfiliados(getCurrentPage());
+                            Swal.fire('¡Eliminado!', data.message, 'success');
+                            fetchAfiliados(getCurrentPage()); 
                         } else {
-                            Swal.fire(
-                                'Error',
-                                data.message || 'No se pudo eliminar el afiliado.',
-                                'error'
-                            );
+                            Swal.fire('Error', data.message || 'No se pudo eliminar el afiliado.', 'error');
                         }
                     })
                     .catch(error => {
                         console.error('Error en fetch handleDeleteClick:', error);
-                        Swal.fire(
-                            'Error',
-                            'Ocurrió un error inesperado al eliminar: ' + error.message,
-                            'error'
-                        );
+                        Swal.fire('Error', 'Ocurrió un error inesperado al eliminar: ' + error.message, 'error');
                     });
                 }
             });
         }
 
-        // Función para adjuntar listeners de eliminación a los botones
         function attachDeleteListeners() {
-            const deleteButtons = document.querySelectorAll('.delete-btn');
-            deleteButtons.forEach(button => {
+            document.querySelectorAll('.delete-btn').forEach(button => {
                 const newButton = button.cloneNode(true);
                 button.parentNode.replaceChild(newButton, button);
                 newButton.addEventListener('click', handleDeleteClick);
             });
         }
 
-        // Función para manejar el clic en los enlaces de paginación
-        function handlePaginationClick(e) {
-            e.preventDefault();
-            const url = new URL(this.href);
-            const page = url.searchParams.get('page');
-            fetchAfiliados(page);
-        }
-
-        // Función para adjuntar listeners de paginación a los enlaces
         function attachPaginationListeners() {
-            const links = paginationLinksContainer.querySelectorAll('a');
-            links.forEach(link => {
+            paginationLinksContainer.querySelectorAll('a').forEach(link => {
                 const newLink = link.cloneNode(true);
                 link.parentNode.replaceChild(newLink, link);
-                newLink.addEventListener('click', handlePaginationClick);
+                newLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = new URL(this.href);
+                    const page = url.searchParams.get('page');
+                    
+                    // Actualizar la URL sin recargar la página
+                    const newUrl = `{{ route('afiliados.list') }}?page=${page}&search=${encodeURIComponent(searchInput.value)}`;
+                    window.history.pushState({}, '', newUrl);
+                    fetchAfiliados(page);
+                });
             });
         }
 
-        // Función principal para obtener y mostrar los afiliados
         function fetchAfiliados(page = 1) {
             const query = searchInput.value;
             const url = `{{ route('afiliados.list') }}?page=${page}&search=${encodeURIComponent(query)}`;
+
+            // Muestra el estado de carga
+            afiliadosTableBody.innerHTML = '<tr><td colspan="10" class="p-6 text-center text-blue-500 dark:text-blue-400"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando afiliados...</td></tr>';
+            noResultsMessage.classList.add('hidden');
 
             fetch(url, {
                 headers: {
@@ -189,34 +202,40 @@
                 afiliadosTableBody.innerHTML = data.table_rows;
                 paginationLinksContainer.innerHTML = data.pagination_links;
 
+                // Muestra/oculta el mensaje de "no resultados"
+                if (data.afiliados_count === 0) {
+                    noResultsMessage.classList.remove('hidden');
+                    afiliadosTableBody.innerHTML = '';
+                } else {
+                    noResultsMessage.classList.add('hidden');
+                }
+
                 attachDeleteListeners();
                 attachPaginationListeners();
             })
             .catch(error => {
                 console.error('Error al buscar afiliados:', error);
-                Swal.fire(
-                    'Error de Carga',
-                    'No se pudieron cargar los afiliados. Inténtalo de nuevo. Detalles: ' + error.message,
-                    'error'
-                );
+                afiliadosTableBody.innerHTML = '<tr><td colspan="10" class="p-6 text-center text-red-500 dark:text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i> Error al cargar.</td></tr>';
+                Swal.fire('Error de Carga', 'No se pudieron cargar los afiliados. Inténtalo de nuevo. Detalles: ' + error.message, 'error');
             });
         }
 
-        // Función para obtener la página actual de la URL
         function getCurrentPage() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('page') || 1;
         }
 
-        // Event listener para la barra de búsqueda
-        searchInput.addEventListener('keyup', function () {
+        searchInput.addEventListener('input', function () {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 fetchAfiliados(1);
             }, 300);
         });
 
-        // Adjuntar listeners iniciales cuando la página se carga
+        // Inicialización: Usar el valor actual de la búsqueda en la URL
+        const initialSearch = searchInput.value;
+        window.history.replaceState({}, '', `{{ route('afiliados.list') }}?search=${encodeURIComponent(initialSearch)}`);
+        
         attachDeleteListeners();
         attachPaginationListeners();
     });

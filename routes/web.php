@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
         // Rutas de gestión (POST para acciones de estado)
         Route::post('/{empresa}/aprobar', [SolicitudController::class, 'aprobar'])->name('aprobar');
         Route::post('/{empresa}/rechazar', [SolicitudController::class, 'rechazar'])->name('rechazar');
+        
     });
     // =========================================================
     
