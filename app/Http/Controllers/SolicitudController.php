@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Empresa;
-use App\Models\Marca; // Para aprobar/rechazar productos
+use App\Models\Marca;
+use App\Models\Resultado; // Importamos el modelo Resultado
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -17,10 +18,10 @@ class SolicitudController extends Controller
         // 1. Obtener el estado del filtro de la URL, por defecto 'pendiente'
         $statusFilter = $request->get('estado', 'pendiente');
 
-        // 2. Cargar y filtrar las empresas
+        // 2. Cargar y filtrar las empresas, precargando el afiliado para mostrar detalles
         $empresas = Empresa::with(['afiliado', 'rubro'])
                             ->where('estado', $statusFilter)
-                            ->orderBy('created_at', 'desc') // Ordenar por las más recientes primero
+                            ->orderBy('created_at', 'desc')
                             ->paginate(15); 
 
         return view('solicitud.index', compact('empresas'));
@@ -28,19 +29,16 @@ class SolicitudController extends Controller
 
     /**
      * Muestra la vista de detalle para una empresa específica, expandiendo sus relaciones.
-     * La Empresa ($empresa) es cargada automáticamente por su ID (Route Model Binding).
      */
     public function show(Empresa $empresa)
     {
-        // Precargamos TODAS las relaciones necesarias para la vista de detalle
+        // Precargamos TODAS las relaciones necesarias, incluyendo 'afiliado' para acceder a su DNI.
         $empresa->load([
             'afiliado',
             'rubro',
             'tipoOrganizacion',
             'paisExportacion',
-            // Relación con Productos a través de la tabla pivot 'marcas'
             'productos', 
-            // Relación con Tiendas a través de la tabla pivot 'empresa_tienda'
             'tiendas' 
         ]);
 
@@ -48,38 +46,72 @@ class SolicitudController extends Controller
     }
 
     /**
-     * Aprueba la empresa y todos los registros relacionados en las tablas pivot.
+     * Aprueba la empresa, registros relacionados y registra/actualiza el Resultado.
      */
-    public function aprobar(Empresa $empresa)
+    public function aprobar(Request $request, Empresa $empresa)
     {
-        DB::transaction(function () use ($empresa) {
-            // 1. Aprobar el registro de la Empresa
+        $request->validate([
+            'comentario' => 'required|string|max:1000',
+        ]);
+        
+        // Obtenemos los datos del afiliado dueño de la empresa para el registro del resultado.
+        $afiliadoId = $empresa->afiliado_id;
+        $afiliadoDni = $empresa->afiliado->dni ?? 'DNI_No_Encontrado'; 
+
+        DB::transaction(function () use ($empresa, $request, $afiliadoId, $afiliadoDni) {
+            
+            // 1. Aprobar registros relacionados
             $empresa->update(['estado' => 'aprobado']);
+            Marca::where('empresa_id', $empresa->id)->update(['estado' => 'aprobado']);
+            DB::table('empresa_tienda')->where('empresa_id', $empresa->id)->update(['estado' => 'aprobado']);
 
-            // 2. Aprobar todos los Productos asociados (actualiza el estado en la tabla 'marcas')
-            Marca::where('empresa_id', $empresa->id)
-                ->update(['estado' => 'aprobado']);
-
-            // 3. Aprobar todas las Tiendas asociadas (actualiza el estado en la tabla 'empresa_tienda')
-            DB::table('empresa_tienda')
-                ->where('empresa_id', $empresa->id)
-                ->update(['estado' => 'aprobado']);
+            // 2. REGISTRAR O ACTUALIZAR EL RESULTADO: Si ya existe un registro para esta empresa, lo actualiza.
+            Resultado::updateOrCreate(
+                ['empresa_id' => $empresa->id], // Criterio de búsqueda (Empresa ID)
+                [
+                    'afiliado_id' => $afiliadoId,
+                    'afiliado_dni' => $afiliadoDni, 
+                    'estado' => 'aprobado',
+                    'comentario' => $request->comentario,
+                ]
+            );
         });
 
-        return redirect()->route('solicitud.index')->with('success', 'La solicitud de ' . $empresa->nombre_negocio . ' y sus registros han sido APROBADOS.');
+        return redirect()->route('solicitud.index')->with('success', 'La solicitud de ' . $empresa->nombre_negocio . ' ha sido APROBADA y su resultado actualizado.');
     }
 
     /**
-     * Rechaza la solicitud de la empresa.
+     * Rechaza la solicitud de la empresa, registros relacionados y registra/actualiza el Resultado.
      */
-    public function rechazar(Empresa $empresa)
+    public function rechazar(Request $request, Empresa $empresa)
     {
-        $empresa->update(['estado' => 'rechazado']);
+        $request->validate([
+            'comentario' => 'required|string|max:1000',
+        ]);
+        
+        // Obtenemos los datos del afiliado dueño de la empresa para el registro del resultado.
+        $afiliadoId = $empresa->afiliado_id;
+        $afiliadoDni = $empresa->afiliado->dni ?? 'DNI_No_Encontrado';
 
-        // Opcional: También rechazamos las marcas y tiendas (si quieres ser estricto)
-        Marca::where('empresa_id', $empresa->id)->update(['estado' => 'rechazado']);
-        DB::table('empresa_tienda')->where('empresa_id', $empresa->id)->update(['estado' => 'rechazado']);
+        DB::transaction(function () use ($empresa, $request, $afiliadoId, $afiliadoDni) {
+            
+            // 1. Rechazar registros relacionados
+            $empresa->update(['estado' => 'rechazado']);
+            Marca::where('empresa_id', $empresa->id)->update(['estado' => 'rechazado']);
+            DB::table('empresa_tienda')->where('empresa_id', $empresa->id)->update(['estado' => 'rechazado']);
 
-        return redirect()->route('solicitud.index')->with('warning', 'La solicitud de ' . $empresa->nombre_negocio . ' ha sido RECHAZADA.');
+            // 2. REGISTRAR O ACTUALIZAR EL RESULTADO: Si ya existe un registro para esta empresa, lo actualiza.
+            Resultado::updateOrCreate(
+                ['empresa_id' => $empresa->id], // Criterio de búsqueda (Empresa ID)
+                [
+                    'afiliado_id' => $afiliadoId,
+                    'afiliado_dni' => $afiliadoDni, 
+                    'estado' => 'rechazado',
+                    'comentario' => $request->comentario,
+                ]
+            );
+        });
+
+        return redirect()->route('solicitud.index')->with('warning', 'La solicitud de ' . $empresa->nombre_negocio . ' ha sido RECHAZADA y su resultado actualizado.');
     }
 }

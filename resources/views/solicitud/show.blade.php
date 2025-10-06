@@ -7,6 +7,7 @@
 
     {{-- 1. INCLUSIÓN DE SWEETALERT2 VIA CDN --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
 
     @php
         $estado = $empresa->estado;
@@ -36,25 +37,25 @@
                     
                     <div class="flex space-x-3">
                         @if ($estado != 'aprobado')
-                            {{-- Modificado: Agregado ID al form y llamado a la función JS --}}
+                            {{-- Modificado: Llamado a la función JS que abre el modal de comentario --}}
                             <form id="approve-form" method="POST" action="{{ route('solicitud.aprobar', $empresa) }}">
                                 @csrf
                                 <button type="button" onclick="confirmAction('approve')" 
                                         class="inline-flex items-center bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 shadow-md disabled:opacity-50"
                                         @if ($estado == 'aprobado') disabled @endif>
-                                    <i class="fas fa-check-circle mr-2"></i> Aprobar Todo
+                                    <i class="fas fa-check-circle mr-2"></i> Aprobar y Comentar
                                 </button>
                             </form>
                         @endif
 
                         @if ($estado != 'rechazado')
-                            {{-- Modificado: Agregado ID al form y llamado a la función JS --}}
+                            {{-- Modificado: Llamado a la función JS que abre el modal de comentario --}}
                             <form id="reject-form" method="POST" action="{{ route('solicitud.rechazar', $empresa) }}">
                                 @csrf
                                 <button type="button" onclick="confirmAction('reject')" 
                                         class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150 shadow-md disabled:opacity-50"
                                         @if ($estado == 'rechazado') disabled @endif>
-                                    <i class="fas fa-times-circle mr-2"></i> Rechazar Todo
+                                    <i class="fas fa-times-circle mr-2"></i> Rechazar y Comentar
                                 </button>
                             </form>
                         @endif
@@ -158,9 +159,6 @@
                             <div class="p-4 border rounded-lg mb-3 bg-gray-50 dark:bg-gray-700 flex justify-between items-center shadow-sm border-l-4 border-{{ $tiendaColor }}-500">
                                 <div>
                                     <p class="font-bold text-lg text-gray-900 dark:text-white">{{ $tienda->nombre }}</p>
-                                    {{-- <p class="text-sm text-gray-600 dark:text-gray-400">
-                                        **Código Asoc:** {{ $tienda->pivot->codigo_asociacion }}
-                                    </p> --}}
                                 </div>
                                 <span class="text-sm uppercase font-semibold px-3 py-1 rounded-full bg-{{ $tiendaColor }}-100 text-{{ $tiendaColor }}-800 dark:bg-{{ $tiendaColor }}-900/50 dark:text-{{ $tiendaColor }}-300">
                                     ESTADO TIENDA: {{ $tienda->pivot->estado }}
@@ -177,31 +175,53 @@
 
     {{-- 2. SCRIPT DE SWEETALERT2 PARA CONFIRMACIONES Y NOTIFICACIONES --}}
     <script>
-        // Función para manejar la confirmación de Aprobar/Rechazar
+        // Función para manejar la confirmación de Aprobar/Rechazar con formulario de Comentario
         function confirmAction(type) {
             const isApprove = type === 'approve';
-            const title = isApprove ? '¿Aprobar Solicitud?' : '¿Rechazar Solicitud?';
-            const text = isApprove 
-                ? "Esta acción aprobará la empresa, sus marcas y tiendas. ¡No podrás deshacerlo fácilmente!" 
-                : "Esta acción rechazará la empresa, sus marcas y tiendas. ¡No podrás deshacerlo fácilmente!";
+            const title = isApprove ? 'Registrar Aprobación' : 'Registrar Rechazo';
+            const htmlText = `
+                <p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                    Ingrese el comentario del Resultado (obligatorio) para auditar esta decisión.
+                </p>
+                <textarea id="swal-input-comentario" class="swal2-input !h-24" placeholder="Escriba aquí el comentario del resultado..."></textarea>
+            `;
             const icon = isApprove ? 'question' : 'warning';
             const confirmButtonColor = isApprove ? '#10B981' : '#EF4444'; // green-600 o red-600
-            const confirmButtonText = isApprove ? 'Sí, ¡Aprobar Todo!' : 'Sí, ¡Rechazar Todo!';
+            const confirmButtonText = isApprove ? 'Sí, ¡Aprobar y Registrar!' : 'Sí, ¡Rechazar y Registrar!';
             const formId = isApprove ? 'approve-form' : 'reject-form';
 
             Swal.fire({
                 title: title,
-                text: text,
+                html: htmlText,
                 icon: icon,
                 showCancelButton: true,
                 confirmButtonColor: confirmButtonColor,
                 cancelButtonColor: '#6B7280', // gray-500
                 confirmButtonText: confirmButtonText,
-                cancelButtonText: 'Cancelar'
+                cancelButtonText: 'Cancelar',
+                focusConfirm: false,
+                preConfirm: () => {
+                    const comentario = document.getElementById('swal-input-comentario').value;
+                    if (!comentario || comentario.trim() === '') {
+                        Swal.showValidationMessage('El campo de comentario es obligatorio.');
+                        return false;
+                    }
+                    return comentario;
+                }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Si el usuario confirma, envía el formulario
-                    document.getElementById(formId).submit();
+                    const comentario = result.value;
+                    const form = document.getElementById(formId);
+                    
+                    // 1. Crear campo de comentario oculto
+                    let input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'comentario';
+                    input.value = comentario;
+                    
+                    // 2. Añadir al formulario y enviarlo
+                    form.appendChild(input);
+                    form.submit();
                 }
             });
         }
