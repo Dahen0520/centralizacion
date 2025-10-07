@@ -37,7 +37,7 @@
                     
                     <div class="flex space-x-3">
                         @if ($estado != 'aprobado')
-                            {{-- Modificado: Llamado a la función JS que abre el modal de comentario --}}
+                            {{-- Llamado a la función JS que abre el modal de comentario --}}
                             <form id="approve-form" method="POST" action="{{ route('solicitud.aprobar', $empresa) }}">
                                 @csrf
                                 <button type="button" onclick="confirmAction('approve')" 
@@ -49,7 +49,7 @@
                         @endif
 
                         @if ($estado != 'rechazado')
-                            {{-- Modificado: Llamado a la función JS que abre el modal de comentario --}}
+                            {{-- Llamado a la función JS que abre el modal de comentario --}}
                             <form id="reject-form" method="POST" action="{{ route('solicitud.rechazar', $empresa) }}">
                                 @csrf
                                 <button type="button" onclick="confirmAction('reject')" 

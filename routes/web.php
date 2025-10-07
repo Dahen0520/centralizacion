@@ -19,9 +19,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/resultados/buscar', [SolicitudController::class, 'buscar'])->name('resultados.buscar');
+Route::get('/resultados/{empresa}/detalle', [SolicitudController::class, 'verResultadoDetalle'])->name('resultados.detalle');
+
+Route::get('/dashboard', [SolicitudController::class, 'dashboard'])->name('dashboard');
 
 // **RUTAS PÚBLICAS (ACCESIBLES SIN AUTENTICACIÓN)**
 // Rutas del proceso de registro de Afiliados.

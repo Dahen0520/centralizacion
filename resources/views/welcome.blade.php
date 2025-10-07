@@ -17,6 +17,17 @@
         <header class="w-full text-base mb-8 absolute top-0 left-0 p-6 lg:p-8 z-10">
             @if (Route::has('login'))
                 <nav class="flex items-center justify-end gap-4">
+                    
+                    {{-- NUEVO: Botón para buscar resultados por DNI (nueva funcionalidad) --}}
+                    @guest
+                        <a
+                            href="{{ route('resultados.buscar') }}"
+                            class="inline-block px-6 py-2 text-yellow-300 border border-yellow-400 rounded-md text-sm font-medium leading-normal hover:bg-yellow-900 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50 btn-hover-scale"
+                        >
+                            Buscar Resultados (DNI)
+                        </a>
+                    @endguest
+
                     {{-- Botón para registrar un afiliado --}}
                     @guest
                         <a

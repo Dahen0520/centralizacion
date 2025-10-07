@@ -93,4 +93,10 @@ class Empresa extends Model
         return $this->belongsToMany(Tienda::class, 'empresa_tienda', 'empresa_id', 'tienda_id')
                     ->withPivot('estado', 'codigo_asociacion'); // Campos extra de la pivot
     }
+
+        public function resultado()
+    {
+        return $this->hasOne(Resultado::class);
+    }
 }
+
