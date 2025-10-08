@@ -13,6 +13,7 @@ use App\Models\TipoOrganizacion;
 use App\Models\Pais;
 use App\Models\Tienda;
 use App\Models\Producto;
+use App\Models\Marca;
 
 class Empresa extends Model
 {
@@ -97,6 +98,11 @@ class Empresa extends Model
         public function resultado()
     {
         return $this->hasOne(Resultado::class);
+    }
+
+    public function marcas()
+    {
+        return $this->hasMany(Marca::class);
     }
 }
 
