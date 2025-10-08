@@ -65,4 +65,9 @@ class Marca extends Model
     {
         return $this->belongsTo(Empresa::class);
     }
+
+    public function inventarios()
+    {
+        return $this->hasMany(Inventario::class);
+    }
 }

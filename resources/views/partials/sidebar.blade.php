@@ -77,6 +77,15 @@
                 <i class="fas fa-barcode mr-3"></i>
                 {{ __('Marcas') }}
             </x-nav-link>
+            
+            {{-- ========================================================= --}}
+            {{-- NUEVA OPCIÓN: INVENTARIO --}}
+            {{-- ========================================================= --}}
+            <x-nav-link :href="route('inventarios.index')" :active="request()->routeIs('inventarios.*')"
+                        class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center font-bold">
+                <i class="fas fa-warehouse mr-3"></i>
+                {{ __('Inventario') }}
+            </x-nav-link>
 
             {{-- Tiendas --}}
             <x-nav-link :href="route('tiendas.index')" :active="request()->routeIs('tiendas.*')"
