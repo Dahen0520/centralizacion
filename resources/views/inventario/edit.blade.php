@@ -27,13 +27,21 @@
                         Modificando precio y stock para la ubicación actual.
                     </p>
                     
-                    <a href="{{ route('inventarios.index') }}" 
+                    {{-- Lógica de Redirección para el botón Volver --}}
+                    @php
+                        $backRoute = route('inventarios.index');
+                        if (request('redirect_to') === 'explorar' && request('empresa_id') && request('tienda_id')) {
+                            $backRoute = route('inventarios.explorar.inventario', ['empresa' => request('empresa_id'), 'tienda' => request('tienda_id')]);
+                        }
+                    @endphp
+                    
+                    <a href="{{ $backRoute }}" 
                        class="mt-6 inline-flex items-center text-sm font-semibold 
                               text-emerald-600 dark:text-emerald-400 
                               hover:text-emerald-800 dark:hover:text-emerald-200 
                               transition duration-300 ease-in-out 
                               transform hover:-translate-x-1 hover:underline">
-                        <i class="fas fa-arrow-left mr-2"></i> Volver a la Lista de Inventario
+                        <i class="fas fa-arrow-left mr-2"></i> Volver a la Vista Anterior
                     </a>
                 </div>
 
@@ -48,6 +56,12 @@
                     <p class="text-sm text-gray-600 dark:text-gray-400">
                         <i class="fas fa-store mr-1"></i> Tienda: {{ $inventario->tienda->nombre ?? 'N/A' }}
                     </p>
+                    {{-- Información de Empresa, si está cargada (útil para el usuario) --}}
+                    @if(isset($inventario->marca->empresa->nombre_negocio))
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        <i class="fas fa-building mr-1"></i> Empresa: {{ $inventario->marca->empresa->nombre_negocio }}
+                    </p>
+                    @endif
                 </div>
 
                 {{-- Manejo de Errores de Validación Estilizado --}}
@@ -69,6 +83,11 @@
                 <form method="POST" action="{{ route('inventarios.update', $inventario) }}">
                     @csrf
                     @method('PUT')
+                    
+                    {{-- 1. CAMPOS OCULTOS PARA CONTROLAR LA REDIRECCIÓN (CLAVE PARA LA SOLUCIÓN) --}}
+                    <input type="hidden" name="redirect_to" value="{{ request('redirect_to') }}">
+                    <input type="hidden" name="empresa_id" value="{{ request('empresa_id') }}">
+                    <input type="hidden" name="tienda_id" value="{{ request('tienda_id') }}">
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
                         

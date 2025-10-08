@@ -64,8 +64,23 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/empresas/{empresa_id}/marcas-disponibles/{tienda_id}', [InventarioController::class, 'getMarcasPorEmpresa'])
          ->name('api.empresas.marcas');
 
+    // ----------------------------------------------------
+    // EXPLORADOR DE INVENTARIO (NUEVAS RUTAS JERÁRQUICAS)
+    // ----------------------------------------------------
+    // Paso 1: Muestra todas las tiendas (Capa principal)
+    Route::get('inventarios/explorar/tiendas', [InventarioController::class, 'explorarTiendas'])->name('inventarios.explorar.tiendas');
+
+    // Paso 2: Muestra las empresas asociadas a una tienda específica
+    Route::get('inventarios/explorar/tienda/{tienda}', [InventarioController::class, 'explorarEmpresasPorTienda'])->name('inventarios.explorar.empresas');
+
+    // Paso 3: Muestra el inventario de una empresa específica dentro de una tienda
+    Route::get('inventarios/explorar/empresa/{empresa}/tienda/{tienda}', [InventarioController::class, 'mostrarInventarioPorEmpresa'])->name('inventarios.explorar.inventario');
+
+
     // CRUD de Inventario
     Route::resource('inventarios', InventarioController::class);
+
+    
 
     // Solicitudes de Empresas
     Route::prefix('solicitudes')->name('solicitud.')->group(function () {

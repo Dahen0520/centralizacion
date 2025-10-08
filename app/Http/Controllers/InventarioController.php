@@ -171,6 +171,16 @@ class InventarioController extends Controller
         ]);
 
         $inventario->update($request->only(['precio', 'stock']));
+        
+        // --- NUEVA LÓGICA DE REDIRECCIÓN ---
+        if ($request->get('redirect_to') === 'explorar' && $request->has(['empresa_id', 'tienda_id'])) {
+            // Redirige de vuelta a la vista de inventario jerárquico.
+            return redirect()->route('inventarios.explorar.inventario', [
+                'empresa' => $request->empresa_id,
+                'tienda' => $request->tienda_id,
+            ])->with('success', 'Inventario actualizado exitosamente. ✅');
+        }
+        // --- FIN NUEVA LÓGICA ---
 
         return redirect()->route('inventarios.index')
             ->with('success', 'Inventario actualizado exitosamente.');
@@ -189,5 +199,53 @@ class InventarioController extends Controller
 
         return redirect()->route('inventarios.index')
             ->with('success', 'Registro de inventario eliminado exitosamente.');
+    }
+
+        public function explorarTiendas()
+    {
+        // Se carga solo el listado de tiendas.
+        $tiendas = Tienda::all();
+        
+        // Retornamos una nueva vista (que debes crear): 'inventario.explorar.index'
+        return view('inventario.explorar.index', compact('tiendas'));
+    }
+
+    /**
+     * Muestra las empresas asociadas a una tienda específica. (Capa 2)
+     */
+    public function explorarEmpresasPorTienda(Tienda $tienda)
+    {
+        // Usamos la relación Many-to-Many 'empresas' definida en el modelo Tienda (si existe)
+        // o cargamos las empresas a través de la tabla pivote.
+        // Asumo que tu modelo Tienda tiene la relación: public function empresas() { ... }
+        $tienda->load('empresas');
+
+        // Retornamos una vista parcial o completa para mostrar la lista de empresas
+        return view('inventario.explorar.empresas', [
+            'tienda' => $tienda,
+            'empresas' => $tienda->empresas
+        ]);
+    }
+
+    /**
+     * Muestra la lista de inventario de una empresa específica dentro de una tienda. (Capa 3)
+     */
+    public function mostrarInventarioPorEmpresa(Empresa $empresa, Tienda $tienda)
+    {
+        // Se obtienen los registros de inventario que cumplen ambas condiciones
+        $inventarios = Inventario::with(['marca.producto'])
+                                 ->where('tienda_id', $tienda->id)
+                                 ->whereHas('marca', function ($query) use ($empresa) {
+                                     // Filtra las marcas que pertenecen a la empresa dada
+                                     $query->where('empresa_id', $empresa->id);
+                                 })
+                                 ->get(); // Usamos get() ya que no necesitamos paginación aquí
+
+        // Retornamos una vista que muestre la tabla de inventario
+        return view('inventario.explorar.inventario', [
+            'inventarios' => $inventarios,
+            'empresa' => $empresa,
+            'tienda' => $tienda,
+        ]);
     }
 }

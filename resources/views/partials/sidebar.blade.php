@@ -42,7 +42,7 @@
             </x-nav-link>
 
             {{-- ========================================================= --}}
-            {{-- NUEVA OPCIÓN: SOLICITUDES DE EMPRESAS --}}
+            {{-- SOLICITUDES DE EMPRESAS --}}
             {{-- ========================================================= --}}
             <x-nav-link :href="route('solicitud.index')" :active="request()->routeIs('solicitud.*')"
                         class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center font-bold bg-chorotega-blue-light/50">
@@ -79,16 +79,26 @@
             </x-nav-link>
             
             {{-- ========================================================= --}}
-            {{-- NUEVA OPCIÓN: INVENTARIO --}}
+            {{-- INVENTARIO PRINCIPAL (LISTA Y EXPLORADOR) --}}
             {{-- ========================================================= --}}
-            <x-nav-link :href="route('inventarios.index')" :active="request()->routeIs('inventarios.*')"
-                        class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center font-bold">
-                <i class="fas fa-warehouse mr-3"></i>
-                {{ __('Inventario') }}
-            </x-nav-link>
+            <div class="{{ request()->routeIs('inventarios.*') ? 'bg-chorotega-blue-light rounded' : '' }}">
+                {{-- Enlace principal (Gestión/CRUD) --}}
+                <x-nav-link :href="route('inventarios.index')" :active="request()->routeIs('inventarios.index')"
+                            class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center font-bold">
+                    <i class="fas fa-warehouse mr-3"></i>
+                    {{ __('Inventario') }}
+                </x-nav-link>
+
+                {{-- NUEVO: Explorador Jerárquico --}}
+                <x-nav-link :href="route('inventarios.explorar.tiendas')" :active="request()->routeIs('inventarios.explorar.*')"
+                            class="py-1 pl-8 pr-4 rounded hover:bg-chorotega-blue-light-hover hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center text-sm">
+                    <i class="fas fa-search-location mr-3 opacity-80"></i>
+                    {{ __('Explorar Inventario') }}
+                </x-nav-link>
+            </div>
 
             {{-- Tiendas --}}
-            <x-nav-link :href="route('tiendas.index')" :active="request()->routeIs('tiendas.*')"
+            <x-nav-link :href="route('tiendas.index')" :active="request()->routeIs('tiendas.*') && !request()->routeIs('inventarios.explorar.empresas')"
                         class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-white transition duration-200 ease-in-out text-white flex items-center">
                 <i class="fas fa-store mr-3"></i>
                 {{ __('Tiendas') }}
