@@ -79,17 +79,34 @@
             </x-nav-link>
             
             {{-- ========================================================= --}}
-            {{-- INVENTARIO PRINCIPAL (LISTA Y EXPLORADOR) --}}
+            {{-- MÓDULO DE INVENTARIO Y VENTAS --}}
             {{-- ========================================================= --}}
-            <div class="{{ request()->routeIs('inventarios.*') ? 'bg-chorotega-blue-light rounded' : '' }}">
-                {{-- Enlace principal (Gestión/CRUD) --}}
-                <x-nav-link :href="route('inventarios.index')" :active="request()->routeIs('inventarios.index')"
+            <div class="{{ request()->routeIs('inventarios.*') || request()->routeIs('ventas.*') ? 'bg-chorotega-blue-light rounded' : '' }}">
+                
+                {{-- NUEVO: PUNTO DE VENTA (POS) --}}
+                <x-nav-link :href="route('ventas.pos')" :active="request()->routeIs('ventas.pos')"
                             class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center font-bold">
-                    <i class="fas fa-warehouse mr-3"></i>
-                    {{ __('Inventario') }}
+                    <i class="fas fa-cash-register mr-3"></i>
+                    {{ __('Punto de Venta (POS)') }}
                 </x-nav-link>
 
-                {{-- NUEVO: Explorador Jerárquico --}}
+                {{-- Historial de Ventas (opcional, si implementas la vista index) --}}
+                @if (Route::has('ventas.index'))
+                <x-nav-link :href="route('ventas.index')" :active="request()->routeIs('ventas.index')"
+                            class="py-1 pl-8 pr-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center text-sm">
+                    <i class="fas fa-history mr-3 opacity-80"></i>
+                    {{ __('Historial de Ventas') }}
+                </x-nav-link>
+                @endif
+                
+                {{-- Enlace principal (Gestión/CRUD) --}}
+                <x-nav-link :href="route('inventarios.index')" :active="request()->routeIs('inventarios.index')"
+                            class="py-1 pl-8 pr-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center text-sm">
+                    <i class="fas fa-list-alt mr-3 opacity-80"></i>
+                    {{ __('Gestión de Inventario') }}
+                </x-nav-link>
+
+                {{-- Explorador Jerárquico --}}
                 <x-nav-link :href="route('inventarios.explorar.tiendas')" :active="request()->routeIs('inventarios.explorar.*')"
                             class="py-1 pl-8 pr-4 rounded hover:bg-chorotega-blue-light-hover hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center text-sm">
                     <i class="fas fa-search-location mr-3 opacity-80"></i>

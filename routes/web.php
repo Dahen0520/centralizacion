@@ -14,6 +14,7 @@ use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\RegistroController;
 use App\Http\Controllers\InventarioController; // Importación necesaria
+use App\Http\Controllers\VentaController; // <-- ¡NUEVA IMPORTACIÓN NECESARIA!
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -52,28 +53,33 @@ Route::middleware('auth')->group(function () {
     // **RUTAS PROTEGIDAS (REQUIEREN AUTENTICACIÓN)**
     
     // =========================================================
-    // GRUPO DE GESTIÓN (CRUDs Protegidos)
+    // MÓDULO DE VENTAS (NUEVO)
+    // =========================================================
+
+    // Interfaz principal del Punto de Venta (POS)
+    Route::get('ventas/pos', [VentaController::class, 'create'])->name('ventas.pos');
+
+    // Ruta que buscará productos disponibles para AJAX (solo stock > 0)
+    Route::get('ventas/productos-por-tienda/{tienda_id}', [VentaController::class, 'getProductosParaVenta'])->name('ventas.productos-por-tienda');
+
+    // CRUD general de ventas (Solo index, show, destroy para historial)
+    Route::resource('ventas', VentaController::class)->except(['create', 'edit', 'update']);
+
+
+    // =========================================================
+    // INVENTARIO Y EXPLORADOR
     // =========================================================
     
     // RUTAS AJAX ESPECÍFICAS DE INVENTARIO PARA SELECCIÓN EN CASCADA
-    // 1. Obtener EMPRESAS asociadas a la TIENDA
     Route::get('/api/tiendas/{tienda_id}/empresas', [InventarioController::class, 'getEmpresasPorTienda'])
          ->name('api.tiendas.empresas');
 
-    // 2. Obtener MARCAS de la EMPRESA y filtrar por TIENDA
     Route::get('/api/empresas/{empresa_id}/marcas-disponibles/{tienda_id}', [InventarioController::class, 'getMarcasPorEmpresa'])
          ->name('api.empresas.marcas');
 
-    // ----------------------------------------------------
-    // EXPLORADOR DE INVENTARIO (NUEVAS RUTAS JERÁRQUICAS)
-    // ----------------------------------------------------
-    // Paso 1: Muestra todas las tiendas (Capa principal)
+    // EXPLORADOR DE INVENTARIO
     Route::get('inventarios/explorar/tiendas', [InventarioController::class, 'explorarTiendas'])->name('inventarios.explorar.tiendas');
-
-    // Paso 2: Muestra las empresas asociadas a una tienda específica
     Route::get('inventarios/explorar/tienda/{tienda}', [InventarioController::class, 'explorarEmpresasPorTienda'])->name('inventarios.explorar.empresas');
-
-    // Paso 3: Muestra el inventario de una empresa específica dentro de una tienda
     Route::get('inventarios/explorar/empresa/{empresa}/tienda/{tienda}', [InventarioController::class, 'mostrarInventarioPorEmpresa'])->name('inventarios.explorar.inventario');
 
 
