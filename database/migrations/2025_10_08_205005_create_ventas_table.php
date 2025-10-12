@@ -13,10 +13,22 @@ return new class extends Migration
     {
         Schema::create('ventas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tienda_id')->constrained('tiendas'); // Donde se realizó la venta
-            $table->foreignId('usuario_id')->constrained('users'); // Quién hizo la venta
+            
+            // Claves Foráneas (Actualizado)
+            $table->foreignId('tienda_id')->constrained('tiendas');
+            
+            // NUEVA COLUMNA: cliente_id (OPCIONAL)
+            // Se asocia a la nueva tabla 'clientes'
+            $table->foreignId('cliente_id')
+                  ->nullable() // Permite ventas genéricas (sin cliente asignado)
+                  ->constrained('clientes');
+            
+            $table->foreignId('usuario_id')->constrained('users');
+
+            // Datos de la Venta
             $table->decimal('total_venta', 10, 2);
-            $table->timestamp('fecha_venta'); 
+            $table->timestamp('fecha_venta');
+
             $table->timestamps();
         });
     }

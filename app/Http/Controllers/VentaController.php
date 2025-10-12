@@ -6,6 +6,7 @@ use App\Models\Venta;
 use App\Models\DetalleVenta;
 use App\Models\Tienda;
 use App\Models\Inventario;
+use App\Models\Cliente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -13,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 class VentaController extends Controller
 {
     /**
-     * Muestra la interfaz del Punto de Venta (POS).
+     * Mostrar la interfaz del Punto de Venta.
      */
     public function create()
     {
@@ -22,17 +23,15 @@ class VentaController extends Controller
     }
 
     /**
-     * Devuelve los productos de inventario (Marca/Producto) disponibles para la venta en una tienda.
+     * Obtener productos disponibles en una tienda.
      */
     public function getProductosParaVenta($tienda_id)
     {
-        // Trae todos los productos inventariados en esa tienda CON stock > 0
         $inventarios = Inventario::with(['marca.producto'])
-                                 ->where('tienda_id', $tienda_id)
-                                 ->where('stock', '>', 0)
-                                 ->get();
+            ->where('tienda_id', $tienda_id)
+            ->where('stock', '>', 0)
+            ->get();
 
-        // Mapeamos los resultados a un formato simple para JavaScript
         $productos = $inventarios->map(function ($item) {
             return [
                 'inventario_id' => $item->id,
@@ -47,13 +46,13 @@ class VentaController extends Controller
     }
 
     /**
-     * Almacena una nueva venta (Transacción) y actualiza el inventario.
+     * Guardar una nueva venta.
      */
     public function store(Request $request)
     {
-        // 1. Validar la estructura de la venta
         $request->validate([
             'tienda_id' => 'required|exists:tiendas,id',
+            'cliente_id' => 'nullable|exists:clientes,id',
             'total_venta' => 'required|numeric|min:0',
             'detalles' => 'required|array|min:1',
             'detalles.*.inventario_id' => 'required|exists:inventarios,id',
@@ -62,29 +61,29 @@ class VentaController extends Controller
         ]);
 
         DB::beginTransaction();
+
         try {
-            // 2. Crear el encabezado de la venta
+            $clienteId = $request->cliente_id > 0 ? $request->cliente_id : null;
+
             $venta = Venta::create([
                 'tienda_id' => $request->tienda_id,
+                'cliente_id' => $clienteId,
                 'fecha_venta' => now(),
                 'total_venta' => $request->total_venta,
-                'usuario_id' => auth()->id(), 
+                'usuario_id' => auth()->id(),
             ]);
 
-            // 3. Procesar los detalles y actualizar inventario
             foreach ($request->detalles as $detalle) {
-                // Bloqueamos la fila de inventario (crucial para stock)
                 $inventario = Inventario::lockForUpdate()->find($detalle['inventario_id']);
 
                 if (!$inventario || $inventario->stock < $detalle['cantidad']) {
                     DB::rollBack();
-                    $productoNombre = $inventario ? ($inventario->marca->producto->nombre ?? 'Producto sin nombre') : 'Producto Desconocido';
+                    $nombre = $inventario ? ($inventario->marca->producto->nombre ?? 'Producto sin nombre') : 'Desconocido';
                     throw ValidationException::withMessages([
-                        'stock' => "Stock insuficiente para el producto '{$productoNombre}'. Stock disponible: {$inventario->stock}, Cantidad solicitada: {$detalle['cantidad']}."
+                        'stock' => "Stock insuficiente para '{$nombre}'. Disponible: {$inventario->stock}, solicitado: {$detalle['cantidad']}.",
                     ]);
                 }
 
-                // Registrar el detalle de la venta
                 DetalleVenta::create([
                     'venta_id' => $venta->id,
                     'inventario_id' => $detalle['inventario_id'],
@@ -93,81 +92,140 @@ class VentaController extends Controller
                     'subtotal' => $detalle['cantidad'] * $detalle['precio_unitario'],
                 ]);
 
-                // 4. Actualizar el stock: descontar la cantidad vendida
                 $inventario->decrement('stock', $detalle['cantidad']);
             }
 
             DB::commit();
 
-            return response()->json(['success' => true, 'message' => 'Venta registrada exitosamente.', 'venta_id' => $venta->id]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Venta registrada exitosamente.',
+                'venta_id' => $venta->id
+            ]);
 
         } catch (ValidationException $e) {
-             DB::rollBack();
-             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => 'Error al procesar la venta: ' . $e->getMessage()], 500);
         }
     }
-    
-    // Métodos estándar para la gestión del historial de ventas
+
+    /**
+     * Registrar un nuevo cliente desde el POS.
+     */
+    public function storeCliente(Request $request)
+    {
+        $validated = $request->validate([
+            'nombre' => 'required|string|max:255',
+            'identificacion' => 'nullable|string|max:50|unique:clientes,identificacion',
+            'email' => 'nullable|email|max:255|unique:clientes,email',
+            'telefono' => 'nullable|string|max:20',
+        ]);
+
+        try {
+            $cliente = Cliente::create($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cliente guardado correctamente.',
+                'cliente' => [
+                    'id' => $cliente->id,
+                    'nombre' => $cliente->nombre,
+                    'identificacion' => $cliente->identificacion ?? 'N/A',
+                ],
+            ], 201);
+        } catch (\Illuminate\Database\QueryException $e) {
+            $msg = $e->getCode() == 23000
+                ? 'La Identificación o el Email ya están registrados.'
+                : 'Error al guardar el cliente.';
+            return response()->json(['success' => false, 'message' => $msg], 422);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error inesperado: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Buscar clientes por nombre o RTN/identificación.
+     */
+    public function buscarClientes(Request $request)
+    {
+        $query = $request->get('query');
+
+        if (empty($query)) {
+            return response()->json([]);
+        }
+
+        $clientes = Cliente::where('nombre', 'like', "%$query%")
+            ->orWhere('identificacion', 'like', "%$query%")
+            ->limit(10)
+            ->get(['id', 'nombre', 'identificacion']);
+
+        if ($clientes->isEmpty()) {
+            return response()->json([[
+                'id' => 0,
+                'nombre' => 'Cliente Genérico / Sin Registro',
+                'identificacion' => 'N/A',
+            ]]);
+        }
+
+        return response()->json($clientes);
+    }
+
+    /**
+     * Listar ventas (historial).
+     */
     public function index()
     {
-        // Precargamos la tienda y el usuario que registró la venta
-        $ventas = Venta::with(['tienda', 'usuario'])
-                       ->orderBy('fecha_venta', 'desc')
-                       ->paginate(15);
-        
+        $ventas = Venta::with(['tienda', 'usuario', 'cliente'])
+            ->orderBy('fecha_venta', 'desc')
+            ->paginate(15);
+
         return view('ventas.index', compact('ventas'));
     }
+
+    /**
+     * Mostrar detalles de una venta.
+     */
     public function show(Venta $venta)
     {
-        // Precargamos los detalles de la venta y las relaciones anidadas
         $venta->load([
-            'tienda', 
+            'tienda',
             'usuario',
-            'detalles.inventario.marca.producto' // Accede al Producto desde el DetalleVenta
+            'cliente',
+            'detalles.inventario.marca.producto',
         ]);
-        
+
         return view('ventas.show', compact('venta'));
     }
 
-        public function destroy(Venta $venta)
+    /**
+     * Anular una venta y devolver stock.
+     */
+    public function destroy(Venta $venta)
     {
-        // Usamos una transacción para asegurar que, si el stock se revierte, la venta también se anule.
         DB::beginTransaction();
 
         try {
-            // 1. Cargar los detalles de la venta para saber qué stock devolver
             $venta->load('detalles');
 
-            // 2. Devolver el stock por cada detalle de venta
             foreach ($venta->detalles as $detalle) {
-                // Bloqueamos la fila de inventario para asegurar la consistencia del stock
                 $inventario = Inventario::lockForUpdate()->find($detalle->inventario_id);
-
                 if ($inventario) {
-                    // Aumentar el stock con la cantidad vendida
                     $inventario->increment('stock', $detalle->cantidad);
                 }
-                // Si el inventario no se encuentra, se asume que fue eliminado, pero la venta debe anularse.
             }
 
-            // 3. Eliminar (Anular) el registro de la venta (eliminará los detalles por 'onDelete: cascade')
             $venta->delete();
-
             DB::commit();
 
-            // Redirección al historial de ventas
             return redirect()->route('ventas.index')
-                ->with('success', 'Venta #' . $venta->id . ' ha sido ANULADA y el stock devuelto exitosamente. 🔄');
-
+                ->with('success', "Venta #{$venta->id} anulada y stock devuelto.");
         } catch (\Exception $e) {
             DB::rollBack();
-
-            // Si falla, se redirige con un mensaje de error detallado.
             return redirect()->route('ventas.index')
-                ->with('error', 'Error al anular la venta. La transacción fue cancelada. Detalle: ' . $e->getMessage());
+                ->with('error', 'Error al anular la venta: ' . $e->getMessage());
         }
     }
 }

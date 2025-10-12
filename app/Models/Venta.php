@@ -15,6 +15,7 @@ class Venta extends Model
         'usuario_id',
         'total_venta',
         'fecha_venta',
+        'cliente_id',
     ];
 
     protected $casts = [
@@ -37,5 +38,10 @@ class Venta extends Model
     public function detalles()
     { 
         return $this->hasMany(DetalleVenta::class); 
+    }
+
+    public function cliente(): BelongsTo // <-- ¡Nueva relación!
+    {
+        return $this->belongsTo(Cliente::class);
     }
 }

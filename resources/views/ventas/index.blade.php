@@ -48,6 +48,8 @@
                                     <i class="fas fa-calendar-alt mr-1"></i> Fecha/Hora
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                    <i class="fas fa-user mr-1"></i> Cliente </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                                     <i class="fas fa-store mr-1"></i> Tienda
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
@@ -69,6 +71,15 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                                     {{ $venta->fecha_venta->format('d/M/Y H:i A') }}
+                                </td>
+                                {{-- DATOS DEL CLIENTE (NUEVA CELDA) --}}
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-100">
+                                    @if ($venta->cliente)
+                                        {{ $venta->cliente->nombre }}
+                                        <span class="text-xs text-gray-500 dark:text-gray-400 block">{{ $venta->cliente->identificacion ?? 'N/A' }}</span>
+                                    @else
+                                        <span class="text-xs text-gray-500 dark:text-gray-400 italic">Cliente Genérico</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                                     {{ $venta->tienda->nombre ?? 'N/A' }}
@@ -101,7 +112,8 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="p-10 text-center text-gray-500 dark:text-gray-400">
+                                {{-- Colspan ajustado a 7 --}}
+                                <td colspan="7" class="p-10 text-center text-gray-500 dark:text-gray-400">
                                     <i class="fas fa-clipboard-list text-5xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                     <p class="font-extrabold text-xl">No se encontraron registros de ventas.</p>
                                     <p>Comience a usar el Punto de Venta para ver el historial.</p>
