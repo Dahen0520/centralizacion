@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-// ✅ Controladores principales
+// Controladores principales
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AfiliadoController;
 use App\Http\Controllers\RubroController;
@@ -17,7 +17,8 @@ use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\MarcaController;
 use App\Http\Controllers\RegistroController;
 use App\Http\Controllers\InventarioController;
-use App\Http\Controllers\VentaController; // 🧾 Controlador de Ventas
+use App\Http\Controllers\VentaController; 
+use App\Http\Controllers\ClienteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -61,11 +62,22 @@ Route::post('/registro-completo', [RegistroController::class, 'store'])->name('r
 Route::middleware('auth')->group(function () {
 
     // =========================================================
-    // 🧾 MÓDULO DE VENTAS (POS)
+    // MODULO DE VENTAS (POS)
     // =========================================================
 
     // Interfaz principal del Punto de Venta
     Route::get('ventas/pos', [VentaController::class, 'create'])->name('ventas.pos');
+
+    // Rutas para procesar transacciones desde el POS (TICKET, COTIZACIÓN, FACTURA)
+    Route::post('ventas/store', [VentaController::class, 'storeTicket'])->name('ventas.store');
+    Route::post('ventas/store-quote', [VentaController::class, 'storeQuote'])->name('ventas.store-quote');
+    Route::post('ventas/store-invoice', [VentaController::class, 'storeInvoice'])->name('ventas.store-invoice');
+
+    // **Ruta para CONVERTIR un documento existente a Factura (upgradeToInvoice)**
+    Route::post('ventas/{venta}/upgrade-to-invoice', [VentaController::class, 'upgradeToInvoice'])->name('ventas.upgrade-to-invoice');
+
+    // Ruta para imprimir/descargar documentos (usada en la respuesta de éxito de Alpine)
+    Route::get('documento/{id}/{type}/print', [VentaController::class, 'printDocument'])->name('ventas.print-document');
 
     // Buscar clientes (usado por el buscador del POS)
     Route::get('ventas/buscar-clientes', [VentaController::class, 'buscarClientes'])->name('ventas.buscar-clientes');
@@ -77,11 +89,11 @@ Route::middleware('auth')->group(function () {
     Route::get('ventas/productos-por-tienda/{tienda_id}', [VentaController::class, 'getProductosParaVenta'])->name('ventas.productos-por-tienda');
 
     // CRUD general de ventas (index, show, destroy para historial)
-    Route::resource('ventas', VentaController::class)->except(['create', 'edit', 'update']);
+    Route::resource('ventas', VentaController::class)->except(['create', 'edit', 'update', 'store']);
 
 
     // =========================================================
-    // 📦 INVENTARIO Y EXPLORADOR
+    // INVENTARIO Y EXPLORADOR
     // =========================================================
     Route::get('/api/tiendas/{tienda_id}/empresas', [InventarioController::class, 'getEmpresasPorTienda'])->name('api.tiendas.empresas');
     Route::get('/api/empresas/{empresa_id}/marcas-disponibles/{tienda_id}', [InventarioController::class, 'getMarcasPorEmpresa'])->name('api.empresas.marcas');
@@ -93,7 +105,7 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================================================
-    // 🏢 SOLICITUDES DE EMPRESAS
+    // SOLICITUDES DE EMPRESAS
     // =========================================================
     Route::prefix('solicitudes')->name('solicitud.')->group(function () {
         Route::get('/', [SolicitudController::class, 'index'])->name('index');
@@ -104,7 +116,7 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================================================
-    // 👤 PERFIL DE USUARIO
+    // PERFIL DE USUARIO
     // =========================================================
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -112,7 +124,7 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================================================
-    // 🗂️ CATÁLOGOS Y RECURSOS
+    // CATÁLOGOS Y RECURSOS
     // =========================================================
     Route::resource('rubros', RubroController::class);
     Route::resource('tipo-organizacions', TipoOrganizacionController::class);
@@ -121,7 +133,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('tiendas', TiendaController::class);
 
     // =========================================================
-    // 🔗 ASOCIACIONES EMPRESA-TIENDA
+    // ASOCIACIONES EMPRESA-TIENDA
     // =========================================================
     Route::get('asociaciones', [EmpresaTiendaController::class, 'index'])->name('asociaciones.index');
     Route::get('asociaciones/create', [EmpresaTiendaController::class, 'create'])->name('asociaciones.create');
@@ -133,12 +145,14 @@ Route::middleware('auth')->group(function () {
 
 
     // =========================================================
-    // 🧍‍♂️ AFILIADOS Y PRODUCTOS
+    // AFILIADOS Y PRODUCTOS
     // =========================================================
     Route::get('/afiliados', [AfiliadoController::class, 'list'])->name('afiliados.list');
     Route::resource('afiliados', AfiliadoController::class)->except(['index', 'create', 'store']);
     Route::resource('productos', ProductoController::class);
     Route::resource('marcas', MarcaController::class);
+
+    Route::resource('clientes', ClienteController::class);
 });
 
 require __DIR__ . '/auth.php';

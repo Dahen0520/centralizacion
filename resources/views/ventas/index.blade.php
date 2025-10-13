@@ -27,13 +27,6 @@
                               transition duration-300 transform hover:scale-[1.02]">
                         <i class="fas fa-cash-register mr-2 text-lg"></i> Ir a Punto de Venta
                     </a>
-
-                    {{-- Barra de búsqueda (Opcional, se puede implementar con AJAX) --}}
-                    {{-- <div class="relative flex-1 min-w-[300px]">
-                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400"></i>
-                        <input type="text" id="search-input" placeholder="Buscar por ID, Tienda o Total..."
-                               class="pl-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl w-full text-gray-900 dark:text-gray-100 dark:bg-gray-700 placeholder-gray-500 focus:ring-emerald-500 focus:border-emerald-500 transition duration-150 shadow-md">
-                    </div> --}}
                 </div>
 
                 {{-- CONTENEDOR DE LA TABLA --}}
@@ -72,7 +65,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                                     {{ $venta->fecha_venta->format('d/M/Y H:i A') }}
                                 </td>
-                                {{-- DATOS DEL CLIENTE (NUEVA CELDA) --}}
+                                {{-- DATOS DEL CLIENTE --}}
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-100">
                                     @if ($venta->cliente)
                                         {{ $venta->cliente->nombre }}
@@ -91,20 +84,36 @@
                                     L {{ number_format($venta->total_venta, 2) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
-                                    {{-- Botón para ver detalles de la venta --}}
+                                    
+                                    {{-- Botón para ver el DOCUMENTO (Factura/Cotización/Ticket) --}}
+                                    @if ($venta->tipo_documento)
+                                        <a href="{{ route('ventas.print-document', ['id' => $venta->id, 'type' => strtolower($venta->tipo_documento)]) }}" 
+                                           target="_blank"
+                                           class="
+                                            @if ($venta->tipo_documento == 'INVOICE') text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200
+                                            @elseif ($venta->tipo_documento == 'QUOTE') text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200
+                                            @else text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200 @endif
+                                            transition-colors" 
+                                           title="Ver Documento {{ $venta->tipo_documento }}">
+                                            <i class="fas fa-file-invoice"></i>
+                                        </a>
+                                    @endif
+                                    
+                                    {{-- Botón para ver detalles de la venta (vista show original) --}}
                                     <a href="{{ route('ventas.show', $venta) }}" 
-                                       class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200 transition-colors" 
-                                       title="Ver Detalles">
-                                        <i class="fas fa-file-invoice"></i>
+                                       class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors" 
+                                       title="Ver Detalles Internos">
+                                        <i class="fas fa-info-circle"></i>
                                     </a>
                                     
-                                    {{-- Botón para anular la venta (Debe usar lógica DELETE/AJAX con SweetAlert) --}}
+                                    {{-- Botón para anular la venta --}}
                                     <form action="{{ route('ventas.destroy', $venta) }}" method="POST" class="inline delete-form" onsubmit="return false;">
                                         @csrf
                                         @method('DELETE')
                                         <button type="button" 
                                                 class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200 delete-btn" 
-                                                data-name="Venta #{{ $venta->id }}">
+                                                data-name="Venta #{{ $venta->id }}"
+                                                title="Anular Venta y Devolver Stock">
                                             <i class="fas fa-ban"></i>
                                         </button>
                                     </form>

@@ -63,6 +63,13 @@
                 <i class="fas fa-layer-group mr-3"></i>
                 {{ __('Subcategorías') }}
             </x-nav-link>
+            
+            {{-- NUEVA RUTA: Clientes --}}
+            <x-nav-link :href="route('clientes.index')" :active="request()->routeIs('clientes.*')"
+                        class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center font-bold">
+                <i class="fas fa-address-book mr-3"></i>
+                {{ __('Clientes') }}
+            </x-nav-link>
 
             {{-- Menú de Productos (opción añadida) --}}
             <x-nav-link :href="route('productos.index')" :active="request()->routeIs('productos.*')"
