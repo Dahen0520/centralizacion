@@ -10,6 +10,7 @@ use App\Models\Cliente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Carbon\Carbon; // Asegúrate de que Carbon esté disponible para las fechas
 
 class VentaController extends Controller
 {
@@ -201,13 +202,6 @@ class VentaController extends Controller
             abort(404, 'Documento no encontrado.');
         }
         
-        // Esta comprobación se eliminó, confiamos en el tipo pasado por la URL para la vista
-        /*
-        if (strtolower($documento->tipo_documento) !== strtolower($tipo)) {
-             abort(403, 'El tipo de documento solicitado no coincide con el registro.');
-        }
-        */
-
         return view('documentos.imprimir', compact('documento', 'tipo'));
     }
 
@@ -273,17 +267,55 @@ class VentaController extends Controller
     }
     
     /**
-     * Listar ventas (historial).
+     * Listar ventas (historial) y aplicar filtros por tienda y rango de fecha.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Se asegura de cargar el tipo_documento para que la vista pueda generar los enlaces de impresión
-        $ventas = Venta::with(['tienda', 'usuario', 'cliente'])
+        // 1. Obtener todas las tiendas para el dropdown de la vista (siempre necesario)
+        $tiendas = Tienda::orderBy('nombre')->get();
+        
+        // 2. Iniciar la consulta base
+        $query = Venta::with(['tienda', 'usuario', 'cliente'])
             ->orderBy('fecha_venta', 'desc')
-            ->select('*') 
-            ->paginate(15);
+            ->select('*');
             
-        return view('ventas.index', compact('ventas'));
+        // 3. Aplicar Filtros (La lógica de filtrado es la misma, ¡es perfecta!)
+        
+        // Filtro por Tienda
+        if ($request->filled('tienda_id') && $request->tienda_id != '') {
+            $query->where('tienda_id', $request->tienda_id);
+        }
+
+        $fechaInicio = $request->input('fecha_inicio');
+        $fechaFin = $request->input('fecha_fin');
+
+        // Lógica de Filtrado de Fechas
+        if ($fechaInicio && $fechaFin) {
+            // Rango de Fechas (Desde y Hasta)
+            $query->whereDate('fecha_venta', '>=', $fechaInicio);
+            $query->where('fecha_venta', '<=', Carbon::parse($fechaFin)->endOfDay());
+            
+        } elseif ($fechaInicio) {
+            // Solo Fecha de Inicio (Muestra solo las ventas de ese día)
+            $query->whereDate('fecha_venta', $fechaInicio);
+            
+        } elseif ($fechaFin) {
+            // Solo Fecha de Fin (Muestra ventas desde siempre hasta el fin de ese día)
+            $query->where('fecha_venta', '<=', Carbon::parse($fechaFin)->endOfDay());
+        }
+
+        // 4. Obtener los resultados paginados, manteniendo los parámetros de filtro
+        $ventas = $query->paginate(15)->withQueryString();
+        
+        
+        // 5. Detectar si la solicitud es AJAX
+        if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            // RUTA ACTUALIZADA: Devuelve solo la vista parcial
+            return view('ventas.partials._ventas_table', compact('ventas'));
+        }
+        
+        // Si no es AJAX (es la carga inicial de la página), devuelve la vista completa
+        return view('ventas.index', compact('ventas', 'tiendas'));
     }
 
     public function show(Venta $venta)
@@ -306,6 +338,9 @@ class VentaController extends Controller
             foreach ($venta->detalles as $detalle) {
                 $inventario = Inventario::lockForUpdate()->find($detalle->inventario_id);
                 if ($inventario) {
+                    // Solo incrementa si la venta afectó el stock (ej. no era una QUOTE)
+                    // Asumiendo que toda venta registrada afecta stock a menos que se defina lo contrario
+                    // Si solo las ventas de tipo TICKET/INVOICE afectan stock, esta lógica es válida.
                     $inventario->increment('stock', $detalle->cantidad);
                 }
             }
