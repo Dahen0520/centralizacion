@@ -19,6 +19,7 @@ use App\Http\Controllers\RegistroController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\VentaController; 
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\ImpuestoController; // NUEVA IMPORTACIÓN
 
 /*
 |--------------------------------------------------------------------------
@@ -131,6 +132,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('categorias', CategoriaController::class);
     Route::resource('subcategorias', SubcategoriaController::class);
     Route::resource('tiendas', TiendaController::class);
+    
+    Route::resource('impuestos', ImpuestoController::class); // RUTA DE IMPUESTOS AÑADIDA AQUÍ
 
     // =========================================================
     // ASOCIACIONES EMPRESA-TIENDA

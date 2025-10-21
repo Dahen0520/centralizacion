@@ -89,9 +89,41 @@
                                 <p class="text-base font-medium text-gray-900 dark:text-white">{{ $producto->subcategoria->nombre ?? 'N/A' }}</p>
                             </div>
                         </div>
+                        
+                        {{-- ESTADO DE FACTURACIÓN (NUEVO CAMPO) --}}
+                        <div class="flex items-start">
+                            <i class="fas fa-file-invoice text-lg mr-3 mt-1 
+                                @if($producto->permite_facturacion) text-green-500 @else text-red-500 @endif dark:text-gray-400"></i>
+                            <div>
+                                <p class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">Facturación Permitida</p>
+                                @if($producto->permite_facturacion)
+                                    <span class="text-base font-medium text-green-600 dark:text-green-400">SÍ</span>
+                                @else
+                                    <span class="text-base font-medium text-red-600 dark:text-red-400">NO</span>
+                                @endif
+                            </div>
+                        </div>
 
-                        {{-- Descripción --}}
-                        <div class="flex items-start md:col-span-2">
+                        {{-- NOMBRE DEL IMPUESTO --}}
+                        <div class="flex items-start">
+                            <i class="fas fa-balance-scale text-lg mr-3 mt-1 text-yellow-500 dark:text-yellow-400"></i>
+                            <div>
+                                <p class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">Impuesto Asignado</p>
+                                <p class="text-base font-medium text-gray-900 dark:text-white">{{ $producto->impuesto->nombre ?? 'Sin Asignar' }}</p>
+                            </div>
+                        </div>
+
+                        {{-- TASA DEL IMPUESTO --}}
+                        <div class="flex items-start">
+                            <i class="fas fa-percent text-lg mr-3 mt-1 text-red-500 dark:text-red-400"></i>
+                            <div>
+                                <p class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">Tasa (Porcentaje)</p>
+                                <p class="text-base font-medium text-gray-900 dark:text-white">{{ number_format($producto->impuesto->porcentaje ?? 0, 2) }}%</p>
+                            </div>
+                        </div>
+                        
+                        {{-- Descripción (Ocupa las dos columnas) --}}
+                        <div class="flex items-start md:col-span-2 border-t pt-4 mt-4 border-gray-100 dark:border-gray-700/50">
                             <i class="fas fa-align-left text-lg mr-3 mt-1 text-teal-500 dark:text-teal-400"></i>
                             <div>
                                 <p class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">Descripción Detallada</p>
@@ -136,3 +168,4 @@
         </div>
     </div>
 </x-app-layout>
+

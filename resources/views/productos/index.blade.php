@@ -77,6 +77,18 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                                     <i class="fas fa-boxes mr-1"></i> Categoría
                                 </th>
+                                {{-- COLUMNAS DE IMPUESTO --}}
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-32">
+                                    <i class="fas fa-balance-scale mr-1"></i> Impuesto
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-24">
+                                    <i class="fas fa-percent mr-1"></i> Tasa
+                                </th>
+                                {{-- NUEVA COLUMNA DE FACTURACIÓN --}}
+                                <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-24">
+                                    <i class="fas fa-file-invoice mr-1"></i> Fact.
+                                </th>
+                                {{-- FIN NUEVA COLUMNA DE FACTURACIÓN --}}
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-24">
                                     <i class="fas fa-check-circle mr-1"></i> Estado
                                 </th>
@@ -218,7 +230,8 @@
                 const url = `{{ route('productos.index') }}?page=${page}&search=${encodeURIComponent(query)}&categoria=${categoria}&estado=${estado}`;
 
                 // Mostrar estado de carga
-                productosTableBody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-blue-500 dark:text-blue-400"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando productos...</td></tr>';
+                // La colspan ahora es 10 (7 columnas originales + 2 Impuestos + 1 Facturación)
+                productosTableBody.innerHTML = '<tr><td colspan="10" class="p-6 text-center text-blue-500 dark:text-blue-400"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando productos...</td></tr>';
                 document.getElementById('no-results-message')?.classList.add('hidden'); // Ocultar mensaje si existe
 
                 fetch(url, {
@@ -241,7 +254,7 @@
                     paginationLinksContainer.innerHTML = data.pagination_links;
                     
                     // Manejar el mensaje de no resultados (si el controlador devuelve el conteo)
-                    if (data.productos_count === 0) {
+                    if (productosTableBody.children.length === 0 || productosTableBody.querySelector('.no-results-row')) {
                         document.getElementById('no-results-message')?.classList.remove('hidden');
                     } else {
                         document.getElementById('no-results-message')?.classList.add('hidden');
@@ -252,7 +265,7 @@
                 })
                 .catch(error => {
                     console.error('Error al buscar productos:', error);
-                    productosTableBody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-red-500 dark:text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i> Error al cargar.</td></tr>';
+                    productosTableBody.innerHTML = '<tr><td colspan="10" class="p-6 text-center text-red-500 dark:text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i> Error al cargar.</td></tr>';
                     Swal.fire('Error de Carga', 'No se pudieron cargar los productos. Detalles: ' + error.message, 'error');
                 });
             }

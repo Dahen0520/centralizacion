@@ -18,6 +18,8 @@ class Producto extends Model
         'nombre',
         'descripcion',
         'subcategoria_id',
+        'impuesto_id',
+        'permite_facturacion', // <--- ¡AÑADIDO!
         'estado'
     ];
 
@@ -27,6 +29,14 @@ class Producto extends Model
     public function subcategoria()
     {
         return $this->belongsTo(Subcategoria::class);
+    }
+
+    /**
+     * Obtiene el impuesto al que pertenece el producto.
+     */
+    public function impuesto()
+    {
+        return $this->belongsTo(Impuesto::class);
     }
 
     /**
@@ -44,5 +54,13 @@ class Producto extends Model
     {
         return $this->belongsToMany(Tienda::class, 'empresa_tienda_producto');
     }
-}
 
+    /**
+     * Los atributos que deben ser casteados.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'permite_facturacion' => 'boolean', // <--- Recomendar casteo
+    ];
+}

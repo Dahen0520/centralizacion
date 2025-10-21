@@ -6,6 +6,7 @@ use App\Models\Producto;
 use App\Models\Subcategoria;
 use App\Models\Categoria;
 use App\Models\Marca;
+use App\Models\Impuesto; // <-- IMPORTACIÓN DEL MODELO IMPUESTO
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -19,7 +20,8 @@ class ProductoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Producto::with('subcategoria.categoria');
+        // Se carga la relación 'impuesto' para mostrar la información en la tabla si es necesario
+        $query = Producto::with('subcategoria.categoria', 'impuesto'); 
 
         if ($request->has('search') && $request->search != '') {
             $searchTerm = $request->search;
@@ -58,14 +60,12 @@ class ProductoController extends Controller
     public function create()
     {
         $subcategorias = Subcategoria::all();
-        return view('productos.create', compact('subcategorias'));
+        $impuestos = Impuesto::all(); // <-- CARGA DE IMPUESTOS
+        return view('productos.create', compact('subcategorias', 'impuestos')); // <-- PASA IMPUESTOS A LA VISTA
     }
 
     /**
      * Muestra el formulario para que un afiliado sugiera un nuevo producto.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\View\View
      */
     public function createAfiliado(Request $request)
     {
@@ -96,9 +96,16 @@ class ProductoController extends Controller
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'subcategoria_id' => 'required|exists:subcategorias,id',
+            'impuesto_id' => 'required|exists:impuestos,id', // <-- VALIDACIÓN DEL IMPUESTO
+            'permite_facturacion' => 'nullable|boolean', // <-- VALIDACIÓN DEL NUEVO CAMPO BOLEANO
             'estado' => 'required|in:pendiente,rechazado,aprobado',
             'afiliado_id' => 'nullable|exists:afiliados,id',
         ]);
+
+        // Laravel manejará automáticamente 'permite_facturacion' y lo convertirá a booleano,
+        // asumiendo que el checkbox está configurado con un valor (ej: '1') o usando
+        // el método ->merge(['permite_facturacion' => $request->has('permite_facturacion')])
+        // Sin embargo, con $request->all() funciona si se utiliza el cast en el modelo.
 
         Producto::create($request->all());
 
@@ -108,9 +115,6 @@ class ProductoController extends Controller
 
     /**
      * Almacena un producto sugerido por un afiliado en la base de datos.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function storeAfiliado(Request $request)
     {
@@ -155,9 +159,6 @@ class ProductoController extends Controller
 
     /**
      * Procesa y almacena las marcas una vez finalizado el registro de productos.
-     * @param Request $request
-     * @param int $empresaId
-     * @return \Illuminate\Http\RedirectResponse
      */
     private function processAndStoreMarcas(Request $request, $empresaId)
     {
@@ -192,7 +193,8 @@ class ProductoController extends Controller
      */
     public function show(Producto $producto)
     {
-        $producto->load('subcategoria.categoria');
+        // Asegúrate de cargar las relaciones
+        $producto->load('subcategoria.categoria', 'impuesto');
         return view('productos.show', compact('producto'));
     }
 
@@ -202,7 +204,13 @@ class ProductoController extends Controller
     public function edit(Producto $producto)
     {
         $subcategorias = Subcategoria::all();
-        return view('productos.edit', compact('producto', 'subcategorias'));
+        $impuestos = Impuesto::all(); // <-- Carga de impuestos
+        
+        // Cargar la relación del impuesto para asegurar que esté disponible en la vista
+        $producto->load('impuesto'); 
+
+        // Pasar las variables a la vista
+        return view('productos.edit', compact('producto', 'subcategorias', 'impuestos'));
     }
 
     /**
@@ -214,10 +222,18 @@ class ProductoController extends Controller
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'subcategoria_id' => 'required|exists:subcategorias,id',
+            'impuesto_id' => 'required|exists:impuestos,id', // <-- VALIDAR IMPUESTO
+            'permite_facturacion' => 'nullable|boolean', // <-- VALIDAR NUEVO CAMPO BOLEANO
             'estado' => 'required|in:pendiente,rechazado,aprobado',
         ]);
 
-        $producto->update($request->all());
+        // Antes de actualizar, asegura que el campo booleano se maneje correctamente.
+        // Si el checkbox no se envía (porque está desmarcado), Laravel lo ignora.
+        // Usamos merge para asegurar que, si no viene, se establezca explícitamente a 0 (false).
+        $data = $request->all();
+        $data['permite_facturacion'] = $request->has('permite_facturacion');
+
+        $producto->update($data);
 
         return redirect()->route('productos.index')
             ->with('success', 'Producto actualizado exitosamente.');

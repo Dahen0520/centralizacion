@@ -104,6 +104,8 @@
                             <p class="mb-2"><strong>DNI:</strong> {{ $empresa->afiliado->dni ?? 'N/A' }}</p>
                             <p class="mb-2"><strong>Teléfono:</strong> {{ $empresa->afiliado->telefono ?? 'N/A' }}</p>
                             <p class="mb-2"><strong>Email:</strong> {{ $empresa->afiliado->email ?? 'N/A' }}</p>
+                            <p class="mb-2"><strong>RTN:</strong> {{ $empresa->afiliado->rtn ?? 'N/A' }}</p>
+                            <p class="mb-2"><strong>Cuenta:</strong> {{ $empresa->afiliado->numero_cuenta ?? 'N/A' }}</p>
                         </div>
                     </div>
 
@@ -115,6 +117,9 @@
                                 $prodColor = $producto->pivot->estado == 'aprobado' ? 'green' : ($producto->pivot->estado == 'rechazado' ? 'red' : 'yellow');
                                 // Aseguramos el acceso a la Categoría
                                 $categoriaNombre = $producto->subcategoria->categoria->nombre ?? 'N/A';
+                                $impuestoNombre = $producto->impuesto->nombre ?? 'N/A';
+                                $impuestoTasa = number_format($producto->impuesto->porcentaje ?? 0, 2);
+                                $permiteFacturacion = $producto->permite_facturacion ? 'Sí (Permitida)' : 'No (Bloqueada)';
                             @endphp
                             <div class="p-4 border rounded-lg mb-3 bg-gray-50 dark:bg-gray-700 flex justify-between items-start shadow-sm border-l-4 border-{{ $prodColor }}-500">
                                 <div class="w-full">
@@ -130,14 +135,22 @@
                                         <p class="font-semibold">Descripción:</p>
                                         <p class="text-xs italic">{{ $producto->descripcion ?? 'No se proporcionó descripción.' }}</p>
                                         
-                                        <div class="grid grid-cols-2 gap-4 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                                            <p>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                                            <p class="col-span-1">
                                                 <strong class="text-gray-700 dark:text-gray-300">Categoría:</strong> 
                                                 <span class="font-medium text-purple-600 dark:text-purple-400">{{ $categoriaNombre }}</span>
                                             </p>
-                                            <p>
+                                            <p class="col-span-1">
                                                 <strong class="text-gray-700 dark:text-gray-300">Subcategoría:</strong> 
                                                 <span class="font-medium text-blue-600 dark:text-blue-400">{{ $producto->subcategoria->nombre ?? 'N/A' }}</span>
+                                            </p>
+                                            <p class="col-span-1">
+                                                <strong class="text-gray-700 dark:text-gray-300">Impuesto:</strong> 
+                                                <span class="font-medium text-teal-600 dark:text-teal-400">{{ $impuestoNombre }} ({{ $impuestoTasa }}%)</span>
+                                            </p>
+                                            <p class="col-span-1">
+                                                <strong class="text-gray-700 dark:text-gray-300">Facturación:</strong> 
+                                                <span class="font-medium text-{{ $producto->permite_facturacion ? 'green' : 'red' }}-600 dark:text-{{ $producto->permite_facturacion ? 'green' : 'red' }}-400">{{ $permiteFacturacion }}</span>
                                             </p>
                                         </div>
                                     </div>

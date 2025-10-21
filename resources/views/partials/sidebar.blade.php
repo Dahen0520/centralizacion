@@ -84,6 +84,13 @@
                 <i class="fas fa-barcode mr-3"></i>
                 {{ __('Marcas') }}
             </x-nav-link>
+
+            {{-- NUEVO: Menú de Impuestos --}}
+            <x-nav-link :href="route('impuestos.index')" :active="request()->routeIs('impuestos.*')"
+                        class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center">
+                <i class="fas fa-percent mr-3"></i>
+                {{ __('Impuestos') }}
+            </x-nav-link>
             
             {{-- ========================================================= --}}
             {{-- MÓDULO DE INVENTARIO Y VENTAS --}}

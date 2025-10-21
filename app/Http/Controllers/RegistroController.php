@@ -17,6 +17,7 @@ use App\Models\Producto;
 use App\Models\Subcategoria;
 use App\Models\Marca;
 use App\Models\EmpresaTienda;
+use App\Models\Impuesto; // NUEVA IMPORTACIÓN
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -42,8 +43,9 @@ class RegistroController extends Controller
         $paises = Pais::all();
         $tiendas = Tienda::all();
         $subcategorias = Subcategoria::all();
+        $impuestos = Impuesto::all(); // NUEVA LÍNEA: Cargar impuestos
 
-        return view('registro-completo', compact('rubros', 'tiposOrganizacion', 'paises', 'tiendas', 'subcategorias'));
+        return view('registro-completo', compact('rubros', 'tiposOrganizacion', 'paises', 'tiendas', 'subcategorias', 'impuestos')); // Pasar $impuestos a la vista
     }
 
     public function queryAfiliado(Request $request)
@@ -139,15 +141,30 @@ class RegistroController extends Controller
             ]);
         } catch (ValidationException $e) {
             // Este es el ajuste clave: permite que Laravel maneje la redirección con los errores.
-            // Esto evita que el formulario no guarde y te redirija a la página anterior sin un mensaje de error.
             return back()->withErrors($e->errors())->withInput();
         }
 
         $productosData = json_decode($request->input('productos_json'), true);
         if (empty($productosData)) {
-            // Un error más específico si no se añaden productos.
             return back()->with('error', 'Debe agregar al menos un producto.')->withInput();
         }
+        
+        // Validar el contenido del JSON de productos de forma manual
+        foreach ($productosData as $index => $productoItem) {
+            $validator = validator($productoItem, [
+                'nombre'              => 'required|string|max:255',
+                'descripcion'         => 'nullable|string',
+                'subcategoria_id'     => 'required|exists:subcategorias,id',
+                'impuesto_id'         => 'required|exists:impuestos,id', // Validar que el impuesto exista
+                'permite_facturacion' => 'required|boolean', // Validar el booleano
+            ]);
+
+            if ($validator->fails()) {
+                $errors = $validator->errors()->all();
+                return back()->with('error', 'Error en el producto #'.($index + 1).': '.implode('; ', $errors))->withInput();
+            }
+        }
+
 
         DB::beginTransaction();
 
@@ -200,15 +217,14 @@ class RegistroController extends Controller
             }
 
             foreach ($productosData as $productoItem) {
-                if (empty($productoItem['nombre']) || empty($productoItem['subcategoria_id'])) {
-                    throw new \Exception("El nombre y la subcategoría del producto son obligatorios.");
-                }
-
+                
                 $producto = Producto::create([
-                    'nombre' => $productoItem['nombre'],
-                    'descripcion' => $productoItem['descripcion'],
-                    'subcategoria_id' => $productoItem['subcategoria_id'],
-                    'estado' => 'pendiente',
+                    'nombre'              => $productoItem['nombre'],
+                    'descripcion'         => $productoItem['descripcion'],
+                    'subcategoria_id'     => $productoItem['subcategoria_id'],
+                    'impuesto_id'         => $productoItem['impuesto_id'], // NUEVO CAMPO
+                    'permite_facturacion' => $productoItem['permite_facturacion'], // NUEVO CAMPO
+                    'estado'              => 'pendiente',
                 ]);
                 
                 $codigoMarca = Str::random(10);

@@ -87,6 +87,35 @@
             background-color: #f8fafc;
             font-weight: 600;
         }
+        
+        /* Estilo para los productos agregados en el Paso 3 */
+        .product-tag {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background-color: #e0f2f7; /* Tailwind blue-50 */
+            border-radius: 9999px; /* Full rounded */
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+        .product-tag-name {
+            font-weight: 600;
+            color: #1f2937; /* Tailwind gray-800 */
+        }
+        .product-tag-subcat {
+            color: #6b7280; /* Tailwind gray-500 */
+            margin-left: 0.5rem;
+        }
+        .product-tag-delete {
+            margin-left: 1rem;
+            color: #ef4444; /* Tailwind red-500 */
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .product-tag-delete:hover {
+            color: #b91c1c; /* Tailwind red-700 */
+        }
     </style>
 </head>
 <body class="body-animated-gradient dark:dark-body-animated-gradient text-[#1b1b18] dark:text-[#EDEDEC] flex items-center justify-center min-h-screen font-sans p-6">
@@ -212,11 +241,36 @@
                             @endforeach
                         </select>
                     </div>
+                    
+                    {{-- NUEVO CAMPO: IMPUESTO --}}
+                    <div>
+                        <label for="impuesto_id_producto" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2 cursor-pointer">Impuesto Aplicable</label>
+                        <select name="impuesto_id_producto" id="impuesto_id_producto" class="block w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white py-3 px-4 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            <option value="" disabled selected>Selecciona un impuesto</option>
+                            @foreach($impuestos as $impuesto)
+                                <option value="{{ $impuesto->id }}">{{ $impuesto->nombre }} ({{ number_format($impuesto->porcentaje, 2) }}%)</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- NUEVO CAMPO: PERMITE FACTURACIÓN (CHECKBOX) --}}
+                    <div class="flex items-center mt-6">
+                        <input type="checkbox" id="permite_facturacion_producto" name="permite_facturacion_producto" class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+                        <label for="permite_facturacion_producto" class="ml-3 block text-gray-700 dark:text-gray-300 font-semibold cursor-pointer">
+                            Permite Facturación
+                        </label>
+                        <i class="fas fa-info-circle ml-2 text-gray-400 cursor-pointer" title="Marca si este producto debe ser facturado fiscalmente."></i>
+                    </div>
+
                     <div class="md:col-span-2">
                         <label for="descripcion_producto" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2 cursor-pointer">Descripción</label>
                         <textarea id="descripcion_producto" name="descripcion_producto" rows="4" class="block w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white py-3 px-4 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Describe tu producto con detalle"></textarea>
                     </div>
                 </div>
+
+                {{-- LISTA DE PRODUCTOS AGREGADOS (Horizontal) --}}
+                <div id="product-list" class="mt-8 flex flex-wrap gap-3"></div>
+                <input type="hidden" name="productos_json" id="productos-input">
 
                 <div class="mt-10 flex flex-col sm:flex-row justify-between gap-4">
                     <button type="button" id="prev-step-3" class="px-6 py-3 bg-gray-500 text-white rounded-md font-semibold shadow-md hover:bg-gray-600 transition-all duration-300">Atrás</button>
@@ -229,9 +283,6 @@
                         </button>
                     </div>
                 </div>
-                
-                <div id="product-list" class="mt-8 space-y-4"></div>
-                <input type="hidden" name="productos_json" id="productos-input">
             </div>
 
             <div id="step-4" class="step-container">
@@ -299,7 +350,7 @@
                     <h5 class="text-xl font-bold text-gray-900 dark:text-gray-100 mt-8 mb-4">INVENTARIO</h5>
                     <ul class="list-disc list-inside text-sm space-y-2">
                         <li>Ningún empresario está matriculado a un espacio dentro de la tienda.</li>
-                        <li>La administradora de la tienda tiene la libertad de mover los productos y reubicarlos en diferentes lugares dentro de la tienda.</li>
+                        <li>La administradora de la tienda tiene la libertad de mover los productos y reubicar los en diferentes lugares dentro de la tienda.</li>
                         <li>Todos los productos vencidos o dañados serán retirados de la tienda y entregados al empresario.</li>
                     </ul>
                     
@@ -314,10 +365,18 @@
                     <h5 class="text-xl font-bold text-gray-900 dark:text-gray-100 mt-8 mb-4">TIEMPO DE CONTRATO</h5>
                     <p class="text-sm">Acuerdan las Partes a este Contrato por tiempo indefinido y podrá darse por terminado por cualquiera de las Partes, con o sin justa causa, previo aviso por escrito en un plazo no menor de treinta (30) días calendarios. No obstante, lo anterior, Promotora y Comercializadora Cooperativa SA, podrá dar por terminado este Contrato, sin la necesidad de notificación previa en cualquiera de las siguientes ocurrencias: a) En el supuesto cierre operaciones. b) En el supuesto que el Negocio Afiliado cierre o mantenga inactiva la(s) cuenta(s) bancaria(s) de Pago. c) El embargo, o cualquier medida cautelar judicial, la quiebra, la insolvencia o cualquier hecho o acto que afecte en cualquier forma el funcionamiento normal del (los) establecimiento(s) del Negocio Afiliado.</p>
                 </div>
+                
+                {{-- CHECKBOX DE TÉRMINOS Y CONDICIONES --}}
+                <div class="mt-4 mb-8 flex items-start">
+                    <input type="checkbox" id="aceptar-terminos" class="h-5 w-5 mt-1 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+                    <label for="aceptar-terminos" class="ml-3 block text-base font-semibold text-gray-900 dark:text-gray-100 cursor-pointer">
+                        Confirmo que he leído y acepto los Términos y Condiciones del Acuerdo de Compromiso.
+                    </label>
+                </div>
 
                 <div class="mt-10 flex justify-between">
                     <button type="button" id="prev-step-4" class="px-6 py-3 bg-gray-500 text-white rounded-md font-semibold shadow-md hover:bg-gray-600 transition-all duration-300">Atrás</button>
-                    <button type="submit" class="px-8 py-4 bg-blue-600 text-white rounded-md font-bold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 transition transform hover:scale-105">
+                    <button type="submit" id="submit-btn" class="px-8 py-4 bg-blue-600 text-white rounded-md font-bold shadow-md hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 transition transform hover:scale-105" disabled>
                         <i class="fas fa-check-circle mr-2"></i> Confirmar y Finalizar
                     </button>
                 </div>
@@ -333,12 +392,14 @@
         const stepInfo = document.getElementById('step-info');
         const progressBar = document.getElementById('progress-bar');
         const form = document.getElementById('multi-step-form');
+        const submitBtn = document.getElementById('submit-btn'); 
         
         let productosAgregados = [];
         const productosCountSpan = document.getElementById('productos-count');
         const productListDiv = document.getElementById('product-list');
         const nextStep3Btn = document.getElementById('next-step-3');
         const summaryInfoDiv = document.getElementById('summary-info');
+        const aceptarTerminosCheckbox = document.getElementById('aceptar-terminos'); 
 
         function updateProgress(step) {
             const progress = (step - 1) * 100 / (steps.length - 1);
@@ -373,7 +434,12 @@
                     element.classList.remove('active');
                 }
             });
+            currentStep = step; 
             updateProgress(step);
+            
+            if (step === 4) {
+                checkTermsAgreement();
+            }
         }
 
         function validateStep1() {
@@ -386,10 +452,21 @@
             }
 
             const numeroCuenta = document.querySelector('#afiliado-response input[name="numero_cuenta"]').value;
+            const rtnInput = document.querySelector('#afiliado-response input[name="rtn"]');
+
             if (!numeroCuenta.trim()) {
                 responseContainer.innerHTML = `<div class="bg-red-500 text-white font-bold p-4 rounded-lg text-center mt-4">El Número de Cuenta es un campo obligatorio.</div>`;
                 return false;
             }
+            
+            if (rtnInput) {
+                const rawRtn = rtnInput.value.replace(/[^0-9]/g, '');
+                if (rawRtn.length !== 14) {
+                     responseContainer.innerHTML = `<div class="bg-red-500 text-white font-bold p-4 rounded-lg text-center mt-4">El RTN debe estar completo (14 caracteres numéricos).</div>`;
+                     return false;
+                }
+            }
+
             return true;
         }
 
@@ -411,6 +488,12 @@
             if (productosAgregados.length === 0) {
                 alert('Debe agregar al menos un producto para continuar.');
                 return false;
+            }
+            
+            const hasMissingImpuesto = productosAgregados.some(p => !p.impuesto_id);
+            if (hasMissingImpuesto) {
+                 alert('Debe seleccionar un Impuesto Aplicable para cada producto agregado.');
+                 return false;
             }
             return true;
         }
@@ -453,10 +536,8 @@
             afiliadoHtml += `<tr><th colspan="2" class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">Información del Afiliado</th></tr>`;
             afiliadoHtml += `<tr><td><strong>DNI:</strong></td><td>${afiliadoInfo.dni || 'N/A'}</td></tr>`;
             afiliadoHtml += `<tr><td><strong>Nombre:</strong></td><td>${afiliadoInfo.nombre_afiliado || 'N/A'}</td></tr>`;
-            afiliadoHtml += `<tr><td><strong>Correo Electrónico:</strong></td><td>${afiliadoInfo.correo_electronico || 'N/A'}</td></tr>`;
-            afiliadoHtml += `<tr><td><strong>Teléfono:</strong></td><td>${afiliadoInfo.telefono || 'N/A'}</td></tr>`;
+            afiliadoHtml += `<tr><td><strong>RTN:</strong></td><td>${rtnFormat(afiliadoInfo.rtn) || 'N/A'}</td></tr>`; // Formateado para resumen
             afiliadoHtml += `<tr><td><strong>Número de Cuenta:</strong></td><td>${afiliadoInfo.numero_cuenta || 'N/A'}</td></tr>`;
-            afiliadoHtml += `<tr><td><strong>Dirección:</strong></td><td>${afiliadoInfo.barrio || 'N/A'}, ${afiliadoInfo.nombre_municipio || 'N/A'}, ${afiliadoInfo.nombre_departamento || 'N/A'}</td></tr>`;
             afiliadoHtml += `</tbody></table>`;
             
             let empresaHtml = `<table class="summary-table"><tbody>`;
@@ -470,15 +551,23 @@
             empresaHtml += `</tbody></table>`;
 
             let productsHtml = `<table class="summary-table"><tbody>`;
-            productsHtml += `<tr><th colspan="2" class="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">Productos Sugeridos (${productosAgregados.length})</th></tr>`;
+            productsHtml += `<tr><th colspan="4" class="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">Productos Sugeridos (${productosAgregados.length})</th></tr>`;
             if (productosAgregados.length > 0) {
-                productsHtml += `<tr><td class="font-semibold">Nombre</td><td class="font-semibold">Subcategoría</td></tr>`;
+                productsHtml += `<tr><td class="font-semibold">Nombre</td><td class="font-semibold">Subcategoría</td><td class="font-semibold">Impuesto</td><td class="font-semibold">Facturación</td></tr>`;
                 productosAgregados.forEach((p, index) => {
                     const subcatName = document.querySelector(`#subcategoria_id_producto option[value="${p.subcategoria_id}"]`)?.textContent || 'N/A';
-                    productsHtml += `<tr><td>${p.nombre}</td><td>${subcatName}</td></tr>`;
+                    const impuestoText = document.querySelector(`#impuesto_id_producto option[value="${p.impuesto_id}"]`)?.textContent || 'N/A';
+                    const facturacionText = p.permite_facturacion ? 'Sí' : 'No';
+
+                    productsHtml += `<tr>
+                                        <td>${p.nombre}</td>
+                                        <td>${subcatName.split('(')[0].trim()}</td>
+                                        <td>${impuestoText}</td>
+                                        <td>${facturacionText}</td>
+                                     </tr>`;
                 });
             } else {
-                productsHtml += `<tr><td colspan="2" class="text-center">No se agregaron productos.</td></tr>`;
+                productsHtml += `<tr><td colspan="4" class="text-center">No se agregaron productos.</td></tr>`;
             }
             productsHtml += `</tbody></table>`;
             
@@ -488,88 +577,182 @@
         function addProduct() {
             const nombre = document.getElementById('nombre_producto');
             const subcategoriaId = document.getElementById('subcategoria_id_producto');
+            const impuestoId = document.getElementById('impuesto_id_producto');
+            const permiteFacturacion = document.getElementById('permite_facturacion_producto');
             const descripcion = document.getElementById('descripcion_producto');
 
-            if (!nombre.value.trim() || !subcategoriaId.value.trim()) {
-                alert('Por favor, complete al menos el nombre y la subcategoría del producto.');
+            if (!nombre.value.trim() || !subcategoriaId.value.trim() || !impuestoId.value.trim()) {
+                alert('Por favor, complete el nombre, la subcategoría y el impuesto del producto.');
                 return;
             }
 
             const newProduct = {
                 nombre: nombre.value,
                 subcategoria_id: subcategoriaId.value,
+                impuesto_id: impuestoId.value,
+                permite_facturacion: permiteFacturacion.checked,
                 descripcion: descripcion.value
             };
             
             productosAgregados.push(newProduct);
             productosCountSpan.textContent = productosAgregados.length;
             
+            // Limpiar campos
             nombre.value = '';
             subcategoriaId.value = '';
+            impuestoId.value = '';
+            permiteFacturacion.checked = false;
             descripcion.value = '';
 
             nextStep3Btn.disabled = false;
 
-            const subcatName = document.querySelector(`#subcategoria_id_producto option[value="${newProduct.subcategoria_id}"]`)?.textContent || 'N/A';
-            const productHtml = `
-                <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-sm flex justify-between items-center">
-                    <span><strong>${newProduct.nombre}</strong> <span class="text-gray-500 dark:text-gray-400">(${subcatName})</span></span>
-                    <button type="button" class="text-red-500 hover:text-red-700" onclick="removeProduct(${productosAgregados.length - 1})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            productListDiv.insertAdjacentHTML('beforeend', productHtml);
+            // Renderizar la lista
+            renderProductList();
         }
 
         function removeProduct(index) {
             productosAgregados.splice(index, 1);
             productosCountSpan.textContent = productosAgregados.length;
             
+            renderProductList(); // Volver a renderizar
+
+            if (productosAgregados.length === 0) {
+                nextStep3Btn.disabled = true;
+            }
+        }
+        
+        // Hacer la función removeProduct accesible globalmente
+        window.removeProduct = removeProduct; 
+
+        function renderProductList() {
             productListDiv.innerHTML = '';
             productosAgregados.forEach((product, i) => {
                 const subcatName = document.querySelector(`#subcategoria_id_producto option[value="${product.subcategoria_id}"]`)?.textContent || 'N/A';
+                const impuestoName = document.querySelector(`#impuesto_id_producto option[value="${product.impuesto_id}"]`)?.textContent || 'N/A';
+                
+                const facturacionIcon = product.permite_facturacion 
+                    ? '<i class="fas fa-check-circle text-green-500"></i>' 
+                    : '<i class="fas fa-times-circle text-red-500"></i>';
+
                 const productHtml = `
-                    <div class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow-sm flex justify-between items-center">
-                        <span><strong>${product.nombre}</strong> <span class="text-gray-500 dark:text-gray-400">(${subcatName})</span></span>
-                        <button type="button" class="text-red-500 hover:text-red-700" onclick="removeProduct(${i})">
-                            <i class="fas fa-trash"></i>
+                    <div class="product-tag bg-gray-100 dark:bg-gray-800 shadow-sm transition-all">
+                        <span class="product-tag-name">${product.nombre}</span> 
+                        <span class="product-tag-subcat">(${subcatName.split('(')[0].trim()})</span>
+                        <span class="product-tag-subcat">| ${impuestoName.split('(')[0].trim()}</span>
+                        <span class="ml-2">${facturacionIcon}</span>
+                        <button type="button" class="product-tag-delete" onclick="removeProduct(${i})">
+                            <i class="fas fa-trash-alt text-base"></i>
                         </button>
                     </div>
                 `;
                 productListDiv.insertAdjacentHTML('beforeend', productHtml);
             });
-            
-            if (productosAgregados.length === 0) {
-                nextStep3Btn.disabled = true;
-            }
+        }
+        
+        function checkTermsAgreement() {
+            submitBtn.disabled = !aceptarTerminosCheckbox.checked;
         }
 
+        // --- FUNCIONES DE FORMATO Y MÁSCARA ---
+        function rtnFormat(value) {
+            if (!value) return '';
+            const raw = value.replace(/[^0-9]/g, '').substring(0, 14); 
+            let formatted = '';
+            if (raw.length > 8) formatted = `${raw.substring(0, 4)}-${raw.substring(4, 8)}-${raw.substring(8, 14)}`;
+            else if (raw.length > 4) formatted = `${raw.substring(0, 4)}-${raw.substring(4, 8)}`;
+            else formatted = raw;
+            return formatted;
+        }
+
+        function applyRtnMask(e) {
+            const input = e.target;
+            const start = input.selectionStart;
+            
+            let rawValue = input.value.replace(/[^0-9-]/g, '');
+            if (e.data && /[^0-9]/.test(e.data)) {
+                 e.preventDefault();
+                 return;
+            }
+            
+            const rawValuePure = rawValue.replace(/[^0-9]/g, '');
+            
+            if (rawValuePure.length > 14 && e.inputType !== 'deleteContentBackward') {
+                e.preventDefault();
+                input.value = rtnFormat(rawValuePure.substring(0, 14));
+                return;
+            }
+            
+            const formatted = rtnFormat(rawValuePure);
+            input.value = formatted;
+
+            let newPosition = start;
+            
+            const guionesAntes = (formatted.substring(0, start).match(/-/g) || []).length;
+            const rawValueAntes = input.value.substring(0, start).replace(/[^0-9]/g, '');
+            
+            newPosition = rawValueAntes.length + guionesAntes;
+
+            if (input.value.charAt(newPosition - 1) === '-' && e.inputType !== 'deleteContentBackward') {
+                newPosition++;
+            }
+            
+            if (newPosition > formatted.length) {
+                newPosition = formatted.length;
+            }
+
+            input.setSelectionRange(newPosition, newPosition);
+        }
+        
         function buildAndSubmitForm() {
-            // Eliminar campos ocultos de envíos anteriores
-            const hiddenInputs = form.querySelectorAll('input[type="hidden"][data-created="true"]');
-            hiddenInputs.forEach(input => input.remove());
+            // Validaciones
+            if (!validateStep1()) {
+                showStep(1);
+                return;
+            }
+            if (!validateStep2()) {
+                showStep(2);
+                return;
+            }
+            if (!validateStep3()) {
+                showStep(3);
+                return;
+            }
+            if (!aceptarTerminosCheckbox.checked) {
+                alert('Debe aceptar los Términos y Condiciones para finalizar el registro.');
+                return;
+            }
             
             const formData = new FormData();
             formData.append('_token', form.querySelector('input[name="_token"]').value);
 
-            // Paso 1: Datos del afiliado
+            // --- RECOLECCIÓN DE DATOS (VERSION ESTABLE) ---
+            
+            // Paso 1: Afiliado (recolectando todos los inputs, incluidos los ocultos)
             const afiliadoInputs = document.querySelectorAll('#afiliado-response input');
             afiliadoInputs.forEach(input => {
+                const name = input.name;
+                let value = input.value || '';
+
+                if (name === 'rtn') {
+                    // Limpiar RTN de guiones para el backend
+                    value = value.replace(/[^0-9]/g, '');
+                }
+                
+                // Mapear 'nombre_afiliado' a 'nombre'
                 const nameMap = {
                     'nombre_afiliado': 'nombre',
                     'correo_electronico': 'email',
                     'fecha_de_nacimiento': 'fecha_nacimiento',
                     'nombre_departamento': 'departamento_nombre',
                     'nombre_municipio': 'municipio_nombre',
+                    // Mantener el resto
                 };
-                const newName = nameMap[input.name] || input.name;
                 
-                // Asegurar que se envíen todos los campos, incluso si están vacíos
-                formData.append(newName, input.value || '');
+                // Usar el nombre mapeado o el original
+                formData.append(nameMap[name] || name, value);
             });
-
-            // Paso 2: Datos de la empresa
+            
+            // Paso 2: Empresa
             const empresaInputs = document.querySelectorAll('#step-2 input, #step-2 select');
             empresaInputs.forEach(input => {
                 if (input.type === 'checkbox') {
@@ -584,13 +767,16 @@
             // Paso 3: Productos como JSON
             formData.append('productos_json', JSON.stringify(productosAgregados));
 
-            // Envía el formulario de manera asíncrona para manejar el JSON de errores
+            // Deshabilitar botón para evitar doble click
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+
+            // Envía el formulario de manera asíncrona 
             fetch(form.action, {
                 method: 'POST',
                 body: formData,
             })
             .then(response => {
-                // Si la respuesta es una redirección, la manejamos
                 if (response.redirected) {
                     window.location.href = response.url;
                 } else {
@@ -598,12 +784,18 @@
                         console.error('Error de validación:', errorData.errors);
                         const errors = Object.values(errorData.errors).flat().join('<br>');
                         alert('Error al registrar: ' + errors);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Confirmar y Finalizar';
+                    }).catch(() => {
+                        throw new Error("Respuesta de servidor inesperada.");
                     });
                 }
             })
             .catch(error => {
                 console.error('Error en la solicitud:', error);
                 alert('Ocurrió un error inesperado al enviar el formulario.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Confirmar y Finalizar';
             });
         }
 
@@ -616,6 +808,12 @@
             if (value.length > 4) formattedValue += '-' + value.substring(4, 8);
             if (value.length > 8) formattedValue += '-' + value.substring(8, 13);
             input.value = formattedValue;
+        });
+        
+        document.addEventListener('input', function(e) {
+            if (e.target.name === 'rtn') {
+                applyRtnMask(e);
+            }
         });
 
         document.getElementById('query-btn').addEventListener('click', async function() {
@@ -642,21 +840,34 @@
                 if (response.ok) {
                     if (data.afiliado) {
                         const afiliado = data.afiliado;
+                        const initialRtn = afiliado.rtn && afiliado.rtn.length === 14 ? afiliado.rtn : dni.replace(/-/g, '');
+                        
                         let html = `
                             <h4 class="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-4">Datos del Afiliado</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <input type="hidden" name="dni" value="${dni}">
-                                <div class="col-span-1"><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">DNI</label><input type="text" class="block w-full py-2 text-base rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white" value="${dni}" readonly></div>
-                                <div class="col-span-1"><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre</label><input type="text" name="nombre_afiliado" class="block w-full py-2 text-base rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white" value="${afiliado.nombre_afiliado || ''}" readonly></div>
-                                <div class="col-span-1"><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Género</label><input type="text" name="genero" class="block w-full py-2 text-base rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white" value="${afiliado.genero || ''}" readonly></div>
-                                <div class="col-span-1"><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha de Nacimiento</label><input type="text" name="fecha_de_nacimiento" class="block w-full py-2 text-base rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white" value="${afiliado.fecha_de_nacimiento || ''}" readonly></div>
-                                <div class="col-span-1"><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Correo Electrónico</label><input type="text" name="correo_electronico" class="block w-full py-2 text-base rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white" value="${afiliado.correo_electronico || ''}"></div>
-                                <div class="col-span-1"><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label><input type="text" name="telefono" class="block w-full py-2 text-base rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white" value="${afiliado.telefono || ''}"></div>
-                                <div class="col-span-1"><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Departamento</label><input type="text" name="nombre_departamento" class="block w-full py-2 text-base rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white" value="${afiliado.nombre_departamento || ''}"></div>
-                                <div class="col-span-1"><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Municipio</label><input type="text" name="nombre_municipio" class="block w-full py-2 text-base rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white" value="${afiliado.nombre_municipio || ''}"></div>
-                                <div class="col-span-1"><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Barrio</label><input type="text" name="barrio" class="block w-full py-2 text-base rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white" value="${afiliado.nombre_barrio || ''}"></div>
-                                <div class="col-span-1"><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">RTN</label><input type="text" name="rtn" class="block w-full py-2 text-base rounded-lg border-green-500 ring-2 ring-green-300 dark:border-green-400 dark:ring-green-600 dark:bg-gray-800 dark:text-white" value="${afiliado.rtn || ''}"></div>
-                                <div class="col-span-1"><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Número de Cuenta Retirable</label><input type="text" name="numero_cuenta" class="block w-full py-2 text-base rounded-lg border-green-500 ring-2 ring-green-300 dark:border-green-400 dark:ring-green-600 dark:bg-gray-800 dark:text-white" value="${afiliado.numero_cuenta || ''}" required></div>
+                                <input type="hidden" name="genero" value="${afiliado.genero || ''}">
+                                <input type="hidden" name="fecha_de_nacimiento" value="${afiliado.fecha_de_nacimiento || ''}">
+                                <input type="hidden" name="correo_electronico" value="${afiliado.correo_electronico || ''}">
+                                <input type="hidden" name="telefono" value="${afiliado.telefono || ''}">
+                                <input type="hidden" name="nombre_departamento" value="${afiliado.nombre_departamento || ''}">
+                                <input type="hidden" name="nombre_municipio" value="${afiliado.nombre_municipio || ''}">
+                                <input type="hidden" name="barrio" value="${afiliado.nombre_barrio || ''}">
+
+                                <div class="col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre Completo</label>
+                                    <input type="text" name="nombre_afiliado" class="block w-full py-2 text-base rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white font-bold" value="${afiliado.nombre_afiliado || ''}" readonly>
+                                </div>
+                                
+                                <div class="col-span-1">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">RTN (14 dígitos)</label>
+                                    <input type="text" name="rtn" maxlength="16" class="block w-full py-2 text-base rounded-lg border-green-500 ring-2 ring-green-300 dark:border-green-400 dark:ring-green-600 dark:bg-gray-800 dark:text-white" value="${rtnFormat(initialRtn)}" required>
+                                </div>
+                                
+                                <div class="col-span-1">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Número de Cuenta Retirable</label>
+                                    <input type="text" name="numero_cuenta" class="block w-full py-2 text-base rounded-lg border-green-500 ring-2 ring-green-300 dark:border-green-400 dark:ring-green-600 dark:bg-gray-800 dark:text-white" value="${afiliado.numero_cuenta || ''}" required>
+                                </div>
                             </div>
                         `;
                         responseContainer.innerHTML = html;
@@ -699,10 +910,6 @@
         document.getElementById('add-product-btn').addEventListener('click', addProduct);
 
         document.getElementById('next-step-3').addEventListener('click', function() {
-            if (productosAgregados.length === 0) {
-                alert('Debe agregar al menos un producto para continuar.');
-                return false;
-            }
             if (validateStep3()) {
                 buildSummary();
                 showStep(4);
@@ -713,7 +920,10 @@
             showStep(3);
         });
         
-        document.querySelector('button[type="submit"]').addEventListener('click', function(event) {
+        // --- Validar Checkbox de Términos y Condiciones ---
+        aceptarTerminosCheckbox.addEventListener('change', checkTermsAgreement);
+
+        document.getElementById('submit-btn').addEventListener('click', function(event) {
             event.preventDefault();
             buildAndSubmitForm();
         });

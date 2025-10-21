@@ -23,6 +23,15 @@ return new class extends Migration
             // Columna de clave foránea para la subcategoría
             $table->foreignId('subcategoria_id')->constrained('subcategorias')->onDelete('cascade');
 
+            // Clave foránea para el impuesto (ya existente)
+            $table->foreignId('impuesto_id')
+                  ->constrained('impuestos')
+                  ->onDelete('restrict');
+
+            // NUEVO CAMPO BOOLEANO PARA FACTURACIÓN
+            // Indica si el producto permite facturación (default: falso)
+            $table->boolean('permite_facturacion')->default(false);
+
             // Columna para el estado del producto usando un ENUM
             $table->enum('estado', ['pendiente', 'rechazado', 'aprobado'])->default('pendiente');
             

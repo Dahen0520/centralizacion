@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Empresa;
 use App\Models\Marca;
 use App\Models\Resultado; 
-use App\Models\Inventario; // <-- ¡NUEVA IMPORTACIÓN NECESARIA!
+use App\Models\Inventario; 
+use App\Models\Producto;
+use App\Models\Impuesto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -33,13 +35,14 @@ class SolicitudController extends Controller
      */
     public function show(Empresa $empresa)
     {
-        // Precargamos TODAS las relaciones necesarias.
+        // Precargamos TODAS las relaciones necesarias, incluyendo las nuevas de Producto: 'impuesto'.
         $empresa->load([
             'afiliado',
             'rubro',
             'tipoOrganizacion',
             'paisExportacion',
-            'productos', // Carga productos asociados (que son Marcas)
+            'productos.impuesto', // <-- IMPORTANTE: Cargar la relación de impuesto
+            'productos.subcategoria.categoria', // Cargar subcategoría y su categoría
             'tiendas'    // Carga tiendas asociadas
         ]);
 
@@ -56,7 +59,7 @@ class SolicitudController extends Controller
         ]);
         
         // Carga las marcas (One-to-Many) y las tiendas (Many-to-Many)
-        $empresa->load(['afiliado', 'marcas', 'tiendas']); // <-- ¡Aquí se usa la nueva relación 'marcas'!
+        $empresa->load(['afiliado', 'marcas', 'tiendas']); 
 
         $afiliadoId = $empresa->afiliado_id;
         $afiliadoDni = $empresa->afiliado->dni ?? 'DNI_No_Encontrado'; 
@@ -69,14 +72,14 @@ class SolicitudController extends Controller
             DB::table('empresa_tienda')->where('empresa_id', $empresa->id)->update(['estado' => 'aprobado']);
 
             // 2. CREACIÓN DE REGISTROS DE INVENTARIO
-            $marcas = $empresa->marcas; // Usa la nueva relación directa HasMany
+            $marcas = $empresa->marcas; 
             $tiendas = $empresa->tiendas; 
             
             foreach ($marcas as $marca) {
                 foreach ($tiendas as $tienda) {
                     
                     // Crea o encuentra el registro de inventario con precio y stock en 0
-                    \App\Models\Inventario::firstOrCreate( // Uso el FQN por seguridad
+                    Inventario::firstOrCreate( 
                         [
                             'marca_id' => $marca->id,
                             'tienda_id' => $tienda->id,
@@ -90,7 +93,7 @@ class SolicitudController extends Controller
             }
 
             // 3. REGISTRAR O ACTUALIZAR EL RESULTADO
-            \App\Models\Resultado::updateOrCreate(
+            Resultado::updateOrCreate(
                 ['empresa_id' => $empresa->id], 
                 [
                     'afiliado_id' => $afiliadoId,
@@ -126,7 +129,7 @@ class SolicitudController extends Controller
 
             // 2. REGISTRAR O ACTUALIZAR EL RESULTADO
             Resultado::updateOrCreate(
-                ['empresa_id' => $empresa->id], // Criterio de búsqueda (Empresa ID)
+                ['empresa_id' => $empresa->id], 
                 [
                     'afiliado_id' => $afiliadoId,
                     'afiliado_dni' => $afiliadoDni, 
@@ -168,6 +171,8 @@ class SolicitudController extends Controller
             'rubro',
             'tipoOrganizacion',
             'paisExportacion',
+            // Aseguramos la carga del impuesto para el detalle de productos
+            'productos.impuesto', 
             'productos.subcategoria.categoria',
         ]);
 

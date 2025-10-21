@@ -23,12 +23,31 @@
 
     {{-- SUBCATEGORÍA (font-normal) --}}
     <td class="px-6 py-4 whitespace-nowrap text-sm font-normal text-gray-700 dark:text-gray-300">
-        {{ $producto->subcategoria->nombre }}
+        {{ $producto->subcategoria->nombre ?? 'N/A' }}
     </td>
 
     {{-- CATEGORÍA PRINCIPAL (font-normal) --}}
     <td class="px-6 py-4 whitespace-nowrap text-sm font-normal text-gray-700 dark:text-gray-300">
-        {{ $producto->subcategoria->categoria->nombre }}
+        {{ $producto->subcategoria->categoria->nombre ?? 'N/A' }}
+    </td>
+    
+    {{-- COLUMNA: NOMBRE DEL IMPUESTO --}}
+    <td class="px-6 py-4 whitespace-nowrap text-sm font-normal text-gray-700 dark:text-gray-300">
+        {{ $producto->impuesto->nombre ?? 'N/A' }}
+    </td>
+
+    {{-- COLUMNA: TASA DEL IMPUESTO --}}
+    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-center text-gray-800 dark:text-gray-200">
+        {{ number_format($producto->impuesto->porcentaje ?? 0, 2) }}%
+    </td>
+    
+    {{-- NUEVA COLUMNA: PERMITE FACTURACIÓN --}}
+    <td class="px-4 py-4 whitespace-nowrap text-center">
+        @if ($producto->permite_facturacion)
+            <i class="fas fa-check-circle text-lg text-green-500" title="Permite Facturación"></i>
+        @else
+            <i class="fas fa-times-circle text-lg text-red-500" title="No Permite Facturación"></i>
+        @endif
     </td>
 
     {{-- ESTADO (Cápsula Estilizada) --}}
@@ -72,7 +91,8 @@
 </tr>
 @empty
 <tr>
-    <td colspan="7" class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300 text-center">
+    {{-- El colspan es 10 (6 columnas originales + 2 Impuesto + 1 Facturación + 1 Estado + 1 Acciones) --}}
+    <td colspan="10" class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300 text-center">
         No se encontraron productos.
     </td>
 </tr>
