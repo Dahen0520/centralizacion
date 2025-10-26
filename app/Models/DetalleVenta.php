@@ -19,4 +19,9 @@ class DetalleVenta extends Model
     
     public function venta() { return $this->belongsTo(Venta::class); }
     public function inventario() { return $this->belongsTo(Inventario::class); }
+    
+    public function movimientos()
+    {
+        return $this->morphMany(MovimientoInventario::class, 'movible');
+    }
 }

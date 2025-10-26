@@ -31,4 +31,10 @@ class Inventario extends Model
     {
         return $this->belongsTo(Tienda::class);
     }
+    
+    // ⭐ NUEVA RELACIÓN: Obtiene todos los movimientos de inventario de este stock.
+    public function movimientos()
+    {
+        return $this->hasMany(MovimientoInventario::class);
+    }
 }

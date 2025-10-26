@@ -35,7 +35,7 @@
             </x-nav-link>
 
             {{-- Afiliados --}}
-            <x-nav-link :href="route('afiliados.list')" :active="request()->routeIs('afiliados.*')"
+            <x-nav-link :href="route('afiliados.list')" :active="request()->routeIs('afiliados.*') && !request()->routeIs('afiliados.registro')"
                         class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400  transition duration-200 ease-in-out text-white flex items-center">
                 <i class="fas fa-users mr-3"></i>
                 {{ __('Afiliados') }}
@@ -57,7 +57,7 @@
                 {{ __('Categorías') }}
             </x-nav-link>
 
-            {{-- Menú de Subcategorías (opción añadida) --}}
+            {{-- Menú de Subcategorías --}}
             <x-nav-link :href="route('subcategorias.index')" :active="request()->routeIs('subcategorias.*')"
                         class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center">
                 <i class="fas fa-layer-group mr-3"></i>
@@ -71,14 +71,14 @@
                 {{ __('Clientes') }}
             </x-nav-link>
 
-            {{-- Menú de Productos (opción añadida) --}}
+            {{-- Menú de Productos --}}
             <x-nav-link :href="route('productos.index')" :active="request()->routeIs('productos.*')"
                         class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center">
                 <i class="fas fa-boxes mr-3"></i>
                 {{ __('Productos') }}
             </x-nav-link>
 
-            {{-- Menú de Marcas (opción añadida) --}}
+            {{-- Menú de Marcas --}}
             <x-nav-link :href="route('marcas.index')" :active="request()->routeIs('marcas.*')"
                         class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center">
                 <i class="fas fa-barcode mr-3"></i>
@@ -94,8 +94,9 @@
             
             {{-- ========================================================= --}}
             {{-- MÓDULO DE INVENTARIO Y VENTAS --}}
+            {{-- Se activa si cualquier ruta de inventarios, movimientos o ventas es activa --}}
             {{-- ========================================================= --}}
-            <div class="{{ request()->routeIs('inventarios.*') || request()->routeIs('ventas.*') ? 'bg-chorotega-blue-light rounded' : '' }}">
+            <div class="{{ request()->routeIs('inventarios.*') || request()->routeIs('ventas.*') || request()->routeIs('movimientos.*') ? 'bg-chorotega-blue-light rounded' : '' }} p-1 space-y-1">
                 
                 {{-- NUEVO: PUNTO DE VENTA (POS) --}}
                 <x-nav-link :href="route('ventas.pos')" :active="request()->routeIs('ventas.pos')"
@@ -104,7 +105,7 @@
                     {{ __('Punto de Venta (POS)') }}
                 </x-nav-link>
 
-                {{-- Historial de Ventas (opcional, si implementas la vista index) --}}
+                {{-- Historial de Ventas --}}
                 @if (Route::has('ventas.index'))
                 <x-nav-link :href="route('ventas.index')" :active="request()->routeIs('ventas.index')"
                             class="py-1 pl-8 pr-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center text-sm">
@@ -113,13 +114,20 @@
                 </x-nav-link>
                 @endif
                 
-                {{-- Enlace principal (Gestión/CRUD) --}}
+                {{-- Enlace principal (Gestión/CRUD de Inventario) --}}
                 <x-nav-link :href="route('inventarios.index')" :active="request()->routeIs('inventarios.index')"
                             class="py-1 pl-8 pr-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center text-sm">
                     <i class="fas fa-list-alt mr-3 opacity-80"></i>
                     {{ __('Gestión de Inventario') }}
                 </x-nav-link>
-
+                
+                {{-- ⭐ NUEVO: Historial de Movimientos (Ajustes, Entradas, Descarte) --}}
+                <x-nav-link :href="route('movimientos.index')" :active="request()->routeIs('movimientos.index')"
+                            class="py-1 pl-8 pr-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center text-sm">
+                    <i class="fas fa-clipboard-list mr-3 opacity-80"></i>
+                    {{ __('Movimientos/Trazabilidad') }}
+                </x-nav-link>
+                
                 {{-- Explorador Jerárquico --}}
                 <x-nav-link :href="route('inventarios.explorar.tiendas')" :active="request()->routeIs('inventarios.explorar.*')"
                             class="py-1 pl-8 pr-4 rounded hover:bg-chorotega-blue-light-hover hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center text-sm">
@@ -129,7 +137,7 @@
             </div>
 
             {{-- Tiendas --}}
-            <x-nav-link :href="route('tiendas.index')" :active="request()->routeIs('tiendas.*') && !request()->routeIs('inventarios.explorar.empresas')"
+            <x-nav-link :href="route('tiendas.index')" :active="request()->routeIs('tiendas.index')"
                         class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-white transition duration-200 ease-in-out text-white flex items-center">
                 <i class="fas fa-store mr-3"></i>
                 {{ __('Tiendas') }}

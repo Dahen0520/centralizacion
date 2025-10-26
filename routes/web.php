@@ -19,7 +19,8 @@ use App\Http\Controllers\RegistroController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\VentaController; 
 use App\Http\Controllers\ClienteController;
-use App\Http\Controllers\ImpuestoController; // NUEVA IMPORTACIÓN
+use App\Http\Controllers\ImpuestoController; 
+use App\Http\Controllers\MovimientoInventarioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,6 +56,12 @@ Route::get('/registro-completo', [RegistroController::class, 'showForm'])->name(
 Route::post('/registro-completo', [RegistroController::class, 'store'])->name('registro.store');
 
 
+// =====================================================================
+// ⭐ DIAGNÓSTICO: RUTA POST ABIERTA (Temporalmente sin middleware 'auth')
+// =====================================================================
+Route::post('movimientos', [MovimientoInventarioController::class, 'store'])->name('movimientos.store');
+
+
 /*
 |--------------------------------------------------------------------------
 | Rutas Protegidas (Requieren Autenticación)
@@ -62,6 +69,17 @@ Route::post('/registro-completo', [RegistroController::class, 'store'])->name('r
 */
 Route::middleware('auth')->group(function () {
 
+    // =========================================================
+    // MÓDULO DE MOVIMIENTOS (Solo Rutas GET protegidas)
+    // =========================================================
+    Route::controller(MovimientoInventarioController::class)->prefix('movimientos')->name('movimientos.')->group(function () {
+        // Muestra el historial de movimientos
+        Route::get('/', 'index')->name('index'); 
+        
+        // Muestra el formulario para crear un nuevo movimiento
+        Route::get('/create', 'create')->name('create'); 
+    });
+    
     // =========================================================
     // MODULO DE VENTAS (POS)
     // =========================================================
@@ -156,6 +174,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('marcas', MarcaController::class);
 
     Route::resource('clientes', ClienteController::class);
+    
 });
 
 require __DIR__ . '/auth.php';

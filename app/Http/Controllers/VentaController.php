@@ -7,10 +7,11 @@ use App\Models\DetalleVenta;
 use App\Models\Tienda;
 use App\Models\Inventario;
 use App\Models\Cliente;
+use App\Models\MovimientoInventario; // ⭐ IMPORTANTE: Nuevo Modelo
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Carbon\Carbon; // Asegúrate de que Carbon esté disponible para las fechas
+use Carbon\Carbon;
 
 class VentaController extends Controller
 {
@@ -21,6 +22,7 @@ class VentaController extends Controller
     public function create()
     {
         $tiendas = Tienda::all();
+        // Asegúrate de que la vista exista: resources/views/ventas/pos.blade.php
         return view('ventas.pos', compact('tiendas'));
     }
 
@@ -88,7 +90,7 @@ class VentaController extends Controller
     }
     
     /**
-     * Función centralizada para ejecutar la transacción.
+     * Función centralizada para ejecutar la transacción, ahora registrando movimientos de inventario.
      */
     protected function handleTransaction(Request $request)
     {
@@ -142,19 +144,33 @@ class VentaController extends Controller
             
             $documentoId = $documento->id;
 
-            // 4. Procesamiento de Detalles y Stock
-            foreach ($request->detalles as $detalle) {
-                $documento->detalles()->create([
+            // 4. Procesamiento de Detalles, Stock y REGISTRO DE MOVIMIENTOS
+            foreach ($request->detalles as $detalleData) {
+                // 4a. Crear el DetalleVenta
+                $detalleVenta = $documento->detalles()->create([
                     'venta_id' => $documento->id,
-                    'inventario_id' => $detalle['inventario_id'],
-                    'cantidad' => $detalle['cantidad'],
-                    'precio_unitario' => $detalle['precio_unitario'],
-                    'subtotal' => ($detalle['cantidad'] * $detalle['precio_unitario']),
+                    'inventario_id' => $detalleData['inventario_id'],
+                    'cantidad' => $detalleData['cantidad'],
+                    'precio_unitario' => $detalleData['precio_unitario'],
+                    'subtotal' => ($detalleData['cantidad'] * $detalleData['precio_unitario']),
                 ]);
 
                 if ($afectaStock) {
-                    $inventario = Inventario::lockForUpdate()->find($detalle['inventario_id']);
-                    $inventario->decrement('stock', $detalle['cantidad']);
+                    $inventario = Inventario::lockForUpdate()->find($detalleData['inventario_id']);
+                    
+                    // 4b. ⭐ Registrar el Movimiento de Inventario (SALIDA)
+                    MovimientoInventario::create([
+                        'inventario_id' => $inventario->id,
+                        'tipo_movimiento' => 'SALIDA',
+                        'razon' => 'Venta (' . $tipo . ')', 
+                        'cantidad' => $detalleData['cantidad'],
+                        'movible_id' => $detalleVenta->id,
+                        'movible_type' => DetalleVenta::class, // Vinculado al DetalleVenta
+                        'usuario_id' => auth()->id(),
+                    ]);
+                    
+                    // 4c. Actualizar el Stock
+                    $inventario->decrement('stock', $detalleData['cantidad']);
                 }
             }
             
@@ -202,6 +218,7 @@ class VentaController extends Controller
             abort(404, 'Documento no encontrado.');
         }
         
+        // Asegúrate de que la vista exista: resources/views/documentos/imprimir.blade.php
         return view('documentos.imprimir', compact('documento', 'tipo'));
     }
 
@@ -271,17 +288,12 @@ class VentaController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. Obtener todas las tiendas para el dropdown de la vista (siempre necesario)
         $tiendas = Tienda::orderBy('nombre')->get();
         
-        // 2. Iniciar la consulta base
         $query = Venta::with(['tienda', 'usuario', 'cliente'])
             ->orderBy('fecha_venta', 'desc')
             ->select('*');
             
-        // 3. Aplicar Filtros (La lógica de filtrado es la misma, ¡es perfecta!)
-        
-        // Filtro por Tienda
         if ($request->filled('tienda_id') && $request->tienda_id != '') {
             $query->where('tienda_id', $request->tienda_id);
         }
@@ -289,32 +301,25 @@ class VentaController extends Controller
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
 
-        // Lógica de Filtrado de Fechas
         if ($fechaInicio && $fechaFin) {
-            // Rango de Fechas (Desde y Hasta)
             $query->whereDate('fecha_venta', '>=', $fechaInicio);
             $query->where('fecha_venta', '<=', Carbon::parse($fechaFin)->endOfDay());
             
         } elseif ($fechaInicio) {
-            // Solo Fecha de Inicio (Muestra solo las ventas de ese día)
             $query->whereDate('fecha_venta', $fechaInicio);
             
         } elseif ($fechaFin) {
-            // Solo Fecha de Fin (Muestra ventas desde siempre hasta el fin de ese día)
             $query->where('fecha_venta', '<=', Carbon::parse($fechaFin)->endOfDay());
         }
 
-        // 4. Obtener los resultados paginados, manteniendo los parámetros de filtro
         $ventas = $query->paginate(15)->withQueryString();
         
-        
-        // 5. Detectar si la solicitud es AJAX
         if ($request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
-            // RUTA ACTUALIZADA: Devuelve solo la vista parcial
+            // Asegúrate de que la vista exista: resources/views/ventas/partials/_ventas_table.blade.php
             return view('ventas.partials._ventas_table', compact('ventas'));
         }
         
-        // Si no es AJAX (es la carga inicial de la página), devuelve la vista completa
+        // Asegúrate de que la vista exista: resources/views/ventas/index.blade.php
         return view('ventas.index', compact('ventas', 'tiendas'));
     }
 
@@ -326,26 +331,51 @@ class VentaController extends Controller
             'cliente',
             'detalles.inventario.marca.producto',
         ]);
+        // Asegúrate de que la vista exista: resources/views/ventas/show.blade.php
         return view('ventas.show', compact('venta'));
     }
 
+    /**
+     * Anula una venta, revierte el stock Y registra el movimiento de anulación (ENTRADA).
+     */
     public function destroy(Venta $venta)
     {
+        // Si la venta no afectó stock (ej. era una QUOTE), solo la eliminamos/anulamos el registro.
+        if ($venta->tipo_documento === 'QUOTE' || $venta->estado === 'ANULADA') {
+            $venta->update(['estado' => 'ANULADA']); 
+             return redirect()->route('ventas.index')
+                ->with('success', "Documento #{$venta->id} marcado como ANULADO.");
+        }
+        
         DB::beginTransaction();
 
         try {
             $venta->load('detalles');
+            
+            // 1. Recorrer los detalles para revertir stock y registrar movimientos
             foreach ($venta->detalles as $detalle) {
                 $inventario = Inventario::lockForUpdate()->find($detalle->inventario_id);
+                
                 if ($inventario) {
-                    // Solo incrementa si la venta afectó el stock (ej. no era una QUOTE)
-                    // Asumiendo que toda venta registrada afecta stock a menos que se defina lo contrario
-                    // Si solo las ventas de tipo TICKET/INVOICE afectan stock, esta lógica es válida.
+                    // 1a. ⭐ REGISTRAR EL MOVIMIENTO DE ENTRADA (Anulación)
+                    MovimientoInventario::create([
+                        'inventario_id' => $inventario->id,
+                        'tipo_movimiento' => 'ENTRADA',
+                        'razon' => 'Anulación Venta (' . $venta->tipo_documento . ')',
+                        'cantidad' => $detalle->cantidad,
+                        'movible_id' => $venta->id, // Vinculado a la VENTA (registro de anulación)
+                        'movible_type' => Venta::class, 
+                        'usuario_id' => auth()->id(),
+                    ]);
+                    
+                    // 1b. Devolver el stock
                     $inventario->increment('stock', $detalle->cantidad);
                 }
             }
+            
+            // 2. Marcar la venta como anulada
+            $venta->update(['estado' => 'ANULADA']); 
 
-            $venta->delete();
             DB::commit();
 
             return redirect()->route('ventas.index')

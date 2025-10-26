@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo; // Importación necesaria
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Venta extends Model
 {
@@ -29,9 +29,8 @@ class Venta extends Model
     }
     
     // Define la relación con el usuario (quien registró la venta)
-    public function usuario(): BelongsTo // <-- ¡RELACIÓN FALTANTE!
+    public function usuario(): BelongsTo 
     {
-        // Asume que tu modelo de usuario es App\Models\User (el default de Laravel)
         return $this->belongsTo(\App\Models\User::class); 
     }
     
@@ -40,7 +39,7 @@ class Venta extends Model
         return $this->hasMany(DetalleVenta::class); 
     }
 
-    public function cliente(): BelongsTo // <-- ¡Nueva relación!
+    public function cliente(): BelongsTo
     {
         return $this->belongsTo(Cliente::class);
     }
