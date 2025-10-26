@@ -17,7 +17,7 @@ use App\Models\Producto;
 use App\Models\Subcategoria;
 use App\Models\Marca;
 use App\Models\EmpresaTienda;
-use App\Models\Impuesto; // NUEVA IMPORTACIÓN
+use App\Models\Impuesto;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -43,9 +43,9 @@ class RegistroController extends Controller
         $paises = Pais::all();
         $tiendas = Tienda::all();
         $subcategorias = Subcategoria::all();
-        $impuestos = Impuesto::all(); // NUEVA LÍNEA: Cargar impuestos
+        $impuestos = Impuesto::all();
 
-        return view('registro-completo', compact('rubros', 'tiposOrganizacion', 'paises', 'tiendas', 'subcategorias', 'impuestos')); // Pasar $impuestos a la vista
+        return view('registro-completo', compact('rubros', 'tiposOrganizacion', 'paises', 'tiendas', 'subcategorias', 'impuestos'));
     }
 
     public function queryAfiliado(Request $request)
@@ -135,6 +135,7 @@ class RegistroController extends Controller
                 'rubro_id'             => 'required|exists:rubros,id',
                 'tipo_organizacion_id' => 'required|exists:tipo_organizacions,id',
                 'pais_exportacion_id'  => 'nullable|exists:paises,id',
+                'facturacion'          => 'nullable|boolean', // <-- VALIDACIÓN DEL CAMPO DE EMPRESA
                 'tiendas'              => 'required|array',
                 'tiendas.*'            => 'exists:tiendas,id',
                 'productos_json'       => 'required|json',
@@ -155,8 +156,8 @@ class RegistroController extends Controller
                 'nombre'              => 'required|string|max:255',
                 'descripcion'         => 'nullable|string',
                 'subcategoria_id'     => 'required|exists:subcategorias,id',
-                'impuesto_id'         => 'required|exists:impuestos,id', // Validar que el impuesto exista
-                'permite_facturacion' => 'required|boolean', // Validar el booleano
+                'impuesto_id'         => 'required|exists:impuestos,id',
+                // 'permite_facturacion' => 'required|boolean', <-- ESTE CAMPO HA SIDO ELIMINADO
             ]);
 
             if ($validator->fails()) {
@@ -203,6 +204,7 @@ class RegistroController extends Controller
                 'rubro_id'             => $validatedData['rubro_id'],
                 'tipo_organizacion_id' => $validatedData['tipo_organizacion_id'],
                 'pais_exportacion_id'  => $validatedData['pais_exportacion_id'],
+                'facturacion'          => $request->has('facturacion'), // <-- ALMACENAMIENTO DE FACTURACION DE EMPRESA
             ]);
 
             foreach ($validatedData['tiendas'] as $tiendaId) {
@@ -222,8 +224,8 @@ class RegistroController extends Controller
                     'nombre'              => $productoItem['nombre'],
                     'descripcion'         => $productoItem['descripcion'],
                     'subcategoria_id'     => $productoItem['subcategoria_id'],
-                    'impuesto_id'         => $productoItem['impuesto_id'], // NUEVO CAMPO
-                    'permite_facturacion' => $productoItem['permite_facturacion'], // NUEVO CAMPO
+                    'impuesto_id'         => $productoItem['impuesto_id'],
+                    'permite_facturacion' => false, // <-- SE ELIMINA EL CAMPO Y SE FIJA A FALSE POR DEFECTO
                     'estado'              => 'pendiente',
                 ]);
                 

@@ -28,10 +28,6 @@ return new class extends Migration
                   ->constrained('impuestos')
                   ->onDelete('restrict');
 
-            // NUEVO CAMPO BOOLEANO PARA FACTURACIÓN
-            // Indica si el producto permite facturación (default: falso)
-            $table->boolean('permite_facturacion')->default(false);
-
             // Columna para el estado del producto usando un ENUM
             $table->enum('estado', ['pendiente', 'rechazado', 'aprobado'])->default('pendiente');
             

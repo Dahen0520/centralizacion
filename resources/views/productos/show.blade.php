@@ -90,20 +90,6 @@
                             </div>
                         </div>
                         
-                        {{-- ESTADO DE FACTURACIÓN (NUEVO CAMPO) --}}
-                        <div class="flex items-start">
-                            <i class="fas fa-file-invoice text-lg mr-3 mt-1 
-                                @if($producto->permite_facturacion) text-green-500 @else text-red-500 @endif dark:text-gray-400"></i>
-                            <div>
-                                <p class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">Facturación Permitida</p>
-                                @if($producto->permite_facturacion)
-                                    <span class="text-base font-medium text-green-600 dark:text-green-400">SÍ</span>
-                                @else
-                                    <span class="text-base font-medium text-red-600 dark:text-red-400">NO</span>
-                                @endif
-                            </div>
-                        </div>
-
                         {{-- NOMBRE DEL IMPUESTO --}}
                         <div class="flex items-start">
                             <i class="fas fa-balance-scale text-lg mr-3 mt-1 text-yellow-500 dark:text-yellow-400"></i>
@@ -168,4 +154,3 @@
         </div>
     </div>
 </x-app-layout>
-

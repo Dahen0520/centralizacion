@@ -6,7 +6,7 @@ use App\Models\Producto;
 use App\Models\Subcategoria;
 use App\Models\Categoria;
 use App\Models\Marca;
-use App\Models\Impuesto; // <-- IMPORTACIÓN DEL MODELO IMPUESTO
+use App\Models\Impuesto;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -60,8 +60,8 @@ class ProductoController extends Controller
     public function create()
     {
         $subcategorias = Subcategoria::all();
-        $impuestos = Impuesto::all(); // <-- CARGA DE IMPUESTOS
-        return view('productos.create', compact('subcategorias', 'impuestos')); // <-- PASA IMPUESTOS A LA VISTA
+        $impuestos = Impuesto::all();
+        return view('productos.create', compact('subcategorias', 'impuestos'));
     }
 
     /**
@@ -96,17 +96,15 @@ class ProductoController extends Controller
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'subcategoria_id' => 'required|exists:subcategorias,id',
-            'impuesto_id' => 'required|exists:impuestos,id', // <-- VALIDACIÓN DEL IMPUESTO
-            'permite_facturacion' => 'nullable|boolean', // <-- VALIDACIÓN DEL NUEVO CAMPO BOLEANO
+            'impuesto_id' => 'required|exists:impuestos,id',
+            // Se eliminó la validación 'permite_facturacion'
             'estado' => 'required|in:pendiente,rechazado,aprobado',
             'afiliado_id' => 'nullable|exists:afiliados,id',
         ]);
 
-        // Laravel manejará automáticamente 'permite_facturacion' y lo convertirá a booleano,
-        // asumiendo que el checkbox está configurado con un valor (ej: '1') o usando
-        // el método ->merge(['permite_facturacion' => $request->has('permite_facturacion')])
-        // Sin embargo, con $request->all() funciona si se utiliza el cast en el modelo.
-
+        // Ya que 'permite_facturacion' fue eliminado del modelo y la validación,
+        // $request->all() ya no contendrá este campo si venía del formulario,
+        // o si venía, será ignorado por el modelo ya que no está en $fillable.
         Producto::create($request->all());
 
         return redirect()->route('productos.index')
@@ -204,7 +202,7 @@ class ProductoController extends Controller
     public function edit(Producto $producto)
     {
         $subcategorias = Subcategoria::all();
-        $impuestos = Impuesto::all(); // <-- Carga de impuestos
+        $impuestos = Impuesto::all();
         
         // Cargar la relación del impuesto para asegurar que esté disponible en la vista
         $producto->load('impuesto'); 
@@ -222,18 +220,14 @@ class ProductoController extends Controller
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'subcategoria_id' => 'required|exists:subcategorias,id',
-            'impuesto_id' => 'required|exists:impuestos,id', // <-- VALIDAR IMPUESTO
-            'permite_facturacion' => 'nullable|boolean', // <-- VALIDAR NUEVO CAMPO BOLEANO
+            'impuesto_id' => 'required|exists:impuestos,id',
+            // Se eliminó la validación 'permite_facturacion'
             'estado' => 'required|in:pendiente,rechazado,aprobado',
         ]);
 
-        // Antes de actualizar, asegura que el campo booleano se maneje correctamente.
-        // Si el checkbox no se envía (porque está desmarcado), Laravel lo ignora.
-        // Usamos merge para asegurar que, si no viene, se establezca explícitamente a 0 (false).
-        $data = $request->all();
-        $data['permite_facturacion'] = $request->has('permite_facturacion');
-
-        $producto->update($data);
+        // Se eliminó la lógica que manejaba el campo 'permite_facturacion'.
+        // Ahora solo se actualiza con los campos restantes que vienen en el request.
+        $producto->update($request->all());
 
         return redirect()->route('productos.index')
             ->with('success', 'Producto actualizado exitosamente.');

@@ -108,6 +108,20 @@
                                 <p class="text-base font-medium text-gray-900 dark:text-white">{{ $empresa->paisExportacion ? $empresa->paisExportacion->nombre : 'N/A' }}</p>
                             </div>
                         </div>
+                        
+                        {{-- ESTADO DE FACTURACIÓN (NUEVO CAMPO) --}}
+                        <div class="flex items-start">
+                            <i class="fas fa-file-invoice text-lg mr-3 mt-1 
+                                @if($empresa->facturacion) text-blue-500 @else text-gray-500 @endif dark:text-gray-400"></i>
+                            <div>
+                                <p class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">Facturación Habilitada</p>
+                                @if($empresa->facturacion)
+                                    <span class="text-base font-medium text-blue-600 dark:text-blue-400">SÍ</span>
+                                @else
+                                    <span class="text-base font-medium text-gray-600 dark:text-gray-400">NO</span>
+                                @endif
+                            </div>
+                        </div>
 
                     </div>
                 </div>

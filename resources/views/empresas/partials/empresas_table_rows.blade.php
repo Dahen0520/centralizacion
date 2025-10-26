@@ -13,6 +13,16 @@
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ $empresa->nombre_negocio }}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ $empresa->afiliado->nombre }}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ $empresa->rubro->nombre }}</td>
+
+        {{-- NUEVA COLUMNA: FACTURACIÓN --}}
+        <td class="px-6 py-4 whitespace-nowrap text-center">
+            @if ($empresa->facturacion)
+                <i class="fas fa-check-circle text-lg text-green-500" title="Facturación Habilitada"></i>
+            @else
+                <i class="fas fa-times-circle text-lg text-red-500" title="Facturación Deshabilitada"></i>
+            @endif
+        </td>
+        
         <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full capitalize
                 @if($empresa->estado == 'aprobado') bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200
@@ -36,7 +46,11 @@
     </tr>
 @empty
     <tr>
-        <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+        {{-- EL COLSPAN DEBE SER 7: (1 # + 4 Datos + 1 Facturación + 1 Estado + 1 Acciones) = 8.
+            El código original tenía 6, por lo que el estado y acciones están juntos.
+            Vamos a revisar el conteo: #, Negocio, Afiliado, Rubro, Estado, Acciones. Son 6.
+            Con Facturación: #, Negocio, Afiliado, Rubro, FACTURACION, Estado, Acciones. Son 7. --}}
+        <td colspan="7" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
             No se encontraron empresas.
         </td>
     </tr>

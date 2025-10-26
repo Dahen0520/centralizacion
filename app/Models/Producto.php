@@ -19,7 +19,6 @@ class Producto extends Model
         'descripcion',
         'subcategoria_id',
         'impuesto_id',
-        'permite_facturacion', // <--- ¡AÑADIDO!
         'estado'
     ];
 
@@ -54,13 +53,5 @@ class Producto extends Model
     {
         return $this->belongsToMany(Tienda::class, 'empresa_tienda_producto');
     }
-
-    /**
-     * Los atributos que deben ser casteados.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'permite_facturacion' => 'boolean', // <--- Recomendar casteo
-    ];
 }
+

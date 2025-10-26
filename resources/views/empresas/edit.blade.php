@@ -148,6 +148,24 @@
                                 <p class="text-red-500 text-xs italic mt-2 flex items-center"><i class="fas fa-info-circle mr-1"></i> {{ $message }}</p>
                             @enderror
                         </div>
+                        
+                        {{-- CAMPO CHECKBOX FACTURACIÓN --}}
+                        <div class="md:col-span-2 mt-2">
+                            <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-inner">
+                                <input type="checkbox" id="facturacion" name="facturacion" value="1"
+                                    class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500"
+                                    @checked(old('facturacion', $empresa->facturacion))>
+                                <label for="facturacion" class="ml-3 block text-sm font-bold text-gray-700 dark:text-gray-200">
+                                    Habilitar Facturación
+                                </label>
+                                <i class="fas fa-info-circle ml-auto text-gray-400 dark:text-gray-500 cursor-pointer" 
+                                title="Marca esta casilla para habilitar la capacidad de generar facturas fiscales para esta empresa."></i>
+                                @error('facturacion')
+                                    <p class="text-red-500 text-xs italic mt-2 flex items-center"><i class="fas fa-info-circle mr-1"></i> {{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+                        {{-- FIN CAMPO CHECKBOX FACTURACIÓN --}}
 
                     </div>
 

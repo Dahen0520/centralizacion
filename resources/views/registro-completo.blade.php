@@ -160,7 +160,9 @@
                 
                 <div id="afiliado-response" class="mt-8"></div>
 
-                <div class="flex justify-end mt-8">
+                <div class="flex justify-between mt-8">
+                    {{-- BOTÓN DE REGRESO MODIFICADO PARA VOLVER A LA RUTA WELCOME --}}
+                    <button type="button" onclick="window.location.href='{{ url('/') }}'" class="px-6 py-3 bg-gray-500 text-white rounded-md font-semibold shadow-md hover:bg-gray-600 transition-all duration-300">Atrás</button>
                     <button type="button" id="next-step-1" class="px-6 py-3 bg-blue-600 text-white rounded-md font-semibold shadow-md hover:bg-blue-700 transition-all duration-300" disabled>Siguiente</button>
                 </div>
             </div>
@@ -203,6 +205,20 @@
                             @endforeach
                         </select>
                     </div>
+
+                    {{-- CAMPO: FACTURACIÓN EMPRESARIAL (CHECKBOX) - ETIQUETA ACTUALIZADA --}}
+                    <div>
+                        <div class="flex items-center mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-inner">
+                            <input type="checkbox" id="facturacion" name="facturacion" value="1"
+                                   class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500">
+                            <label for="facturacion" class="ml-3 block text-gray-700 dark:text-gray-200 font-semibold cursor-pointer">
+                                ¿Cuenta con Facturación?
+                            </label>
+                            <i class="fas fa-file-invoice ml-auto text-gray-400 cursor-pointer" title="Marca esta casilla si la empresa está preparada para emitir facturas fiscales."></i>
+                        </div>
+                    </div>
+                    {{-- FIN CAMPO --}}
+
                     <div class="md:col-span-2">
                         <label class="block mb-3 text-gray-700 dark:text-gray-300 font-semibold">Tiendas en las que desea participar</label>
                         <div tabindex="0" role="group" aria-labelledby="checkbox-group" class="checkbox-container">
@@ -212,6 +228,7 @@
                                 <span>{{ $tienda->nombre }}</span>
                             </label>
                             @endforeach
+                        </select>
                         </div>
                     </div>
                 </div>
@@ -242,7 +259,7 @@
                         </select>
                     </div>
                     
-                    {{-- NUEVO CAMPO: IMPUESTO --}}
+                    {{-- CAMPO: IMPUESTO --}}
                     <div>
                         <label for="impuesto_id_producto" class="block text-gray-700 dark:text-gray-300 font-semibold mb-2 cursor-pointer">Impuesto Aplicable</label>
                         <select name="impuesto_id_producto" id="impuesto_id_producto" class="block w-full rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white py-3 px-4 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
@@ -253,13 +270,9 @@
                         </select>
                     </div>
 
-                    {{-- NUEVO CAMPO: PERMITE FACTURACIÓN (CHECKBOX) --}}
-                    <div class="flex items-center mt-6">
-                        <input type="checkbox" id="permite_facturacion_producto" name="permite_facturacion_producto" class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
-                        <label for="permite_facturacion_producto" class="ml-3 block text-gray-700 dark:text-gray-300 font-semibold cursor-pointer">
-                            Permite Facturación
-                        </label>
-                        <i class="fas fa-info-circle ml-2 text-gray-400 cursor-pointer" title="Marca si este producto debe ser facturado fiscalmente."></i>
+                    {{-- ESPACIO VACÍO PARA MANTENER EL LAYOUT --}}
+                    <div class="md:col-span-1">
+                        
                     </div>
 
                     <div class="md:col-span-2">
@@ -400,6 +413,7 @@
         const nextStep3Btn = document.getElementById('next-step-3');
         const summaryInfoDiv = document.getElementById('summary-info');
         const aceptarTerminosCheckbox = document.getElementById('aceptar-terminos'); 
+        const facturacionCheckbox = document.getElementById('facturacion'); // Obtener el nuevo checkbox de empresa
 
         function updateProgress(step) {
             const progress = (step - 1) * 100 / (steps.length - 1);
@@ -438,6 +452,7 @@
             updateProgress(step);
             
             if (step === 4) {
+                buildSummary(); // Reconstruir el resumen antes de mostrar
                 checkTermsAgreement();
             }
         }
@@ -515,11 +530,13 @@
                 const name = input.name;
                 const value = input.value;
                 if (name) {
-                    if (input.type === 'checkbox') {
+                    if (input.type === 'checkbox' && name !== 'facturacion') {
                          if (input.checked) {
                              if (!empresaInfo[name]) empresaInfo[name] = [];
-                             empresaInfo[name].push(input.nextElementSibling.textContent);
+                             empresaInfo[name].push(input.nextElementSibling.textContent.trim());
                          }
+                    } else if (name === 'facturacion') {
+                         empresaInfo[name] = input.checked;
                     } else {
                         empresaInfo[name] = value;
                     }
@@ -531,12 +548,13 @@
             const paisExportacionText = document.querySelector(`#pais_exportacion_id option[value="${empresaInfo.pais_exportacion_id}"]`)?.textContent || 'No aplica';
             
             let tiendasText = empresaInfo.tiendas?.join(', ') || 'N/A';
+            const facturacionText = empresaInfo.facturacion ? 'SÍ' : 'NO';
 
             let afiliadoHtml = `<table class="summary-table"><tbody>`;
             afiliadoHtml += `<tr><th colspan="2" class="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">Información del Afiliado</th></tr>`;
             afiliadoHtml += `<tr><td><strong>DNI:</strong></td><td>${afiliadoInfo.dni || 'N/A'}</td></tr>`;
             afiliadoHtml += `<tr><td><strong>Nombre:</strong></td><td>${afiliadoInfo.nombre_afiliado || 'N/A'}</td></tr>`;
-            afiliadoHtml += `<tr><td><strong>RTN:</strong></td><td>${rtnFormat(afiliadoInfo.rtn) || 'N/A'}</td></tr>`; // Formateado para resumen
+            afiliadoHtml += `<tr><td><strong>RTN:</strong></td><td>${rtnFormat(afiliadoInfo.rtn) || 'N/A'}</td></tr>`;
             afiliadoHtml += `<tr><td><strong>Número de Cuenta:</strong></td><td>${afiliadoInfo.numero_cuenta || 'N/A'}</td></tr>`;
             afiliadoHtml += `</tbody></table>`;
             
@@ -547,27 +565,26 @@
             empresaHtml += `<tr><td><strong>Rubro:</strong></td><td>${rubroText}</td></tr>`;
             empresaHtml += `<tr><td><strong>Tipo de Organización:</strong></td><td>${tipoOrgText}</td></tr>`;
             empresaHtml += `<tr><td><strong>País de Exportación:</strong></td><td>${paisExportacionText}</td></tr>`;
+            empresaHtml += `<tr><td><strong>Cuenta con Facturación:</strong></td><td>${facturacionText}</td></tr>`;
             empresaHtml += `<tr><td><strong>Tiendas en las que desea participar:</strong></td><td>${tiendasText}</td></tr>`;
             empresaHtml += `</tbody></table>`;
 
             let productsHtml = `<table class="summary-table"><tbody>`;
-            productsHtml += `<tr><th colspan="4" class="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">Productos Sugeridos (${productosAgregados.length})</th></tr>`;
+            productsHtml += `<tr><th colspan="3" class="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">Productos Sugeridos (${productosAgregados.length})</th></tr>`;
             if (productosAgregados.length > 0) {
-                productsHtml += `<tr><td class="font-semibold">Nombre</td><td class="font-semibold">Subcategoría</td><td class="font-semibold">Impuesto</td><td class="font-semibold">Facturación</td></tr>`;
+                productsHtml += `<tr><td class="font-semibold">Nombre</td><td class="font-semibold">Subcategoría</td><td class="font-semibold">Impuesto</td></tr>`; 
                 productosAgregados.forEach((p, index) => {
                     const subcatName = document.querySelector(`#subcategoria_id_producto option[value="${p.subcategoria_id}"]`)?.textContent || 'N/A';
                     const impuestoText = document.querySelector(`#impuesto_id_producto option[value="${p.impuesto_id}"]`)?.textContent || 'N/A';
-                    const facturacionText = p.permite_facturacion ? 'Sí' : 'No';
-
+                    
                     productsHtml += `<tr>
                                         <td>${p.nombre}</td>
                                         <td>${subcatName.split('(')[0].trim()}</td>
                                         <td>${impuestoText}</td>
-                                        <td>${facturacionText}</td>
                                      </tr>`;
                 });
             } else {
-                productsHtml += `<tr><td colspan="4" class="text-center">No se agregaron productos.</td></tr>`;
+                productsHtml += `<tr><td colspan="3" class="text-center">No se agregaron productos.</td></tr>`;
             }
             productsHtml += `</tbody></table>`;
             
@@ -578,7 +595,6 @@
             const nombre = document.getElementById('nombre_producto');
             const subcategoriaId = document.getElementById('subcategoria_id_producto');
             const impuestoId = document.getElementById('impuesto_id_producto');
-            const permiteFacturacion = document.getElementById('permite_facturacion_producto');
             const descripcion = document.getElementById('descripcion_producto');
 
             if (!nombre.value.trim() || !subcategoriaId.value.trim() || !impuestoId.value.trim()) {
@@ -590,7 +606,6 @@
                 nombre: nombre.value,
                 subcategoria_id: subcategoriaId.value,
                 impuesto_id: impuestoId.value,
-                permite_facturacion: permiteFacturacion.checked,
                 descripcion: descripcion.value
             };
             
@@ -601,7 +616,6 @@
             nombre.value = '';
             subcategoriaId.value = '';
             impuestoId.value = '';
-            permiteFacturacion.checked = false;
             descripcion.value = '';
 
             nextStep3Btn.disabled = false;
@@ -630,16 +644,11 @@
                 const subcatName = document.querySelector(`#subcategoria_id_producto option[value="${product.subcategoria_id}"]`)?.textContent || 'N/A';
                 const impuestoName = document.querySelector(`#impuesto_id_producto option[value="${product.impuesto_id}"]`)?.textContent || 'N/A';
                 
-                const facturacionIcon = product.permite_facturacion 
-                    ? '<i class="fas fa-check-circle text-green-500"></i>' 
-                    : '<i class="fas fa-times-circle text-red-500"></i>';
-
                 const productHtml = `
                     <div class="product-tag bg-gray-100 dark:bg-gray-800 shadow-sm transition-all">
                         <span class="product-tag-name">${product.nombre}</span> 
                         <span class="product-tag-subcat">(${subcatName.split('(')[0].trim()})</span>
                         <span class="product-tag-subcat">| ${impuestoName.split('(')[0].trim()}</span>
-                        <span class="ml-2">${facturacionIcon}</span>
                         <button type="button" class="product-tag-delete" onclick="removeProduct(${i})">
                             <i class="fas fa-trash-alt text-base"></i>
                         </button>
@@ -756,6 +765,7 @@
             const empresaInputs = document.querySelectorAll('#step-2 input, #step-2 select');
             empresaInputs.forEach(input => {
                 if (input.type === 'checkbox') {
+                    // La lógica del controlador maneja si facturacion está presente o no
                     if (input.checked) {
                         formData.append(input.name, input.value);
                     }

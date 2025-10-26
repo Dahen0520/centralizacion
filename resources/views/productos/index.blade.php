@@ -6,6 +6,8 @@
     </x-slot>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
 
     <div class="py-12">
         <div class="w-full max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -84,11 +86,7 @@
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-24">
                                     <i class="fas fa-percent mr-1"></i> Tasa
                                 </th>
-                                {{-- NUEVA COLUMNA DE FACTURACIÓN --}}
-                                <th scope="col" class="px-4 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-24">
-                                    <i class="fas fa-file-invoice mr-1"></i> Fact.
-                                </th>
-                                {{-- FIN NUEVA COLUMNA DE FACTURACIÓN --}}
+                                {{-- El encabezado de 'Fact.' ha sido eliminado --}}
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-24">
                                     <i class="fas fa-check-circle mr-1"></i> Estado
                                 </th>
@@ -220,6 +218,9 @@
                     newLink.addEventListener('click', handlePaginationClick);
                 });
             }
+            
+            // LA TABLA AHORA TIENE 9 COLUMNAS EN TOTAL (antes era 10)
+            const COLUMN_COUNT = 9; 
 
             function fetchProductos(page = 1) {
                 const query = searchInput.value;
@@ -230,8 +231,8 @@
                 const url = `{{ route('productos.index') }}?page=${page}&search=${encodeURIComponent(query)}&categoria=${categoria}&estado=${estado}`;
 
                 // Mostrar estado de carga
-                // La colspan ahora es 10 (7 columnas originales + 2 Impuestos + 1 Facturación)
-                productosTableBody.innerHTML = '<tr><td colspan="10" class="p-6 text-center text-blue-500 dark:text-blue-400"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando productos...</td></tr>';
+                // Colspan ajustado a 9
+                productosTableBody.innerHTML = '<tr><td colspan="' + COLUMN_COUNT + '" class="p-6 text-center text-blue-500 dark:text-blue-400"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando productos...</td></tr>';
                 document.getElementById('no-results-message')?.classList.add('hidden'); // Ocultar mensaje si existe
 
                 fetch(url, {
@@ -265,7 +266,8 @@
                 })
                 .catch(error => {
                     console.error('Error al buscar productos:', error);
-                    productosTableBody.innerHTML = '<tr><td colspan="10" class="p-6 text-center text-red-500 dark:text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i> Error al cargar.</td></tr>';
+                    // Colspan ajustado a 9
+                    productosTableBody.innerHTML = '<tr><td colspan="' + COLUMN_COUNT + '" class="p-6 text-center text-red-500 dark:text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i> Error al cargar.</td></tr>';
                     Swal.fire('Error de Carga', 'No se pudieron cargar los productos. Detalles: ' + error.message, 'error');
                 });
             }

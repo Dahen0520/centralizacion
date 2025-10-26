@@ -118,7 +118,7 @@
                         </div>
 
                         {{-- Campo Estado (Select) --}}
-                        <div>
+                        <div class="md:col-span-1">
                             <label for="estado" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Estado <span class="text-red-500">*</span></label>
                             <select name="estado" id="estado" required 
                                     class="w-full px-5 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500 transition @error('estado') border-red-500 ring-red-500 @enderror">
@@ -131,20 +131,7 @@
                             @enderror
                         </div>
 
-                        {{-- Campo Checkbox Facturación --}}
-                        <div class="flex items-center mt-2">
-                            <input type="checkbox" id="permite_facturacion" name="permite_facturacion" value="1"
-                                   class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
-                                   @checked(old('permite_facturacion', $producto->permite_facturacion)) >
-                            <label for="permite_facturacion" class="ml-3 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                ¿Permite Facturación?
-                            </label>
-                            <i class="fas fa-info-circle ml-2 text-gray-400 dark:text-gray-500 cursor-pointer" 
-                               title="Marca esta casilla si el producto puede ser incluido en documentos fiscales (facturas)."></i>
-                            @error('permite_facturacion')
-                                <p class="text-red-500 text-xs italic mt-2 flex items-center"><i class="fas fa-info-circle mr-1"></i> {{ $message }}</p>
-                            @enderror
-                        </div>
+                        {{-- ELIMINADO: Campo Checkbox Facturación (anteriormente estaba aquí) --}}
                         
                     </div>
                     

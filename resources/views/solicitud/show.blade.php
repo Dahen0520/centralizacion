@@ -95,17 +95,41 @@
                             <p class="mb-2"><strong>País Exporta:</strong> {{ $empresa->paisExportacion->nombre ?? 'No aplica' }}</p>
                         </div>
 
-                        {{-- BLOQUE 2: DATOS DEL AFILIADO --}}
-                        <div class="p-5 border border-yellow-100 dark:border-gray-700 rounded-lg bg-yellow-50/50 dark:bg-gray-800/50 shadow-inner">
+                        {{-- BLOQUE 2: DATOS DE CUMPLIMIENTO --}}
+                        <div class="p-5 border border-purple-100 dark:border-gray-700 rounded-lg bg-purple-50/50 dark:bg-gray-800/50 shadow-inner">
+                            <h3 class="text-xl font-bold mb-4 text-purple-600 dark:text-purple-400 flex items-center">
+                                <i class="fas fa-file-invoice mr-2"></i> Cumplimiento Fiscal
+                            </h3>
+                            <p class="mb-2">
+                                <strong class="text-gray-700 dark:text-gray-300">Cuenta con Facturación:</strong>
+                                @if ($empresa->facturacion)
+                                    <span class="font-bold text-green-600 dark:text-green-400">SÍ</span>
+                                @else
+                                    <span class="font-bold text-red-600 dark:text-red-400">NO</span>
+                                @endif
+                            </p>
+                            <p class="mb-2">
+                                <strong class="text-gray-700 dark:text-gray-300">RTN del Afiliado:</strong> 
+                                {{ $empresa->afiliado->rtn ?? 'N/A' }}
+                            </p>
+                            <p class="mb-2">
+                                <strong class="text-gray-700 dark:text-gray-300">Cuenta Bancaria:</strong> 
+                                {{ $empresa->afiliado->numero_cuenta ?? 'N/A' }}
+                            </p>
+                        </div>
+
+                        {{-- BLOQUE 3: DATOS DEL AFILIADO --}}
+                        <div class="md:col-span-2 p-5 border border-yellow-100 dark:border-gray-700 rounded-lg bg-yellow-50/50 dark:bg-gray-800/50 shadow-inner">
                             <h3 class="text-xl font-bold mb-4 text-yellow-600 dark:text-yellow-400 flex items-center">
                                 <i class="fas fa-user-tag mr-2"></i> Afiliado Registrante
                             </h3>
-                            <p class="mb-2"><strong>Nombre:</strong> {{ $empresa->afiliado->nombre ?? 'N/A' }}</p>
-                            <p class="mb-2"><strong>DNI:</strong> {{ $empresa->afiliado->dni ?? 'N/A' }}</p>
-                            <p class="mb-2"><strong>Teléfono:</strong> {{ $empresa->afiliado->telefono ?? 'N/A' }}</p>
-                            <p class="mb-2"><strong>Email:</strong> {{ $empresa->afiliado->email ?? 'N/A' }}</p>
-                            <p class="mb-2"><strong>RTN:</strong> {{ $empresa->afiliado->rtn ?? 'N/A' }}</p>
-                            <p class="mb-2"><strong>Cuenta:</strong> {{ $empresa->afiliado->numero_cuenta ?? 'N/A' }}</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                                <p><strong>Nombre:</strong> {{ $empresa->afiliado->nombre ?? 'N/A' }}</p>
+                                <p><strong>DNI:</strong> {{ $empresa->afiliado->dni ?? 'N/A' }}</p>
+                                <p><strong>Email:</strong> {{ $empresa->afiliado->email ?? 'N/A' }}</p>
+                                <p><strong>Teléfono:</strong> {{ $empresa->afiliado->telefono ?? 'N/A' }}</p>
+                                <p><strong>Barrio:</strong> {{ $empresa->afiliado->barrio ?? 'N/A' }}</p>
+                            </div>
                         </div>
                     </div>
 
@@ -115,11 +139,10 @@
                         @forelse ($empresa->productos as $producto)
                             @php
                                 $prodColor = $producto->pivot->estado == 'aprobado' ? 'green' : ($producto->pivot->estado == 'rechazado' ? 'red' : 'yellow');
-                                // Aseguramos el acceso a la Categoría
                                 $categoriaNombre = $producto->subcategoria->categoria->nombre ?? 'N/A';
                                 $impuestoNombre = $producto->impuesto->nombre ?? 'N/A';
                                 $impuestoTasa = number_format($producto->impuesto->porcentaje ?? 0, 2);
-                                $permiteFacturacion = $producto->permite_facturacion ? 'Sí (Permitida)' : 'No (Bloqueada)';
+                                // Nota: El campo permite_facturacion en Producto ahora está fijo a false en el store.
                             @endphp
                             <div class="p-4 border rounded-lg mb-3 bg-gray-50 dark:bg-gray-700 flex justify-between items-start shadow-sm border-l-4 border-{{ $prodColor }}-500">
                                 <div class="w-full">
@@ -149,8 +172,7 @@
                                                 <span class="font-medium text-teal-600 dark:text-teal-400">{{ $impuestoNombre }} ({{ $impuestoTasa }}%)</span>
                                             </p>
                                             <p class="col-span-1">
-                                                <strong class="text-gray-700 dark:text-gray-300">Facturación:</strong> 
-                                                <span class="font-medium text-{{ $producto->permite_facturacion ? 'green' : 'red' }}-600 dark:text-{{ $producto->permite_facturacion ? 'green' : 'red' }}-400">{{ $permiteFacturacion }}</span>
+                                                {{-- Eliminamos el campo Facturación del Producto --}}
                                             </p>
                                         </div>
                                     </div>

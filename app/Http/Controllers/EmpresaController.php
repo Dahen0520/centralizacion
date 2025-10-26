@@ -95,9 +95,16 @@ class EmpresaController extends Controller
             'rubro_id'             => 'required|exists:rubros,id',
             'tipo_organizacion_id' => 'required|exists:tipo_organizacions,id',
             'pais_exportacion_id'  => 'nullable|exists:paises,id',
+            'facturacion'          => 'nullable|boolean', // <-- NUEVA REGLA DE VALIDACIÓN
         ]);
         
-        $empresa->update($request->all());
+        // Manejo explícito del campo booleano 'facturacion'.
+        // Si el checkbox no viene en la solicitud (desmarcado), has('facturacion') será false (0).
+        // Si viene (marcado), será true (1).
+        $data = $request->all();
+        $data['facturacion'] = $request->has('facturacion');
+
+        $empresa->update($data); // Usamos $data en lugar de $request->all() para asegurar que 'facturacion' esté siempre presente (true/false)
 
         return redirect()->route('empresas.index')
                          ->with('success', 'Empresa actualizada exitosamente.');

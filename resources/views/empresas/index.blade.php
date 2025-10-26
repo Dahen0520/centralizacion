@@ -83,6 +83,11 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                                     <i class="fas fa-industry mr-1"></i> Rubro
                                 </th>
+                                {{-- NUEVO ENCABEZADO DE FACTURACIÓN --}}
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-24">
+                                    <i class="fas fa-file-invoice mr-1"></i> Facturación
+                                </th>
+                                {{-- FIN NUEVO ENCABEZADO --}}
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-24">
                                     <i class="fas fa-check-circle mr-1"></i> Estado
                                 </th>
@@ -134,6 +139,10 @@
             
             const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
             let searchTimeout;
+            
+            // Constante para el número total de columnas
+            const COLUMN_COUNT = 7; 
+
 
             function getCurrentStatus() {
                 const activeFilter = document.querySelector('.status-filter.bg-blue-600');
@@ -257,7 +266,8 @@
                 const status = getCurrentStatus();
                 const url = `{{ route('empresas.index') }}?page=${page}&search=${encodeURIComponent(query)}&estado=${status}`;
 
-                empresasTableBody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-blue-500 dark:text-blue-400"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando empresas...</td></tr>';
+                // Usamos COLUMN_COUNT (7) para el colspan
+                empresasTableBody.innerHTML = '<tr><td colspan="' + COLUMN_COUNT + '" class="p-6 text-center text-blue-500 dark:text-blue-400"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando empresas...</td></tr>';
                 noResultsMessage.classList.add('hidden');
                 
                 fetch(url, {
@@ -292,7 +302,8 @@
                 })
                 .catch(error => {
                     console.error('Error al buscar empresas:', error);
-                    empresasTableBody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-red-500 dark:text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i> Error al cargar.</td></tr>';
+                    // Usamos COLUMN_COUNT (7) para el colspan
+                    empresasTableBody.innerHTML = '<tr><td colspan="' + COLUMN_COUNT + '" class="p-6 text-center text-red-500 dark:text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i> Error al cargar.</td></tr>';
                     Swal.fire('Error de Carga', 'No se pudieron cargar las empresas. Inténtalo de nuevo. Detalles: ' + error.message, 'error');
                 });
             }

@@ -16,6 +16,10 @@ return new class extends Migration
             $table->string('nombre_negocio');
             $table->string('direccion');
             
+            // NUEVO CAMPO BOLEANO PARA FACTURACIÓN
+            // Indica si la empresa tiene habilitada la facturación (default: falso)
+            $table->boolean('facturacion')->default(false); 
+            
             // Relaciones
             $table->foreignId('rubro_id')->constrained('rubros');
             $table->foreignId('tipo_organizacion_id')->constrained('tipo_organizacions');

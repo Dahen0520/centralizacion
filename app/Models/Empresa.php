@@ -14,6 +14,7 @@ use App\Models\Pais;
 use App\Models\Tienda;
 use App\Models\Producto;
 use App\Models\Marca;
+use App\Models\Resultado; // Asegurando que este modelo esté importado
 
 class Empresa extends Model
 {
@@ -27,6 +28,7 @@ class Empresa extends Model
     protected $fillable = [
         'nombre_negocio',
         'direccion',
+        'facturacion', // <--- ¡CAMPO FACTURACION AÑADIDO!
         'rubro_id',
         'tipo_organizacion_id',
         'pais_exportacion_id',
@@ -40,7 +42,7 @@ class Empresa extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        // ...
+        'facturacion' => 'boolean', // <--- CASTING A BOLEANO AÑADIDO!
     ];
 
     /**
@@ -77,7 +79,6 @@ class Empresa extends Model
 
     // =======================================================
     // RELACIÓN CON PRODUCTOS A TRAVÉS DE LA TABLA PIVOT 'MARCAS'
-    // Importante: Quitamos ->using(Marca::class)
     // =======================================================
     public function productos()
     {
@@ -87,7 +88,6 @@ class Empresa extends Model
 
     // =======================================================
     // RELACIÓN CON TIENDAS A TRAVÉS DE LA TABLA PIVOT 'EMPRESA_TIENDA'
-    // Importante: Quitamos ->using(EmpresaTienda::class)
     // =======================================================
     public function tiendas()
     {
@@ -95,7 +95,7 @@ class Empresa extends Model
                     ->withPivot('estado', 'codigo_asociacion'); // Campos extra de la pivot
     }
 
-        public function resultado()
+    public function resultado()
     {
         return $this->hasOne(Resultado::class);
     }

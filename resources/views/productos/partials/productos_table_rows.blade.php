@@ -41,15 +41,6 @@
         {{ number_format($producto->impuesto->porcentaje ?? 0, 2) }}%
     </td>
     
-    {{-- NUEVA COLUMNA: PERMITE FACTURACIÓN --}}
-    <td class="px-4 py-4 whitespace-nowrap text-center">
-        @if ($producto->permite_facturacion)
-            <i class="fas fa-check-circle text-lg text-green-500" title="Permite Facturación"></i>
-        @else
-            <i class="fas fa-times-circle text-lg text-red-500" title="No Permite Facturación"></i>
-        @endif
-    </td>
-
     {{-- ESTADO (Cápsula Estilizada) --}}
     <td class="px-6 py-4 whitespace-nowrap text-center">
         @php
@@ -82,7 +73,7 @@
                 <button type="button" 
                         class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200 delete-btn" 
                         data-id="{{ $producto->id }}"
-                        data-name="{{ $producto->nombre }}" > {{-- Añadido data-name para SweetAlert2 --}}
+                        data-name="{{ $producto->nombre }}" >
                     <i class="fas fa-trash-alt"></i>
                 </button>
             </form>
@@ -91,8 +82,8 @@
 </tr>
 @empty
 <tr>
-    {{-- El colspan es 10 (6 columnas originales + 2 Impuesto + 1 Facturación + 1 Estado + 1 Acciones) --}}
-    <td colspan="10" class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300 text-center">
+    {{-- Colspan ajustado a 9 (antes 10) --}}
+    <td colspan="9" class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300 text-center">
         No se encontraron productos.
     </td>
 </tr>
