@@ -12,6 +12,10 @@ class RangoCai extends Model
     protected $fillable = [
         'tienda_id',
         'cai',
+        // 🆕 Agregamos el nuevo campo
+        'prefijo_sar', 
+        
+        // Los siguientes campos ahora almacenan solo el número entero de la secuencia
         'rango_inicial',
         'rango_final',
         'numero_actual',
@@ -21,15 +25,14 @@ class RangoCai extends Model
 
     /**
      * Define los tipos de datos para la conversión automática.
-     * CRÍTICO: Forzar los campos de numeración a INTEGER para que PHP y el Controller
-     * puedan realizar sumas y comparaciones con seguridad.
      */
     protected $casts = [
         'fecha_limite_emision' => 'date',
         'esta_activo' => 'boolean',
-        // ⭐ CAMPOS CORREGIDOS
         'tienda_id' => 'integer',
-        'rango_inicial' => 'integer',
+        
+        // ⭐ CRÍTICO: Aseguramos que estos campos siempre se traten como números enteros
+        'rango_inicial' => 'integer', 
         'rango_final' => 'integer',
         'numero_actual' => 'integer', 
     ];

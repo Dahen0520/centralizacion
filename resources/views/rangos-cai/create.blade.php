@@ -13,8 +13,9 @@
                     <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg dark:bg-red-900 dark:border-red-600 dark:text-red-300">
                         <p class="font-bold">Por favor, corrija los siguientes errores:</p>
                         <ul class="mt-2 list-disc list-inside">
+                            {{-- Los errores deben mostrarse con los nombres de campo del controlador (_full) --}}
                             @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
+                                <li>{{ str_replace('_full', '', $error) }}</li>
                             @endforeach
                         </ul>
                     </div>
@@ -49,22 +50,24 @@
                             @error('cai') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- Rango Inicial --}}
+                        {{-- Rango Inicial - Cambiado a rango_inicial_full --}}
                         <div>
-                            <label for="rango_inicial" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rango Inicial (SAR)</label>
-                            <input type="text" id="rango_inicial" name="rango_inicial" value="{{ old('rango_inicial') }}" required maxlength="50"
-                                   placeholder="Ej: 000-001-01-0000001"
+                            <label for="rango_inicial_full" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rango Inicial Completo (SAR)</label>
+                            <input type="text" id="rango_inicial_full" name="rango_inicial_full" value="{{ old('rango_inicial_full') }}" required maxlength="50"
+                                   placeholder="Ej: 000-001-01-00000001"
                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500">
-                            @error('rango_inicial') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            {{-- Usamos rango_inicial_full para capturar el error --}}
+                            @error('rango_inicial_full') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- Rango Final --}}
+                        {{-- Rango Final - Cambiado a rango_final_full --}}
                         <div>
-                            <label for="rango_final" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rango Final (SAR)</label>
-                            <input type="text" id="rango_final" name="rango_final" value="{{ old('rango_final') }}" required maxlength="50"
-                                   placeholder="Ej: 000-001-01-0000500"
+                            <label for="rango_final_full" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rango Final Completo (SAR)</label>
+                            <input type="text" id="rango_final_full" name="rango_final_full" value="{{ old('rango_final_full') }}" required maxlength="50"
+                                   placeholder="Ej: 000-001-01-00000500"
                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500">
-                            @error('rango_final') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            {{-- Usamos rango_final_full para capturar el error --}}
+                            @error('rango_final_full') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
                         
                         {{-- Fecha Límite de Emisión --}}

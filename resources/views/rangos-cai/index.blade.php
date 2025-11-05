@@ -60,24 +60,36 @@
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             @forelse ($rangos as $rango)
+                                @php
+                                    // 🌟 CRÍTICO: Reconstruir la cadena completa para la visualización
+                                    $ceroPad = 8;
+                                    $rangoInicialFull = $rango->prefijo_sar . str_pad($rango->rango_inicial, $ceroPad, '0', STR_PAD_LEFT);
+                                    $rangoFinalFull = $rango->prefijo_sar . str_pad($rango->rango_final, $ceroPad, '0', STR_PAD_LEFT);
+                                    $numeroActualFull = $rango->prefijo_sar . str_pad($rango->numero_actual, $ceroPad, '0', STR_PAD_LEFT);
+
+                                    $fechaLimite = \Carbon\Carbon::parse($rango->fecha_limite_emision);
+                                    $isExpired = $fechaLimite->isPast();
+                                    $isNear = $fechaLimite->diffInDays(now()) < 30 && !$isExpired;
+                                    $dateClass = $isExpired ? 'text-red-600 font-bold' : ($isNear ? 'text-yellow-600 font-semibold' : 'text-gray-700 dark:text-gray-300');
+                                @endphp
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                         {{ $rango->tienda->nombre ?? 'N/A' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-700 dark:text-gray-300">
                                         <p class="font-semibold text-blue-600 dark:text-blue-400 mb-1">CAI: {{ $rango->cai }}</p>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Rango: {{ $rango->rango_inicial }} a {{ $rango->rango_final }}</p>
+                                        {{-- Mostrar el rango completo reconstruido --}}
+                                        <p class="text-xs text-gray-500 dark:text-gray-400" title="Prefijo: {{ $rango->prefijo_sar }}">
+                                            Rango: **{{ $rangoInicialFull }}** a **{{ $rangoFinalFull }}**
+                                        </p>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-teal-600 dark:text-teal-400">
-                                        {{ $rango->numero_actual }}
+                                        {{-- Mostrar el número actual completo reconstruido --}}
+                                        <span title="Secuencia: {{ $rango->numero_actual }}">
+                                            {{ $numeroActualFull }}
+                                        </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                        @php
-                                            $fechaLimite = \Carbon\Carbon::parse($rango->fecha_limite_emision);
-                                            $isExpired = $fechaLimite->isPast();
-                                            $isNear = $fechaLimite->diffInDays(now()) < 30 && !$isExpired;
-                                            $dateClass = $isExpired ? 'text-red-600 font-bold' : ($isNear ? 'text-yellow-600 font-semibold' : 'text-gray-700 dark:text-gray-300');
-                                        @endphp
                                         <span class="{{ $dateClass }}">
                                             {{ $fechaLimite->format('d/M/Y') }}
                                         </span>

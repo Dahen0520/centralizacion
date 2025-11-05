@@ -19,19 +19,10 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class VentaController extends Controller
 {
     /**
-     * Función auxiliar para extraer la secuencia numérica (los últimos 8 dígitos) de un número de factura completo.
-     * Ejemplo: '000-001-01-00000001' -> 1
+     * NOTA IMPORTANTE: La función 'extractLastSequence' y la lógica anterior han sido eliminadas
+     * debido a que la tabla 'rango_cais' ahora almacena la secuencia numérica como INTEGER.
+     * La lógica de facturación se ha actualizado en 'handleTransaction'.
      */
-    private function extractLastSequence(string $formattedNumber): int
-    {
-        // Se asume que la secuencia numérica son siempre los últimos 8 dígitos
-        if (strlen($formattedNumber) >= 8) {
-            $sequence = substr($formattedNumber, -8);
-            return intval($sequence);
-        }
-        // Devuelve 0 si el formato es inesperado, permitiendo que el cálculo sea al menos numérico.
-        return 0;
-    }
 
     /**
      * Mostrar interfaz del POS
@@ -154,7 +145,7 @@ class VentaController extends Controller
             DB::beginTransaction();
             
             // =========================================
-            // LÓGICA DE FACTURACIÓN (CAI) - CORREGIDA PARA FORMATO SAR
+            // LÓGICA DE FACTURACIÓN (CAI) - 🌟 ACTUALIZADA
             // =========================================
             $caiData = [];
             
@@ -169,27 +160,29 @@ class VentaController extends Controller
                     throw new \Exception('No se encontró un rango CAI activo y válido para esta tienda.');
                 }
                 
-                // 1. Extraer la secuencia numérica actual (Ej: '...00000001' -> 1)
-                $numeroActualSecuencia = $this->extractLastSequence($rangoCai->numero_actual);
-                $rangoFinalSecuencia = $this->extractLastSequence($rangoCai->rango_final);
+                // 1. Obtener la secuencia numérica pura (gracias a los casts en el modelo)
+                $numeroActualSecuencia = $rangoCai->numero_actual;
+                $rangoFinalSecuencia = $rangoCai->rango_final;
+                $prefijoSar = $rangoCai->prefijo_sar;
 
-                $nuevoNumeroSecuencia = $numeroActualSecuencia + 1;
+                $nuevoNumeroSecuencia = $numeroActualSecuencia + 1; // Incremento numérico limpio
                 
                 // 2. Comprobar si se excede el rango con los números puros
                 if ($nuevoNumeroSecuencia > $rangoFinalSecuencia) {
+                    // Este es el error original que buscábamos solucionar
                     throw new \Exception('El rango de facturación CAI ha sido excedido.');
                 }
                 
                 // 3. Reconstruir el número de factura completo con el prefijo SAR
-                $prefix = substr($rangoCai->rango_final, 0, -8); // Obtiene '000-001-01-'
-                $numeroSecuencialFormateado = str_pad($nuevoNumeroSecuencia, 8, '0', STR_PAD_LEFT);
-                $nuevoNumeroFormateado = $prefix . $numeroSecuencialFormateado;
+                $ceroPad = 8; // La secuencia SAR estándar es de 8 dígitos
+                $numeroSecuencialFormateado = str_pad($nuevoNumeroSecuencia, $ceroPad, '0', STR_PAD_LEFT);
+                $nuevoNumeroFormateado = $prefijoSar . $numeroSecuencialFormateado;
 
                 $caiData['cai'] = $rangoCai->cai;
                 $caiData['numero_documento'] = $nuevoNumeroFormateado;
                 
-                // 4. Almacenar la cadena formateada completa para la siguiente iteración
-                $rangoCai->numero_actual = $nuevoNumeroFormateado;
+                // 4. Almacenar la secuencia numérica limpia para la siguiente iteración
+                $rangoCai->numero_actual = $nuevoNumeroSecuencia;
             }
 
             // 1. Verificación de Stock
