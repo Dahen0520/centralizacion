@@ -4,11 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
-// Asegúrate de importar los modelos
-use App\Models\Municipio;
-use App\Models\Empresa;
-use App\Models\EmpresaTienda;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Carbon\Carbon; // Necesario para el método de ayuda
 
 class Tienda extends Model
 {
@@ -32,5 +29,30 @@ class Tienda extends Model
         return $this->belongsToMany(Empresa::class, 'empresa_tienda', 'tienda_id', 'empresa_id')
                     ->using(EmpresaTienda::class)
                     ->withPivot('estado', 'codigo_asociacion'); // Campos extra de la pivot
+    }
+    
+    // =======================================================
+    // RELACIÓN CON RANGO CAI (CRÍTICO PARA FACTURACIÓN)
+    // =======================================================
+    /**
+     * Obtiene todos los rangos CAI asociados a esta tienda.
+     */
+    public function rangosCai(): HasMany
+    {
+        return $this->hasMany(RangoCai::class);
+    }
+    
+    /**
+     * Método auxiliar para obtener el rango CAI activo y no expirado.
+     * Utilizado principalmente para la vista de impresión.
+     */
+    public function rangoCaiActivo()
+    {
+        // Se busca el rango que está activo y cuya fecha límite aún no ha pasado.
+        // Se asume que solo debe haber uno activo a la vez, aunque se usa first() por seguridad.
+        return $this->rangosCai()
+                    ->where('esta_activo', true)
+                    ->whereDate('fecha_limite_emision', '>=', Carbon::today())
+                    ->first();
     }
 }

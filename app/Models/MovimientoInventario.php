@@ -22,6 +22,17 @@ class MovimientoInventario extends Model
     ];
     
     /**
+     * Define los tipos de datos para la conversión automática.
+     * CRÍTICO: Asegura que los campos numéricos siempre se traten como números.
+     */
+    protected $casts = [
+        'inventario_id' => 'integer',
+        'cantidad' => 'integer',
+        'movible_id' => 'integer',
+        'usuario_id' => 'integer',
+    ];
+    
+    /**
      * Obtiene el registro de inventario (stock) afectado.
      */
     public function inventario()

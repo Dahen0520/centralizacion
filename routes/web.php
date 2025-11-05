@@ -21,12 +21,7 @@ use App\Http\Controllers\VentaController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ImpuestoController; 
 use App\Http\Controllers\MovimientoInventarioController;
-
-/*
-|--------------------------------------------------------------------------
-| Rutas Públicas
-|--------------------------------------------------------------------------
-*/
+use App\Http\Controllers\RangoCaiController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -57,7 +52,7 @@ Route::post('/registro-completo', [RegistroController::class, 'store'])->name('r
 
 
 // =====================================================================
-// ⭐ DIAGNÓSTICO: RUTA POST ABIERTA (Temporalmente sin middleware 'auth')
+// RUTA POST ABIERTA: MOVIMIENTOS (MOVER DENTRO DE 'auth' SI ES NECESARIO)
 // =====================================================================
 Route::post('movimientos', [MovimientoInventarioController::class, 'store'])->name('movimientos.store');
 
@@ -70,45 +65,40 @@ Route::post('movimientos', [MovimientoInventarioController::class, 'store'])->na
 Route::middleware('auth')->group(function () {
 
     // =========================================================
-    // MÓDULO DE MOVIMIENTOS (Solo Rutas GET protegidas)
+    // MÓDULO DE MOVIMIENTOS
     // =========================================================
     Route::controller(MovimientoInventarioController::class)->prefix('movimientos')->name('movimientos.')->group(function () {
-        // Muestra el historial de movimientos
         Route::get('/', 'index')->name('index'); 
-        
-        // Muestra el formulario para crear un nuevo movimiento
         Route::get('/create', 'create')->name('create'); 
     });
     
     // =========================================================
-    // MODULO DE VENTAS (POS)
+    // MODULO DE VENTAS (POS) - AJUSTADO PARA IMPRESIÓN
     // =========================================================
+    
+    Route::controller(VentaController::class)->prefix('ventas')->name('ventas.')->group(function () {
+        
+        // 1. Interfaz del Punto de Venta (Nombre: ventas.pos)
+        Route::get('pos', 'create')->name('pos'); 
+        
+        // 2. Rutas Auxiliares
+        Route::get('buscar-clientes', 'buscarClientes')->name('buscar-clientes');
+        Route::post('store-cliente', 'storeCliente')->name('store-cliente');
+        Route::get('productos-por-tienda/{tienda_id}', 'getProductosParaVenta')->name('productos-por-tienda');
+        
+        // 3. Rutas de Transacción (POST)
+        Route::post('store-ticket', 'storeTicket')->name('store-ticket');
+        Route::post('store-quote', 'storeQuote')->name('store-quote');
+        Route::post('store-invoice', 'storeInvoice')->name('store-invoice');
 
-    // Interfaz principal del Punto de Venta
-    Route::get('ventas/pos', [VentaController::class, 'create'])->name('ventas.pos');
-
-    // Rutas para procesar transacciones desde el POS (TICKET, COTIZACIÓN, FACTURA)
-    Route::post('ventas/store', [VentaController::class, 'storeTicket'])->name('ventas.store');
-    Route::post('ventas/store-quote', [VentaController::class, 'storeQuote'])->name('ventas.store-quote');
-    Route::post('ventas/store-invoice', [VentaController::class, 'storeInvoice'])->name('ventas.store-invoice');
-
-    // **Ruta para CONVERTIR un documento existente a Factura (upgradeToInvoice)**
-    Route::post('ventas/{venta}/upgrade-to-invoice', [VentaController::class, 'upgradeToInvoice'])->name('ventas.upgrade-to-invoice');
-
-    // Ruta para imprimir/descargar documentos (usada en la respuesta de éxito de Alpine)
-    Route::get('documento/{id}/{type}/print', [VentaController::class, 'printDocument'])->name('ventas.print-document');
-
-    // Buscar clientes (usado por el buscador del POS)
-    Route::get('ventas/buscar-clientes', [VentaController::class, 'buscarClientes'])->name('ventas.buscar-clientes');
-
-    // Registrar nuevo cliente desde el modal del POS
-    Route::post('ventas/store-cliente', [VentaController::class, 'storeCliente'])->name('ventas.store-cliente');
-
-    // Obtener productos disponibles por tienda (solo con stock > 0)
-    Route::get('ventas/productos-por-tienda/{tienda_id}', [VentaController::class, 'getProductosParaVenta'])->name('ventas.productos-por-tienda');
-
-    // CRUD general de ventas (index, show, destroy para historial)
-    Route::resource('ventas', VentaController::class)->except(['create', 'edit', 'update', 'store']);
+        // ⭐ RUTA DE IMPRESIÓN CORREGIDA Y RENOMBRADA
+        Route::get('documento/{id}/{type}/imprimir', 'printDocument')->name('print');
+        
+        // 4. CRUD Manual (Historial de ventas)
+        Route::get('/', 'index')->name('index'); // Historial de ventas
+        Route::get('{venta}', 'show')->name('show');
+        Route::delete('{venta}', 'destroy')->name('destroy');
+    });
 
 
     // =========================================================
@@ -151,7 +141,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('subcategorias', SubcategoriaController::class);
     Route::resource('tiendas', TiendaController::class);
     
-    Route::resource('impuestos', ImpuestoController::class); // RUTA DE IMPUESTOS AÑADIDA AQUÍ
+    Route::resource('impuestos', ImpuestoController::class); 
+    
+    // GESTIÓN DE RANGOS CAI (ADMINISTRACIÓN FISCAL)
+    Route::resource('rangos-cai', RangoCaiController::class); 
 
     // =========================================================
     // ASOCIACIONES EMPRESA-TIENDA

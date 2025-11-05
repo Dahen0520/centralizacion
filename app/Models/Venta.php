@@ -13,13 +13,44 @@ class Venta extends Model
     protected $fillable = [
         'tienda_id',
         'usuario_id',
-        'total_venta',
+        
+        // Totales originales y descuento
+        'total_venta', 
+        'descuento',
+        
+        // Campos de Desglose Fiscal (SAR)
+        'subtotal_neto',       
+        'subtotal_gravado',     
+        'subtotal_exonerado',   
+        'total_isv',            
+        'total_final',          
+        
+        // Campos de Facturación / Documento
+        'tipo_documento',       
+        'tipo_pago',            
+        'cai',                  
+        'numero_documento',     
+        'estado',               
+        
         'fecha_venta',
         'cliente_id',
     ];
 
+    /**
+     * Define los tipos de datos para la conversión automática.
+     * Esta es la corrección crítica para el error 'non-numeric value encountered'.
+     */
     protected $casts = [
         'fecha_venta' => 'datetime',
+        
+        // Todos los campos numéricos deben ser 'float' para evitar errores.
+        'total_venta' => 'float',
+        'descuento' => 'float',
+        'subtotal_neto' => 'float',
+        'subtotal_gravado' => 'float',
+        'subtotal_exonerado' => 'float',
+        'total_isv' => 'float',
+        'total_final' => 'float',
     ];
     
     // Define la relación con la tienda

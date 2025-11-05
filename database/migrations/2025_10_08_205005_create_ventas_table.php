@@ -14,19 +14,50 @@ return new class extends Migration
         Schema::create('ventas', function (Blueprint $table) {
             $table->id();
             
-            // Claves Foráneas (Actualizado)
+            // ===================================
+            // CLAVES FORÁNEAS
+            // ===================================
             $table->foreignId('tienda_id')->constrained('tiendas');
             
-            // NUEVA COLUMNA: cliente_id (OPCIONAL)
-            // Se asocia a la nueva tabla 'clientes'
+            // Cliente (ID opcional para ventas genéricas)
             $table->foreignId('cliente_id')
-                  ->nullable() // Permite ventas genéricas (sin cliente asignado)
+                  ->nullable() 
                   ->constrained('clientes');
             
             $table->foreignId('usuario_id')->constrained('users');
 
-            // Datos de la Venta
-            $table->decimal('total_venta', 10, 2);
+            // ===================================
+            // CAMPOS DE FACTURACIÓN (SAR)
+            // ===================================
+            
+            // Tipo de Documento: TICKET, QUOTE, INVOICE (solo Factura usa CAI)
+            $table->string('tipo_documento', 20)->default('TICKET');
+            $table->string('tipo_pago', 20)->nullable(); // Pago: Efectivo, Tarjeta, Transferencia, etc.
+            
+            // Campos Fiscales (solo llenos para INVOICE)
+            $table->string('cai', 100)->nullable();
+            $table->string('numero_documento', 50)->nullable(); // Número de Factura/Documento
+
+            // Estado de la Transacción
+            $table->string('estado', 20)->default('COMPLETADA'); // COMPLETADA, PENDIENTE (Quote), ANULADA
+
+            // ===================================
+            // DESGLOSE FINANCIERO / FISCAL
+            // ===================================
+            $table->decimal('descuento', 10, 2)->default(0.00);
+
+            // Subtotales Base (antes de ISV)
+            $table->decimal('subtotal_neto', 10, 2)->default(0.00)->comment('Suma de gravado + exonerado');
+            $table->decimal('subtotal_gravado', 10, 2)->default(0.00)->comment('Suma de bases imponibles');
+            $table->decimal('subtotal_exonerado', 10, 2)->default(0.00)->comment('Suma de bases exoneradas');
+            
+            // Impuesto y Total Final
+            $table->decimal('total_isv', 10, 2)->default(0.00);
+            $table->decimal('total_final', 10, 2)->default(0.00)->comment('Monto a pagar (Neto - Descuento + ISV)');
+            
+            // Campo original (lo mantenemos por si acaso, aunque subtotal_neto es más preciso)
+            $table->decimal('total_venta', 10, 2)->default(0.00); 
+
             $table->timestamp('fecha_venta');
 
             $table->timestamps();

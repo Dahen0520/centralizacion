@@ -28,7 +28,7 @@
             </x-nav-link>
 
             {{-- Empresas --}}
-            <x-nav-link :href="route('empresas.index')" :active="request()->routeIs('empresas.*')"
+            <x-nav-link :href="route('empresas.index')" :active="request()->routeIs('empresas.*') && !request()->routeIs('afiliados.*')"
                         class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400  transition duration-200 ease-in-out text-white flex items-center">
                 <i class="fas fa-building mr-3"></i>
                 {{ __('Empresas') }}
@@ -92,14 +92,20 @@
                 {{ __('Impuestos') }}
             </x-nav-link>
             
+            {{-- GESTIÓN DE RANGOS CAI --}}
+            <x-nav-link :href="route('rangos-cai.index')" :active="request()->routeIs('rangos-cai.*')"
+                        class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center font-bold">
+                <i class="fas fa-file-invoice-dollar mr-3"></i>
+                {{ __('Rangos CAI (Fiscal)') }}
+            </x-nav-link>
+            
             {{-- ========================================================= --}}
             {{-- MÓDULO DE INVENTARIO Y VENTAS --}}
-            {{-- Se activa si cualquier ruta de inventarios, movimientos o ventas es activa --}}
             {{-- ========================================================= --}}
             <div class="{{ request()->routeIs('inventarios.*') || request()->routeIs('ventas.*') || request()->routeIs('movimientos.*') ? 'bg-chorotega-blue-light rounded' : '' }} p-1 space-y-1">
                 
-                {{-- NUEVO: PUNTO DE VENTA (POS) --}}
-                <x-nav-link :href="route('ventas.pos')" :active="request()->routeIs('ventas.pos')"
+                {{-- ⭐ CORRECCIÓN: Apunta a ventas.pos --}}
+                <x-nav-link :href="route('ventas.pos')" :active="request()->routeIs('ventas.pos')" 
                             class="py-2 px-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center font-bold">
                     <i class="fas fa-cash-register mr-3"></i>
                     {{ __('Punto de Venta (POS)') }}
@@ -121,7 +127,7 @@
                     {{ __('Gestión de Inventario') }}
                 </x-nav-link>
                 
-                {{-- ⭐ NUEVO: Historial de Movimientos (Ajustes, Entradas, Descarte) --}}
+                {{-- Historial de Movimientos (Ajustes, Entradas, Descarte) --}}
                 <x-nav-link :href="route('movimientos.index')" :active="request()->routeIs('movimientos.index')"
                             class="py-1 pl-8 pr-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center text-sm">
                     <i class="fas fa-clipboard-list mr-3 opacity-80"></i>

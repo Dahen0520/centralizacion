@@ -56,7 +56,7 @@
                     
                     {{-- Botón para ver el DOCUMENTO (Factura/Cotización/Ticket) --}}
                     @if ($venta->tipo_documento)
-                        <a href="{{ route('ventas.print-document', ['id' => $venta->id, 'type' => strtolower($venta->tipo_documento)]) }}" 
+                        <a href="{{ route('ventas.print', ['id' => $venta->id, 'type' => strtolower($venta->tipo_documento)]) }}" 
                             target="_blank"
                             class="
                             @if ($venta->tipo_documento == 'INVOICE') text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200
