@@ -12,18 +12,13 @@ use App\Models\RangoCai;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf; 
 
 class VentaController extends Controller
 {
-    /**
-     * NOTA IMPORTANTE: La función 'extractLastSequence' y la lógica anterior han sido eliminadas
-     * debido a que la tabla 'rango_cais' ahora almacena la secuencia numérica como INTEGER.
-     * La lógica de facturación se ha actualizado en 'handleTransaction'.
-     */
-
     /**
      * Mostrar interfaz del POS
      */
@@ -67,6 +62,135 @@ class VentaController extends Controller
             return response()->json([
                 'success' => false, 
                 'message' => 'Error al cargar productos.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Guardar nuevo cliente desde el POS
+     * (CORREGIDO FINAL: Asegura la correcta serialización de 'id' y manejo de NULLs)
+     */
+    public function storeCliente(Request $request)
+    {
+        // 1. Saneamiento: Limpiamos y aseguramos que los valores vacíos sean tratados como tales.
+        $request->merge([
+            'identificacion' => trim($request->input('identificacion', '')),
+            'email' => trim($request->input('email', '')),
+            'telefono' => trim($request->input('telefono', '')),
+        ]);
+
+        try {
+            $rules = [
+                'nombre' => 'required|string|max:255',
+                'telefono' => 'nullable|string|max:20',
+                
+                'identificacion' => [
+                    'nullable', 
+                    'string', 
+                    'max:50',
+                    Rule::unique('clientes', 'identificacion')->where(function ($query) use ($request) {
+                        if (empty($request->identificacion)) {
+                            return $query->whereNotNull('identificacion');
+                        }
+                        return $query;
+                    }),
+                ],
+                'email' => [
+                    'nullable', 
+                    'email', 
+                    'max:255',
+                    Rule::unique('clientes', 'email')->where(function ($query) use ($request) {
+                        if (empty($request->email)) {
+                            return $query->whereNotNull('email');
+                        }
+                        return $query;
+                    }),
+                ],
+            ];
+
+            $validated = $request->validate($rules);
+            
+            // 2. Remover guiones del RTN para almacenarlo limpio
+            if (!empty($validated['identificacion'])) {
+                $validated['identificacion'] = str_replace('-', '', $validated['identificacion']);
+            }
+            
+            // 3. CRÍTICO: Convertir cadenas vacías ('') a NULL para la base de datos (DB).
+            // Esto evita errores de integridad si una columna es opcional (nullable) pero recibe una cadena vacía.
+            $validated = array_map(function ($value) {
+                return (is_string($value) && $value === '') ? null : $value;
+            }, $validated);
+
+            $cliente = Cliente::create($validated);
+
+            // 4. RESPUESTA CRÍTICA: Forzamos el ID a ser integer y los opcionales a string vacío ('' o el valor).
+            // Esto asegura que Alpine.js reciba un número para 'clientId' (para la lógica > 0) y strings para el nombre visible.
+            return response()->json([
+                'success' => true,
+                'message' => 'Cliente guardado y seleccionado correctamente.',
+                'cliente' => [
+                    'id' => (int)$cliente->id, // Aseguramos que es INT para la validación Alpine (clientId > 0)
+                    'nombre' => $cliente->nombre,
+                    // Devolvemos string vacío en lugar de NULL para evitar problemas de concatenación en JS
+                    'identificacion' => $cliente->identificacion ?? '', 
+                    'telefono' => $cliente->telefono ?? '',
+                    'email' => $cliente->email ?? '',
+                ],
+            ], 201);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación.',
+                'errors' => $e->errors()
+            ], 422);
+            
+        } catch (\Exception $e) {
+            Log::error("Error inesperado al guardar cliente (POS): " . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error CRÍTICO al guardar cliente. Detalles: ' . $e->getMessage() . '. Revise el log de Laravel.'
+            ], 500);
+        }
+    }
+
+
+    /**
+     * Búsqueda de clientes en tiempo real
+     */
+    public function buscarClientes(Request $request)
+    {
+        try {
+            $query = trim($request->get('query', ''));
+            
+            if (strlen($query) < 2) {
+                return response()->json([]);
+            }
+
+            $cleanQuery = str_replace(['-', ' '], '', $query);
+
+            $clientes = Cliente::where(function ($q) use ($query, $cleanQuery) {
+                    $q->where('nombre', 'like', "%{$query}%")
+                      ->orWhere('identificacion', 'like', "%{$cleanQuery}%");
+                })
+                ->orderBy('nombre')
+                ->limit(10)
+                ->get(['id', 'nombre', 'identificacion', 'telefono', 'email']);
+
+            return response()->json($clientes);
+            
+        } catch (\Illuminate\Database\QueryException $e) {
+            Log::error('Error de base de datos al buscar clientes: ' . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error al consultar la base de datos.'
+            ], 500);
+            
+        } catch (\Exception $e) {
+            Log::error('Error inesperado al buscar clientes: ' . $e->getMessage());
+            return response()->json([
+                'success' => false, 
+                'message' => 'Error en el servidor al buscar clientes.'
             ], 500);
         }
     }
@@ -145,7 +269,7 @@ class VentaController extends Controller
             DB::beginTransaction();
             
             // =========================================
-            // LÓGICA DE FACTURACIÓN (CAI) - 🌟 ACTUALIZADA
+            // LÓGICA DE FACTURACIÓN (CAI)
             // =========================================
             $caiData = [];
             
@@ -160,16 +284,15 @@ class VentaController extends Controller
                     throw new \Exception('No se encontró un rango CAI activo y válido para esta tienda.');
                 }
                 
-                // 1. Obtener la secuencia numérica pura (gracias a los casts en el modelo)
+                // 1. Obtener la secuencia numérica pura
                 $numeroActualSecuencia = $rangoCai->numero_actual;
                 $rangoFinalSecuencia = $rangoCai->rango_final;
                 $prefijoSar = $rangoCai->prefijo_sar;
 
                 $nuevoNumeroSecuencia = $numeroActualSecuencia + 1; // Incremento numérico limpio
                 
-                // 2. Comprobar si se excede el rango con los números puros
+                // 2. Comprobar si se excede el rango
                 if ($nuevoNumeroSecuencia > $rangoFinalSecuencia) {
-                    // Este es el error original que buscábamos solucionar
                     throw new \Exception('El rango de facturación CAI ha sido excedido.');
                 }
                 
@@ -318,101 +441,7 @@ class VentaController extends Controller
             ], 500);
         }
     }
-
-    /**
-     * Guardar nuevo cliente desde el POS
-     */
-    public function storeCliente(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'nombre' => 'required|string|max:255',
-                'identificacion' => 'nullable|string|max:50|unique:clientes,identificacion',
-                'email' => 'nullable|email|max:255|unique:clientes,email',
-                'telefono' => 'nullable|string|max:20',
-            ]);
-
-            if (isset($validated['identificacion'])) {
-                $validated['identificacion'] = str_replace('-', '', $validated['identificacion']);
-            }
-            
-            $cliente = Cliente::create($validated);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Cliente guardado correctamente.',
-                'cliente' => [
-                    'id' => $cliente->id,
-                    'nombre' => $cliente->nombre,
-                    'identificacion' => $cliente->identificacion,
-                    'telefono' => $cliente->telefono,
-                    'email' => $cliente->email,
-                ],
-            ], 201);
-            
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error de validación.',
-                'errors' => $e->errors()
-            ], 422);
-            
-        } catch (\Illuminate\Database\QueryException $e) {
-            Log::error("Error DB al guardar cliente: " . $e->getMessage());
-            return response()->json([
-                'success' => false, 
-                'message' => 'La Identificación o el Email ya están registrados.'
-            ], 422);
-            
-        } catch (\Exception $e) {
-            Log::error("Error al guardar cliente: " . $e->getMessage());
-            return response()->json([
-                'success' => false, 
-                'message' => 'Error inesperado al guardar cliente.'
-            ], 500);
-        }
-    }
-
-    /**
-     * Búsqueda de clientes en tiempo real
-     */
-    public function buscarClientes(Request $request)
-    {
-        try {
-            $query = trim($request->get('query', ''));
-            
-            if (strlen($query) < 2) {
-                return response()->json([]);
-            }
-
-            $cleanQuery = str_replace(['-', ' '], '', $query);
-
-            $clientes = Cliente::where(function ($q) use ($query, $cleanQuery) {
-                    $q->where('nombre', 'like', "%{$query}%")
-                      ->orWhere('identificacion', 'like', "%{$cleanQuery}%");
-                })
-                ->orderBy('nombre')
-                ->limit(10)
-                ->get(['id', 'nombre', 'identificacion', 'telefono', 'email']);
-
-            return response()->json($clientes);
-            
-        } catch (\Illuminate\Database\QueryException $e) {
-            Log::error('Error de base de datos al buscar clientes: ' . $e->getMessage());
-            return response()->json([
-                'success' => false, 
-                'message' => 'Error al consultar la base de datos.'
-            ], 500);
-            
-        } catch (\Exception $e) {
-            Log::error('Error inesperado al buscar clientes: ' . $e->getMessage());
-            return response()->json([
-                'success' => false, 
-                'message' => 'Error en el servidor al buscar clientes.'
-            ], 500);
-        }
-    }
-
+    
     /**
      * Listado de ventas con filtros
      */

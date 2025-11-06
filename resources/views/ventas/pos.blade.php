@@ -14,10 +14,16 @@
     {{-- CRÍTICO: Asegurar que Alpine.js esté cargado para que x-data funcione --}}
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-6" x-data="posModule()" @keydown.window="handleKeyboard($event)">
+    {{-- AÑADIDO: Listener de evento global para seleccionar cliente --}}
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-6" 
+         x-data="posModule()" 
+         @keydown.window="handleKeyboard($event)"
+         @new-client-saved.window="setClientAfterModal($event.detail.client)"> 
+
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
+                {{-- RESTO DEL CONTENIDO HTML DEL POS... (Sin cambios mayores aquí) --}}
+                
                 {{-- COLUMNA IZQUIERDA --}}
                 <div class="lg:col-span-2 space-y-4">
 
@@ -64,17 +70,17 @@
                                         class="w-full pl-4 pr-10 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-gray-900 dark:text-white">
                             
                             <button x-show="clientSearchQuery.length > 0" @click="clearClientSearch"
-                                            x-transition
-                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                                        x-transition
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                                 <i class="fas fa-times-circle"></i>
                             </button>
 
                             {{-- Cliente Seleccionado --}}
                             <div x-show="selectedClientName !== 'Cliente Genérico / Sin Registro'" 
-                                            x-transition:enter="transition ease-out duration-200"
-                                            x-transition:enter-start="opacity-0 transform -translate-y-2"
-                                            x-transition:enter-end="opacity-100 transform translate-y-0"
-                                            class="mt-3">
+                                        x-transition:enter="transition ease-out duration-200"
+                                        x-transition:enter-start="opacity-0 transform -translate-y-2"
+                                        x-transition:enter-end="opacity-100 transform translate-y-0"
+                                        class="mt-3">
                                 <div class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800">
                                     <div class="flex items-center gap-2">
                                         <i class="fas fa-user-check text-indigo-600 dark:text-indigo-400"></i>
@@ -88,8 +94,8 @@
 
                             {{-- Cliente Genérico --}}
                             <div x-show="selectedClientName === 'Cliente Genérico / Sin Registro'" 
-                                            x-transition
-                                            class="mt-3">
+                                        x-transition
+                                        class="mt-3">
                                 <div class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
                                     <i class="fas fa-user-circle text-gray-400"></i>
                                     <p class="text-sm text-gray-600 dark:text-gray-400" x-text="selectedClientName"></p>
@@ -98,11 +104,11 @@
 
                             {{-- Dropdown de resultados --}}
                             <div x-show="clientSearchResults.length && !isClientLoading" 
-                                            @click.away="clientSearchResults = []"
-                                            x-transition:enter="transition ease-out duration-200"
-                                            x-transition:enter-start="opacity-0 transform -translate-y-2"
-                                            x-transition:enter-end="opacity-100 transform translate-y-0"
-                                            class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                                        @click.away="clientSearchResults = []"
+                                        x-transition:enter="transition ease-out duration-200"
+                                        x-transition:enter-start="opacity-0 transform -translate-y-2"
+                                        x-transition:enter-end="opacity-100 transform translate-y-0"
+                                        class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                                 <template x-for="(client, idx) in clientSearchResults" :key="client.id">
                                     <div @click="selectClient(client)"
                                             :class="{'bg-gray-50 dark:bg-gray-600': idx === selectedClientIndex}"
@@ -123,8 +129,8 @@
 
                             {{-- Loading state --}}
                             <div x-show="isClientLoading" 
-                                            x-transition
-                                            class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl p-4 text-center">
+                                        x-transition
+                                        class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl p-4 text-center">
                                 <i class="fas fa-spinner fa-spin text-indigo-500"></i>
                                 <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Buscando...</span>
                             </div>
@@ -138,15 +144,15 @@
                                 <div class="flex-1 relative">
                                     <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 transition-colors" :class="{'text-emerald-500': searchQuery.length > 0}"></i>
                                     <input type="text" 
-                                                x-ref="productSearch"
-                                                x-model="searchQuery" 
-                                                @input.debounce.300ms="filterProductos"
-                                                @keydown.escape="clearSearch"
-                                                placeholder="Buscar producto (nombre, código o escanea código de barras)..."
-                                                class="w-full pl-12 pr-10 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:shadow-lg transition text-gray-900 dark:text-white">
+                                            x-ref="productSearch"
+                                            x-model="searchQuery" 
+                                            @input.debounce.300ms="filterProductos"
+                                            @keydown.escape="clearSearch"
+                                            placeholder="Buscar producto (nombre, código o escanea código de barras)..."
+                                            class="w-full pl-12 pr-10 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:shadow-lg transition text-gray-900 dark:text-white">
                                     <button x-show="searchQuery.length > 0" @click="clearSearch"
-                                                    x-transition
-                                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                                            x-transition
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                                         <i class="fas fa-times-circle"></i>
                                     </button>
                                 </div>
@@ -174,10 +180,10 @@
 
                             <template x-for="(producto, idx) in filteredProductos" :key="producto.inventario_id">
                                 <div x-transition:enter="transition ease-out duration-200"
-                                                x-transition:enter-start="opacity-0 transform translate-y-2"
-                                                x-transition:enter-end="opacity-100 transform translate-y-0"
-                                                :style="`transition-delay: ${idx * 20}ms`"
-                                                class="group bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all duration-200 border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 hover:shadow-md">
+                                                    x-transition:enter-start="opacity-0 transform translate-y-2"
+                                                    x-transition:enter-end="opacity-100 transform translate-y-0"
+                                                    :style="`transition-delay: ${idx * 20}ms`"
+                                                    class="group bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all duration-200 border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 hover:shadow-md">
                                     <div class="flex items-center justify-between">
                                         <div class="flex-1 min-w-0 mr-4">
                                             <h4 class="font-semibold text-gray-900 dark:text-white mb-1 truncate" x-text="producto.producto_nombre"></h4>
@@ -196,8 +202,8 @@
                                             </div>
                                         </div>
                                         <button @click="addToCart(producto)"
-                                                        :disabled="producto.stock_actual === 0"
-                                                        class="flex-shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 disabled:transform-none">
+                                                    :disabled="producto.stock_actual === 0"
+                                                    class="flex-shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 disabled:transform-none">
                                             <i class="fas fa-plus mr-1"></i>
                                             Añadir
                                         </button>
@@ -207,16 +213,16 @@
 
                             {{-- Estados vacíos --}}
                             <div x-show="!isProductsLoading && !filteredProductos.length && searchQuery && tiendaId" 
-                                            x-transition
-                                            class="text-center py-12">
+                                        x-transition
+                                        class="text-center py-12">
                                 <i class="fas fa-search text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                 <p class="text-gray-500 dark:text-gray-400 font-medium">No se encontraron productos</p>
                                 <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Intenta con otro término de búsqueda</p>
                             </div>
                             
                             <div x-show="!isProductsLoading && tiendaId && !searchQuery && !allProductos.length" 
-                                            x-transition
-                                            class="text-center py-12">
+                                        x-transition
+                                        class="text-center py-12">
                                 <i class="fas fa-box-open text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                 <p class="text-gray-500 dark:text-gray-400 font-medium">No hay productos con stock</p>
                                 <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Selecciona otra tienda o añade inventario</p>
@@ -256,12 +262,12 @@
                         <div class="p-4 max-h-[450px] overflow-y-auto">
                             <template x-for="(item, index) in cart" :key="item.inventario_id">
                                 <div x-transition:enter="transition ease-out duration-200"
-                                                x-transition:enter-start="opacity-0 transform translate-x-4"
-                                                x-transition:enter-end="opacity-100 transform translate-x-0"
-                                                x-transition:leave="transition ease-in duration-150"
-                                                x-transition:leave-start="opacity-100 transform translate-x-0"
-                                                x-transition:leave-end="opacity-0 transform -translate-x-4"
-                                                class="bg-gradient-to-r from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-700/30 rounded-lg p-4 mb-3 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow">
+                                                    x-transition:enter-start="opacity-0 transform translate-x-4"
+                                                    x-transition:enter-end="opacity-100 transform translate-x-0"
+                                                    x-transition:leave="transition ease-in duration-150"
+                                                    x-transition:leave-start="opacity-100 transform translate-x-0"
+                                                    x-transition:leave-end="opacity-0 transform -translate-x-4"
+                                                    class="bg-gradient-to-r from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-700/30 rounded-lg p-4 mb-3 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow">
                                     <div class="flex items-start justify-between mb-3">
                                         <div class="flex-1 min-w-0 mr-2">
                                             <h4 class="font-semibold text-sm text-gray-900 dark:text-white mb-1 truncate" x-text="item.nombre"></h4>
@@ -274,7 +280,7 @@
                                             </div>
                                         </div>
                                         <button @click="removeFromCart(index)"
-                                                        class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
+                                                    class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </div>
@@ -309,8 +315,8 @@
 
                             {{-- Carrito vacío --}}
                             <div x-show="!cart.length" 
-                                            x-transition
-                                            class="text-center py-12">
+                                        x-transition
+                                        class="text-center py-12">
                                 <i class="fas fa-shopping-cart text-5xl text-gray-300 dark:text-gray-600 mb-4"></i>
                                 <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Tu carrito está vacío</p>
                                 <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Añade productos para comenzar</p>
@@ -339,13 +345,13 @@
                                     </span>
                                     <div class="flex items-center gap-2">
                                         <input type="number" 
-                                                x-model.number="discount" 
-                                                @input="updateCart"
-                                                min="0" 
-                                                :max="total"
-                                                step="0.01"
-                                                placeholder="0.00"
-                                                class="w-24 px-2 py-1 text-sm text-right bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-gray-900 dark:text-white">
+                                                    x-model.number="discount" 
+                                                    @input="updateCart"
+                                                    min="0" 
+                                                    :max="total"
+                                                    step="0.01"
+                                                    placeholder="0.00"
+                                                    class="w-24 px-2 py-1 text-sm text-right bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-gray-900 dark:text-white">
                                         <span class="text-gray-500">L</span>
                                     </div>
                                 </label>
@@ -412,18 +418,18 @@
                             {{-- Acciones rápidas (Limpiar, Cotizar, Facturar) --}}
                             <div class="flex gap-2 pt-2">
                                 <button @click="clearCart" 
-                                                :disabled="!cart.length"
-                                                class="flex-1 px-3 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 text-sm rounded-lg transition-colors">
+                                            :disabled="!cart.length"
+                                            class="flex-1 px-3 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 text-sm rounded-lg transition-colors">
                                     <i class="fas fa-trash-alt mr-1"></i> Limpiar
                                 </button>
                                 <button @click="processSale('QUOTE')" 
-                                                :disabled="!cart.length || isProcessing || !clientId"
-                                                class="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors">
+                                            :disabled="!cart.length || isProcessing || !(clientId > 0)"
+                                            class="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors">
                                     <i class="fas fa-file-alt mr-1"></i> Cotizar
                                 </button>
                                 <button @click="processSale('INVOICE')" 
-                                                :disabled="!cart.length || isProcessing || !clientId"
-                                                class="flex-1 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors">
+                                            :disabled="!cart.length || isProcessing || !(clientId > 0)"
+                                            class="flex-1 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors">
                                     <i class="fas fa-file-invoice-dollar mr-1"></i> Facturar
                                 </button>
                             </div>
@@ -532,9 +538,9 @@
                             <div class="relative">
                                 <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                                 <input type="email" 
-                                            x-model="newClientForm.email"
-                                            placeholder="correo@ejemplo.com"
-                                            class="w-full pl-10 pr-3 py-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                                                x-model="newClientForm.email"
+                                                placeholder="correo@ejemplo.com"
+                                                class="w-full pl-10 pr-3 py-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                             </div>
                         </div>
 
@@ -545,12 +551,12 @@
                             <div class="relative">
                                 <i class="fas fa-phone absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                                 <input type="tel" 
-                                            id="new_client_telefono" 
-                                            x-model="newClientForm.telefono"
-                                            placeholder="9999-9999"
-                                            maxlength="9"
-                                            @input="formatTelefono($event)"
-                                            class="w-full pl-10 pr-3 py-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                                                id="new_client_telefono" 
+                                                x-model="newClientForm.telefono"
+                                                placeholder="9999-9999"
+                                                maxlength="9"
+                                                @input="formatTelefono($event)"
+                                                class="w-full pl-10 pr-3 py-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                             </div>
                         </div>
                     </div>
@@ -586,7 +592,7 @@
         </div>
     </div>
 
-    {{-- SCRIPT JS/ALPINE MEJORADO --}}
+    {{-- SCRIPT JS/ALPINE CON ESTRATEGIA DE EVENTOS --}}
     <script>
         function posModule() {
             return {
@@ -598,16 +604,16 @@
                 cart: [],
                 
                 // Totales
-                total: 0.00, // Total incluyendo ISV, antes de descuento
+                total: 0.00, 
                 discount: 0,
                 finalTotal: 0.00,
 
                 // ESTADOS FISCALES
-                subtotalNeto: 0.00,      // Suma de la base (Exento + Gravado)
-                totalExento: 0.00,       // Base de ítems con ISV 0%
-                totalGravado: 0.00,      // Base de ítems con ISV > 0%
-                totalIsv: 0.00,          // Monto total del ISV
-                totalImpuestos: 0.00,    // Alias de totalIsv
+                subtotalNeto: 0.00,      
+                totalExento: 0.00,       
+                totalGravado: 0.00,      
+                totalIsv: 0.00,          
+                totalImpuestos: 0.00,    
 
                 isProcessing: false,
                 isProductsLoading: false,
@@ -631,6 +637,7 @@
                     if (this.tiendaId) this.fetchProductos();
                     this.updateCart();
                     this.showWelcomeNotification();
+                    // El listener de eventos ahora está en la etiqueta div principal (@new-client-saved.window)
                 },
 
                 // ==========================================
@@ -828,13 +835,44 @@
                 },
 
                 selectClient(client) {
-                    this.clientId = client.id > 0 ? client.id : null;
+                    // FIX: Aseguramos que el ID se asigne como entero válido.
+                    this.clientId = client.id > 0 ? parseInt(client.id) : null; 
+                    
                     this.selectedClientName = `${client.nombre}${client.identificacion ? ' (' + client.identificacion + ')' : ''}`;
-                    this.clientSearchQuery = '';
+                    // Limpiar el query para que desaparezca el dropdown y la barra se vea limpia
+                    this.clientSearchQuery = ''; 
                     this.clientSearchResults = [];
                     this.selectedClientIndex = 0;
                     
                     this.showNotification('success', 'Cliente seleccionado', client.nombre);
+                    this.updateCart();
+                },
+                
+                // *** FUNCIÓN DE SELECCIÓN (llamada ahora por el evento personalizado) ***
+                setClientAfterModal(client) {
+                    // CRÍTICO: Aseguramiento de ID
+                    if (!client || !client.id || isNaN(parseInt(client.id))) {
+                        console.error('Error: Cliente creado no devolvió un ID válido.');
+                        this.clearClient(); 
+                        return;
+                    }
+                    
+                    // 1. Asigna el ID (CRÍTICO para Cotizar/Facturar)
+                    this.clientId = parseInt(client.id); 
+                    
+                    // 2. Asigna el nombre visible
+                    this.selectedClientName = `${client.nombre}${client.identificacion ? ' (' + client.identificacion + ')' : ''}`;
+                    
+                    // 3. Limpia la búsqueda
+                    this.clientSearchQuery = ''; 
+                    this.clientSearchResults = [];
+                    
+                    // 4. Forzamos la actualización de reactividad (habilita los botones)
+                    this.updateCart(); 
+                    
+                    this.$nextTick(() => {
+                        this.$refs.productSearch?.focus();
+                    });
                 },
 
                 clearClientSearch() {
@@ -848,6 +886,7 @@
                     this.selectedClientName = 'Cliente Genérico / Sin Registro';
                     this.clientSearchQuery = '';
                     this.clientSearchResults = [];
+                    this.updateCart(); // Actualiza para deshabilitar Cotizar/Facturar
                 },
 
                 // ==========================================
@@ -921,9 +960,9 @@
                     try {
                         const response = await fetch('{{ route('ventas.store-cliente') }}', {
                             method: 'POST',
-                            headers: { 
-                                'Content-Type': 'application/json', 
-                                'X-Requested-With': 'XMLHttpRequest' 
+                            headers: {  
+                                'Content-Type': 'application/json',  
+                                'X-Requested-With': 'XMLHttpRequest'  
                             },
                             body: JSON.stringify(payload)
                         });
@@ -931,18 +970,28 @@
                         const data = await response.json();
 
                         if (response.ok && data.success) {
+                            // Cierra el modal primero
+                            this.closeNewClientModal();
+                            
+                            // Dispara el evento personalizado CON los datos del cliente
+                            // Esto se ejecutará fuera del ciclo de vida del modal, de forma más segura.
+                            this.$nextTick(() => {
+                                window.dispatchEvent(new CustomEvent('new-client-saved', {
+                                    detail: { client: data.cliente }
+                                }));
+                            });
+
                             Swal.fire({
                                 icon: 'success',
                                 title: '¡Cliente Registrado!',
-                                text: `${data.cliente.nombre} ha sido guardado exitosamente.`,
+                                text: `${data.cliente.nombre} ha sido guardado y seleccionado.`,
                                 timer: 2000,
                                 showConfirmButton: false,
                                 position: 'top-end',
                                 toast: true
                             });
                             
-                            this.selectClient(data.cliente);
-                            this.closeNewClientModal();
+                            
                         } else if (response.status === 422) {
                             const errors = data.errors || {};
                             let errorMessage = '';
@@ -1062,20 +1111,20 @@
                         const tasa = item.isv_tasa && !isNaN(item.isv_tasa) ? parseFloat(item.isv_tasa) : 0.00;
                         const isvMonto = base * tasa;
                         
-                        subtotalNeto += base; 
+                        subtotalNeto += base;  
                         totalIsv += isvMonto;
 
                         // Desglose Exento/Gravado
                         if (tasa > 0) {
                             totalGravado += base;
                         } else {
-                            totalExento += base;
+                            totalExonerado += base;
                         }
                         
-                        // Asignar los cálculos a cada ítem 
+                        // Asignar los cálculos a cada ítem  
                         item.subtotalBase = base;
                         item.isvMonto = isvMonto;
-                        item.isv_tasa = tasa; 
+                        item.isv_tasa = tasa;  
                     });
 
                     // 3. Asignar Totales al Estado
@@ -1083,18 +1132,18 @@
                     this.totalExento = parseFloat(totalExento.toFixed(2));
                     this.totalGravado = parseFloat(totalGravado.toFixed(2));
                     this.totalIsv = parseFloat(totalIsv.toFixed(2));
-                    this.totalImpuestos = this.totalIsv; 
+                    this.totalImpuestos = this.totalIsv;  
 
                     // 4. Calcular el Total General (Subtotal Neto + ISV) antes del descuento global
                     const totalConIsv = this.subtotalNeto + this.totalIsv;
                     this.total = parseFloat(totalConIsv.toFixed(2));
 
                     // 5. Validar y aplicar descuento (CRÍTICO: Refuerzo contra non-numeric)
-                    let currentDiscount = parseFloat(this.discount) || 0; 
+                    let currentDiscount = parseFloat(this.discount) || 0;  
 
                     if (currentDiscount < 0) currentDiscount = 0;
                     if (currentDiscount > totalConIsv) currentDiscount = totalConIsv;
-                    this.discount = parseFloat(currentDiscount.toFixed(2)); 
+                    this.discount = parseFloat(currentDiscount.toFixed(2));  
                     
                     // 6. Calcular Total Final a Pagar (Total - Descuento)
                     this.finalTotal = parseFloat((totalConIsv - this.discount).toFixed(2));
@@ -1123,7 +1172,7 @@
                 },
 
                 // ==========================================
-                // PROCESAR VENTA / COTIZACIÓN / FACTURA 
+                // PROCESAR VENTA / COTIZACIÓN / FACTURA  
                 // ==========================================
                 async processSale(type) {
                     if (!this.cart.length || this.isProcessing) return;
@@ -1138,7 +1187,7 @@
                         return;
                     }
                     
-                    if ((type === 'INVOICE' || type === 'QUOTE') && !this.clientId) {
+                    if ((type === 'INVOICE' || type === 'QUOTE') && !(this.clientId > 0)) {
                         Swal.fire({
                             icon: 'info',
                             title: `Se requiere Cliente para ${type === 'INVOICE' ? 'Factura' : 'Cotización'}`,
@@ -1156,8 +1205,8 @@
                     };
                     
                     const endpointMap = {
-                        'TICKET': '{{ route('ventas.store-ticket') }}', 
-                        'QUOTE': '{{ route('ventas.store-quote') }}', 
+                        'TICKET': '{{ route('ventas.store-ticket') }}',  
+                        'QUOTE': '{{ route('ventas.store-quote') }}',  
                         'INVOICE': '{{ route('ventas.store-invoice') }}'
                     };
                     
@@ -1172,9 +1221,9 @@
                         'INVOICE': 'La factura ha sido emitida y registrada con éxito.'
                     };
                     const successColorMap = {
-                        'TICKET': '#10b981', 
-                        'QUOTE': '#3b82f6', 
-                        'INVOICE': '#4f46e5' 
+                        'TICKET': '#10b981',  
+                        'QUOTE': '#3b82f6',  
+                        'INVOICE': '#4f46e5'  
                     };
                     const confirmButtonTextMap = {
                         'TICKET': 'Sí, procesar',
@@ -1186,8 +1235,7 @@
                         title: titleMap[type],
                         html: `
                             <div class="text-left space-y-2">
-                                <p class="text-sm text-gray-600">
-                                    <strong>Tipo:</strong> ${type === 'TICKET' ? 'Ticket de Venta' : (type === 'QUOTE' ? 'Cotización' : 'Factura')}
+                                <strong>Tipo:</strong> ${type === 'TICKET' ? 'Ticket de Venta' : (type === 'QUOTE' ? 'Cotización' : 'Factura')}
                                 </p>
                                 <p class="text-sm text-gray-600">
                                     <strong>Cliente:</strong> ${this.selectedClientName}
@@ -1218,14 +1266,14 @@
                         inventario_id: item.inventario_id,
                         cantidad: item.cantidad,
                         precio_unitario: item.precio,
-                        isv_tasa: item.isv_tasa 
+                        isv_tasa: item.isv_tasa  
                     }));
 
                     const payload = {
                         _token: '{{ csrf_token() }}',
                         tienda_id: this.tiendaId,
                         cliente_id: this.clientId,
-                        tipo_documento: type, 
+                        tipo_documento: type,  
                         total_monto: this.total, // Total incluyendo ISV, antes de descuento
                         descuento: this.discount,
                         detalles: detalles
@@ -1234,9 +1282,9 @@
                     try {
                         const res = await fetch(url, {
                             method: 'POST',
-                            headers: { 
-                                'Content-Type': 'application/json', 
-                                'X-Requested-With': 'XMLHttpRequest' 
+                            headers: {  
+                                'Content-Type': 'application/json',  
+                                'X-Requested-With': 'XMLHttpRequest'  
                             },
                             body: JSON.stringify(payload)
                         });
@@ -1260,7 +1308,7 @@
                                                 </p>
                                             </div>
                                         ` : ''}
-                                        
+                                            
                                         ${data.documento_url ? `
                                             <a href="${data.documento_url}" target="_blank" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                                 <i class="fas fa-print mr-2"></i> Imprimir / Descargar
