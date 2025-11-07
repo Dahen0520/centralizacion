@@ -22,8 +22,6 @@
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {{-- RESTO DEL CONTENIDO HTML DEL POS... (Sin cambios mayores aquí) --}}
-                
                 {{-- COLUMNA IZQUIERDA --}}
                 <div class="lg:col-span-2 space-y-4">
 
@@ -61,26 +59,26 @@
 
                         <div class="relative">
                             <input type="text"
-                                        id="client_search_input"
-                                        x-model="clientSearchQuery"
-                                        @input.debounce.300ms="onClientSearchInput"
-                                        @input="formatIdentificacion($event, 'clientSearch')"
-                                        @keydown.escape="clearClientSearch"
-                                        placeholder="Buscar por Nombre o RTN (Ej: 0615-2003-001441)..."
-                                        class="w-full pl-4 pr-10 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-gray-900 dark:text-white">
+                                         id="client_search_input"
+                                         x-model="clientSearchQuery"
+                                         @input.debounce.300ms="onClientSearchInput"
+                                         @input="formatIdentificacion($event, 'clientSearch')"
+                                         @keydown.escape="clearClientSearch"
+                                         placeholder="Buscar por Nombre o RTN (Ej: 0615-2003-001441)..."
+                                         class="w-full pl-4 pr-10 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-gray-900 dark:text-white">
                             
                             <button x-show="clientSearchQuery.length > 0" @click="clearClientSearch"
-                                        x-transition
-                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                                          x-transition
+                                          class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                                 <i class="fas fa-times-circle"></i>
                             </button>
 
                             {{-- Cliente Seleccionado --}}
                             <div x-show="selectedClientName !== 'Cliente Genérico / Sin Registro'" 
-                                        x-transition:enter="transition ease-out duration-200"
-                                        x-transition:enter-start="opacity-0 transform -translate-y-2"
-                                        x-transition:enter-end="opacity-100 transform translate-y-0"
-                                        class="mt-3">
+                                          x-transition:enter="transition ease-out duration-200"
+                                          x-transition:enter-start="opacity-0 transform -translate-y-2"
+                                          x-transition:enter-end="opacity-100 transform translate-y-0"
+                                          class="mt-3">
                                 <div class="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800">
                                     <div class="flex items-center gap-2">
                                         <i class="fas fa-user-check text-indigo-600 dark:text-indigo-400"></i>
@@ -94,8 +92,8 @@
 
                             {{-- Cliente Genérico --}}
                             <div x-show="selectedClientName === 'Cliente Genérico / Sin Registro'" 
-                                        x-transition
-                                        class="mt-3">
+                                          x-transition
+                                          class="mt-3">
                                 <div class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
                                     <i class="fas fa-user-circle text-gray-400"></i>
                                     <p class="text-sm text-gray-600 dark:text-gray-400" x-text="selectedClientName"></p>
@@ -104,15 +102,15 @@
 
                             {{-- Dropdown de resultados --}}
                             <div x-show="clientSearchResults.length && !isClientLoading" 
-                                        @click.away="clientSearchResults = []"
-                                        x-transition:enter="transition ease-out duration-200"
-                                        x-transition:enter-start="opacity-0 transform -translate-y-2"
-                                        x-transition:enter-end="opacity-100 transform translate-y-0"
-                                        class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                                          @click.away="clientSearchResults = []"
+                                          x-transition:enter="transition ease-out duration-200"
+                                          x-transition:enter-start="opacity-0 transform -translate-y-2"
+                                          x-transition:enter-end="opacity-100 transform translate-y-0"
+                                          class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                                 <template x-for="(client, idx) in clientSearchResults" :key="client.id">
                                     <div @click="selectClient(client)"
-                                            :class="{'bg-gray-50 dark:bg-gray-600': idx === selectedClientIndex}"
-                                            class="p-3 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-gray-900 dark:text-white text-sm border-b border-gray-100 dark:border-gray-600 last:border-0 transition-colors">
+                                             :class="{'bg-gray-50 dark:bg-gray-600': idx === selectedClientIndex}"
+                                             class="p-3 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-gray-900 dark:text-white text-sm border-b border-gray-100 dark:border-gray-600 last:border-0 transition-colors">
                                         <div class="flex items-center justify-between">
                                             <div>
                                                 <p class="font-semibold" x-text="client.nombre"></p>
@@ -129,8 +127,8 @@
 
                             {{-- Loading state --}}
                             <div x-show="isClientLoading" 
-                                        x-transition
-                                        class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl p-4 text-center">
+                                          x-transition
+                                          class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl p-4 text-center">
                                 <i class="fas fa-spinner fa-spin text-indigo-500"></i>
                                 <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Buscando...</span>
                             </div>
@@ -144,15 +142,15 @@
                                 <div class="flex-1 relative">
                                     <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 transition-colors" :class="{'text-emerald-500': searchQuery.length > 0}"></i>
                                     <input type="text" 
-                                            x-ref="productSearch"
-                                            x-model="searchQuery" 
-                                            @input.debounce.300ms="filterProductos"
-                                            @keydown.escape="clearSearch"
-                                            placeholder="Buscar producto (nombre, código o escanea código de barras)..."
-                                            class="w-full pl-12 pr-10 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:shadow-lg transition text-gray-900 dark:text-white">
+                                                x-ref="productSearch"
+                                                x-model="searchQuery" 
+                                                @input.debounce.300ms="filterProductos"
+                                                @keydown.escape="clearSearch"
+                                                placeholder="Buscar producto (nombre, código o escanea código de barras)..."
+                                                class="w-full pl-12 pr-10 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:shadow-lg transition text-gray-900 dark:text-white">
                                     <button x-show="searchQuery.length > 0" @click="clearSearch"
-                                            x-transition
-                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                                                x-transition
+                                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                                         <i class="fas fa-times-circle"></i>
                                     </button>
                                 </div>
@@ -180,10 +178,10 @@
 
                             <template x-for="(producto, idx) in filteredProductos" :key="producto.inventario_id">
                                 <div x-transition:enter="transition ease-out duration-200"
-                                                    x-transition:enter-start="opacity-0 transform translate-y-2"
-                                                    x-transition:enter-end="opacity-100 transform translate-y-0"
-                                                    :style="`transition-delay: ${idx * 20}ms`"
-                                                    class="group bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all duration-200 border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 hover:shadow-md">
+                                                                     x-transition:enter-start="opacity-0 transform translate-y-2"
+                                                                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                                                                     :style="`transition-delay: ${idx * 20}ms`"
+                                                                     class="group bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-3 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all duration-200 border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 hover:shadow-md">
                                     <div class="flex items-center justify-between">
                                         <div class="flex-1 min-w-0 mr-4">
                                             <h4 class="font-semibold text-gray-900 dark:text-white mb-1 truncate" x-text="producto.producto_nombre"></h4>
@@ -202,8 +200,8 @@
                                             </div>
                                         </div>
                                         <button @click="addToCart(producto)"
-                                                    :disabled="producto.stock_actual === 0"
-                                                    class="flex-shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 disabled:transform-none">
+                                                      :disabled="producto.stock_actual === 0"
+                                                      class="flex-shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 disabled:transform-none">
                                             <i class="fas fa-plus mr-1"></i>
                                             Añadir
                                         </button>
@@ -213,16 +211,16 @@
 
                             {{-- Estados vacíos --}}
                             <div x-show="!isProductsLoading && !filteredProductos.length && searchQuery && tiendaId" 
-                                        x-transition
-                                        class="text-center py-12">
+                                          x-transition
+                                          class="text-center py-12">
                                 <i class="fas fa-search text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                 <p class="text-gray-500 dark:text-gray-400 font-medium">No se encontraron productos</p>
                                 <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Intenta con otro término de búsqueda</p>
                             </div>
                             
                             <div x-show="!isProductsLoading && tiendaId && !searchQuery && !allProductos.length" 
-                                        x-transition
-                                        class="text-center py-12">
+                                          x-transition
+                                          class="text-center py-12">
                                 <i class="fas fa-box-open text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                 <p class="text-gray-500 dark:text-gray-400 font-medium">No hay productos con stock</p>
                                 <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Selecciona otra tienda o añade inventario</p>
@@ -232,8 +230,8 @@
 
                     {{-- Mensaje inicial mejorado --}}
                     <div x-show="!tiendaId" 
-                                x-transition
-                                class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-sm border-2 border-dashed border-gray-300 dark:border-gray-600 p-12 text-center">
+                                      x-transition
+                                      class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-sm border-2 border-dashed border-gray-300 dark:border-gray-600 p-12 text-center">
                         <div class="animate-bounce mb-4">
                             <i class="fas fa-arrow-up text-5xl text-emerald-500"></i>
                         </div>
@@ -262,12 +260,12 @@
                         <div class="p-4 max-h-[450px] overflow-y-auto">
                             <template x-for="(item, index) in cart" :key="item.inventario_id">
                                 <div x-transition:enter="transition ease-out duration-200"
-                                                    x-transition:enter-start="opacity-0 transform translate-x-4"
-                                                    x-transition:enter-end="opacity-100 transform translate-x-0"
-                                                    x-transition:leave="transition ease-in duration-150"
-                                                    x-transition:leave-start="opacity-100 transform translate-x-0"
-                                                    x-transition:leave-end="opacity-0 transform -translate-x-4"
-                                                    class="bg-gradient-to-r from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-700/30 rounded-lg p-4 mb-3 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow">
+                                                                     x-transition:enter-start="opacity-0 transform translate-x-4"
+                                                                     x-transition:enter-end="opacity-100 transform translate-x-0"
+                                                                     x-transition:leave="transition ease-in duration-150"
+                                                                     x-transition:leave-start="opacity-100 transform translate-x-0"
+                                                                     x-transition:leave-end="opacity-0 transform -translate-x-4"
+                                                                     class="bg-gradient-to-r from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-700/30 rounded-lg p-4 mb-3 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow">
                                     <div class="flex items-start justify-between mb-3">
                                         <div class="flex-1 min-w-0 mr-2">
                                             <h4 class="font-semibold text-sm text-gray-900 dark:text-white mb-1 truncate" x-text="item.nombre"></h4>
@@ -280,7 +278,7 @@
                                             </div>
                                         </div>
                                         <button @click="removeFromCart(index)"
-                                                    class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
+                                                      class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </div>
@@ -289,18 +287,18 @@
                                             <label class="text-xs text-gray-600 dark:text-gray-400 font-medium">Cant:</label>
                                             <div class="flex items-center gap-1">
                                                 <button @click="decrementQuantity(index)"
-                                                            class="w-8 h-8 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-lg transition-colors flex items-center justify-center text-gray-700 dark:text-gray-200">
+                                                                class="w-8 h-8 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-lg transition-colors flex items-center justify-center text-gray-700 dark:text-gray-200">
                                                     <i class="fas fa-minus text-xs"></i>
                                                 </button>
                                                 <input type="number" 
-                                                            x-model.number="item.cantidad" 
-                                                            min="1" 
-                                                            :max="item.stockMax"
-                                                            @input="updateCart"
-                                                            class="w-16 px-2 py-1.5 text-center text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 text-gray-900 dark:text-white font-semibold">
+                                                                x-model.number="item.cantidad" 
+                                                                min="1" 
+                                                                :max="item.stockMax"
+                                                                @input="updateCart"
+                                                                class="w-16 px-2 py-1.5 text-center text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 text-gray-900 dark:text-white font-semibold">
                                                 <button @click="incrementQuantity(index, item.stockMax)"
-                                                            :disabled="item.cantidad >= item.stockMax"
-                                                            class="w-8 h-8 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-400 rounded-lg transition-colors flex items-center justify-center text-white disabled:cursor-not-allowed">
+                                                                :disabled="item.cantidad >= item.stockMax"
+                                                                class="w-8 h-8 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-400 rounded-lg transition-colors flex items-center justify-center text-white disabled:cursor-not-allowed">
                                                     <i class="fas fa-plus text-xs"></i>
                                                 </button>
                                             </div>
@@ -315,8 +313,8 @@
 
                             {{-- Carrito vacío --}}
                             <div x-show="!cart.length" 
-                                        x-transition
-                                        class="text-center py-12">
+                                          x-transition
+                                          class="text-center py-12">
                                 <i class="fas fa-shopping-cart text-5xl text-gray-300 dark:text-gray-600 mb-4"></i>
                                 <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Tu carrito está vacío</p>
                                 <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Añade productos para comenzar</p>
@@ -345,13 +343,13 @@
                                     </span>
                                     <div class="flex items-center gap-2">
                                         <input type="number" 
-                                                    x-model.number="discount" 
-                                                    @input="updateCart"
-                                                    min="0" 
-                                                    :max="total"
-                                                    step="0.01"
-                                                    placeholder="0.00"
-                                                    class="w-24 px-2 py-1 text-sm text-right bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-gray-900 dark:text-white">
+                                                        x-model.number="discount" 
+                                                        @input="updateCart"
+                                                        min="0" 
+                                                        :max="total"
+                                                        step="0.01"
+                                                        placeholder="0.00"
+                                                        class="w-24 px-2 py-1 text-sm text-right bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-gray-900 dark:text-white">
                                         <span class="text-gray-500">L</span>
                                     </div>
                                 </label>
@@ -402,8 +400,8 @@
 
                             {{-- Botón procesar venta (TICKET DE VENTA) --}}
                             <button @click="processSale('TICKET')"
-                                            :disabled="!cart.length || isProcessing"
-                                            class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none">
+                                                :disabled="!cart.length || isProcessing"
+                                                class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none">
                                 <span x-show="!isProcessing" class="flex items-center justify-center gap-2">
                                     <i class="fas fa-receipt text-xl"></i>
                                     <span>Generar Ticket de Venta</span>
@@ -418,18 +416,18 @@
                             {{-- Acciones rápidas (Limpiar, Cotizar, Facturar) --}}
                             <div class="flex gap-2 pt-2">
                                 <button @click="clearCart" 
-                                            :disabled="!cart.length"
-                                            class="flex-1 px-3 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 text-sm rounded-lg transition-colors">
+                                                :disabled="!cart.length"
+                                                class="flex-1 px-3 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 text-sm rounded-lg transition-colors">
                                     <i class="fas fa-trash-alt mr-1"></i> Limpiar
                                 </button>
                                 <button @click="processSale('QUOTE')" 
-                                            :disabled="!cart.length || isProcessing || !(clientId > 0)"
-                                            class="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors">
+                                                :disabled="!cart.length || isProcessing || !(clientId > 0)"
+                                                class="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors">
                                     <i class="fas fa-file-alt mr-1"></i> Cotizar
                                 </button>
                                 <button @click="processSale('INVOICE')" 
-                                            :disabled="!cart.length || isProcessing || !(clientId > 0)"
-                                            class="flex-1 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors">
+                                                :disabled="!cart.length || isProcessing || !(clientId > 0)"
+                                                class="flex-1 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors">
                                     <i class="fas fa-file-invoice-dollar mr-1"></i> Facturar
                                 </button>
                             </div>
@@ -447,8 +445,8 @@
                             <i class="fas" :class="showKeyboardShortcuts ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                         </button>
                         <div x-show="showKeyboardShortcuts" 
-                                x-transition
-                                class="mt-3 space-y-2 text-xs">
+                                      x-transition
+                                      class="mt-3 space-y-2 text-xs">
                             <div class="flex justify-between items-center py-1">
                                 <span class="text-gray-600 dark:text-gray-400">Buscar productos</span>
                                 <kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">F1</kbd>
@@ -506,10 +504,10 @@
                         <div class="relative">
                             <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                             <input type="text" 
-                                            x-model="newClientForm.nombre" 
-                                            required
-                                            placeholder="Ej: Juan Pérez"
-                                            class="w-full pl-10 pr-3 py-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                                                x-model="newClientForm.nombre" 
+                                                required
+                                                placeholder="Ej: Juan Pérez"
+                                                class="w-full pl-10 pr-3 py-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                         </div>
                     </div>
 
@@ -520,12 +518,12 @@
                         <div class="relative">
                             <i class="fas fa-id-card absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                             <input type="text" 
-                                            id="new_client_identificacion" 
-                                            x-model="newClientForm.identificacion"
-                                            @input="formatIdentificacion($event, 'newClient')"
-                                            maxlength="16"
-                                            placeholder="0615-2003-001441"
-                                            class="w-full pl-10 pr-3 py-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                                                id="new_client_identificacion" 
+                                                x-model="newClientForm.identificacion"
+                                                @input="formatIdentificacion($event, 'newClient')"
+                                                maxlength="16"
+                                                placeholder="0615-2003-001441"
+                                                class="w-full pl-10 pr-3 py-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                         </div>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Formato: 0000-0000-000000</p>
                     </div>
@@ -538,9 +536,9 @@
                             <div class="relative">
                                 <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                                 <input type="email" 
-                                                x-model="newClientForm.email"
-                                                placeholder="correo@ejemplo.com"
-                                                class="w-full pl-10 pr-3 py-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                                                            x-model="newClientForm.email"
+                                                            placeholder="correo@ejemplo.com"
+                                                            class="w-full pl-10 pr-3 py-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                             </div>
                         </div>
 
@@ -551,24 +549,25 @@
                             <div class="relative">
                                 <i class="fas fa-phone absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                                 <input type="tel" 
-                                                id="new_client_telefono" 
-                                                x-model="newClientForm.telefono"
-                                                placeholder="9999-9999"
-                                                maxlength="9"
-                                                @input="formatTelefono($event)"
-                                                class="w-full pl-10 pr-3 py-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                                                            id="new_client_telefono" 
+                                                            x-model="newClientForm.telefono"
+                                                            placeholder="9999-9999"
+                                                            maxlength="9"
+                                                            @input="formatTelefono($event)"
+                                                            class="w-full pl-10 pr-3 py-2.5 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                             </div>
                         </div>
                     </div>
 
-                    <div x-show="newClientError" 
-                                x-transition
-                                class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    {{-- 🛑 ESTO FUE ELIMINADO PARA QUITAR LOS MENSAJES DE ERROR DEL MODAL --}}
+                    {{-- <div x-show="newClientError" 
+                                      x-transition
+                                      class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                         <p class="text-red-600 dark:text-red-400 text-sm flex items-start gap-2">
                             <i class="fas fa-exclamation-circle mt-0.5"></i>
                             <span x-text="newClientError"></span>
                         </p>
-                    </div>
+                    </div> --}}
 
                     <div class="flex justify-end pt-4 gap-3 border-t dark:border-gray-700">
                         <button type="button" 
@@ -592,7 +591,7 @@
         </div>
     </div>
 
-    {{-- SCRIPT JS/ALPINE CON ESTRATEGIA DE EVENTOS --}}
+    {{-- SCRIPT JS/ALPINE CON LA CORRECCIÓN DE SINCRONIZACIÓN APLICADA --}}
     <script>
         function posModule() {
             return {
@@ -609,11 +608,11 @@
                 finalTotal: 0.00,
 
                 // ESTADOS FISCALES
-                subtotalNeto: 0.00,      
-                totalExento: 0.00,       
-                totalGravado: 0.00,      
-                totalIsv: 0.00,          
-                totalImpuestos: 0.00,    
+                subtotalNeto: 0.00,     
+                totalExento: 0.00,      
+                totalGravado: 0.00,     
+                totalIsv: 0.00,         
+                totalImpuestos: 0.00,   
 
                 isProcessing: false,
                 isProductsLoading: false,
@@ -630,14 +629,13 @@
                 // Modal cliente
                 showNewClientModal: false,
                 newClientSaving: false,
-                newClientError: '',
+                newClientError: '', // Se mantiene la variable, aunque no se muestre
                 newClientForm: { nombre: '', identificacion: '', email: '', telefono: '' },
 
                 init() {
                     if (this.tiendaId) this.fetchProductos();
                     this.updateCart();
                     this.showWelcomeNotification();
-                    // El listener de eventos ahora está en la etiqueta div principal (@new-client-saved.window)
                 },
 
                 // ==========================================
@@ -948,9 +946,12 @@
                     this.newClientError = '';
                 },
 
+                // =========================================================================
+                // FUNCIÓN CRÍTICA CON CORRECCIÓN FINAL DE SINCRONIZACIÓN Y ERRORES
+                // =========================================================================
                 async saveNewClient() {
                     this.newClientSaving = true;
-                    this.newClientError = '';
+                    this.newClientError = ''; // Limpiamos el error antes de empezar
 
                     const payload = {
                         _token: '{{ csrf_token() }}',
@@ -970,17 +971,13 @@
                         const data = await response.json();
 
                         if (response.ok && data.success) {
-                            // Cierra el modal primero
-                            this.closeNewClientModal();
                             
-                            // Dispara el evento personalizado CON los datos del cliente
-                            // Esto se ejecutará fuera del ciclo de vida del modal, de forma más segura.
-                            this.$nextTick(() => {
-                                window.dispatchEvent(new CustomEvent('new-client-saved', {
-                                    detail: { client: data.cliente }
-                                }));
-                            });
-
+                            // 1. Dispara el evento personalizado CON los datos del cliente inmediatamente.
+                            window.dispatchEvent(new CustomEvent('new-client-saved', {
+                                detail: { client: data.cliente }
+                            }));
+                            
+                            // 2. Muestra la notificación de éxito (SweetAlert Toast)
                             Swal.fire({
                                 icon: 'success',
                                 title: '¡Cliente Registrado!',
@@ -991,24 +988,55 @@
                                 toast: true
                             });
                             
-                            
-                        } else if (response.status === 422) {
-                            const errors = data.errors || {};
-                            let errorMessage = '';
-                            Object.keys(errors).forEach(k => {
-                                errorMessage += errors[k][0] + '\n';
+                            // 3. CRÍTICO: Usar $nextTick + setTimeout para asegurar la sincronización.
+                            this.$nextTick(() => {
+                                // El retraso permite que SweetAlert y la animación de transición se inicien sin solaparse.
+                                setTimeout(() => {
+                                    this.closeNewClientModal();
+                                }, 100); 
                             });
-                            this.newClientError = errorMessage || data.message || 'Error de validación.';
+
+                        } else if (response.status === 422) {
+                            // En caso de error de validación, aunque no se muestre en el modal,
+                            // podemos registrarlo o ignorarlo, pero no cerramos el modal.
+                            console.error('Error de validación 422 (Cliente):', data.errors);
+                            
+                            // Como ya eliminaste la visualización, solo debes evitar el cierre.
+                            // Si quieres mostrar un Toast genérico de error de validación (no detallado):
+                            /*
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Datos Incompletos',
+                                text: 'Revise los campos obligatorios del formulario.',
+                                timer: 2500,
+                                showConfirmButton: false,
+                                position: 'top-end',
+                                toast: true
+                            });
+                            */
+                            
+                            // Opcional: Asignar el error para debug si lo reactivas
+                            // this.newClientError = data.message || 'Error de validación.';
+
                         } else {
+                            // Otros errores de servidor (500)
+                            console.error('Error de servidor (Cliente):', data);
+                            
+                            // Si recibes este error, es mejor no hacer nada para evitar el destello,
+                            // solo dejar que el `finally` se ejecute, pero el modal no se cerrará.
+
+                            /*
                             this.newClientError = data.message || 'Error desconocido al guardar el cliente.';
+                            */
                         }
                     } catch (err) {
-                        console.error('Error al guardar cliente:', err);
-                        this.newClientError = 'Error de conexión. Intente nuevamente.';
+                        console.error('Error de conexión o JSON inválido:', err);
+                        // this.newClientError = 'Error de conexión. Intente nuevamente.';
                     } finally {
                         this.newClientSaving = false;
                     }
                 },
+                // =========================================================================
 
                 // ==========================================
                 // CARRITO - MODIFICADO CON LÓGICA ISV
@@ -1118,7 +1146,7 @@
                         if (tasa > 0) {
                             totalGravado += base;
                         } else {
-                            totalExonerado += base;
+                            totalExento += base;
                         }
                         
                         // Asignar los cálculos a cada ítem  

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('nombre');
             $table->string('identificacion')->unique()->nullable(); // DNI, RUC, etc.
             $table->string('telefono')->nullable();
-            $table->string('email')->unique()->nullable();
+            $table->string('email')->nullable();
             $table->timestamps();
         });
     }
