@@ -66,7 +66,7 @@
                                 @input.debounce.300ms="onClientSearchInput"
                                 @input="formatIdentificacion($event, 'clientSearch')"
                                 @keydown.escape="clearClientSearch"
-                                placeholder="Buscar por Nombre o RTN (Ej: 0615-2003-001441)..."
+                                placeholder="Buscar por RTN (Ej: 0615-2003-001441)"
                                 class="w-full pl-4 pr-10 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-gray-900 dark:text-white">
                            
                             <button x-show="clientSearchQuery.length > 0" @click="clearClientSearch"
@@ -532,7 +532,7 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            RTN/Identidad
+                            RTN
                         </label>
                         <div class="relative">
                             <i class="fas fa-id-card absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
