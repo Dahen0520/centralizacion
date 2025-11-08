@@ -10,6 +10,14 @@ class Venta extends Model
 {
     use HasFactory;
 
+    // Define los tipos de pago disponibles (Enum-like structure)
+    // Se ha simplificado a 3 opciones clave.
+    public const TIPOS_PAGO = [
+        'EFECTIVO'      => 'Efectivo',
+        'TARJETA'       => 'Tarjeta (Crédito/Débito)',
+        'OTRO'          => 'Otro (Transferencia, Cheque, Crédito, etc.)'
+    ];
+
     protected $fillable = [
         'tienda_id',
         'usuario_id',
@@ -27,7 +35,7 @@ class Venta extends Model
         
         // Campos de Facturación / Documento
         'tipo_documento',       
-        'tipo_pago',            
+        'tipo_pago',            // <-- Campo de pago
         'cai',                  
         'numero_documento',     
         'estado',               
@@ -38,12 +46,9 @@ class Venta extends Model
 
     /**
      * Define los tipos de datos para la conversión automática.
-     * Esta es la corrección crítica para el error 'non-numeric value encountered'.
      */
     protected $casts = [
         'fecha_venta' => 'datetime',
-        
-        // Todos los campos numéricos deben ser 'float' para evitar errores.
         'total_venta' => 'float',
         'descuento' => 'float',
         'subtotal_neto' => 'float',
@@ -53,13 +58,11 @@ class Venta extends Model
         'total_final' => 'float',
     ];
     
-    // Define la relación con la tienda
     public function tienda(): BelongsTo
     { 
         return $this->belongsTo(Tienda::class); 
     }
     
-    // Define la relación con el usuario (quien registró la venta)
     public function usuario(): BelongsTo 
     {
         return $this->belongsTo(\App\Models\User::class); 

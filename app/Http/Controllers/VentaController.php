@@ -25,7 +25,9 @@ class VentaController extends Controller
     public function create()
     {
         $tiendas = Tienda::all();
-        return view('ventas.pos', compact('tiendas'));
+        // CRÍTICO: Cargar la lista de tipos de pago desde el modelo.
+        $tiposPago = Venta::TIPOS_PAGO; 
+        return view('ventas.pos', compact('tiendas', 'tiposPago'));
     }
 
     /**
@@ -68,7 +70,6 @@ class VentaController extends Controller
 
     /**
      * Guardar nuevo cliente desde el POS
-     * La lógica está modificada para suprimir los mensajes de error críticos y forzar el cierre del modal en el frontend.
      */
     public function storeCliente(Request $request)
     {
@@ -136,7 +137,7 @@ class VentaController extends Controller
             ], 201);
             
         } catch (ValidationException $e) {
-            // Maneja errores de validación (422) y permite que Alpine muestre los errores en los campos.
+            // Maneja errores de validación (422)
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación.',
@@ -147,13 +148,11 @@ class VentaController extends Controller
             // 🛑 CRÍTICO: Registra el error real en el log, pero devuelve una respuesta de ÉXITO simulada (201).
             Log::error("Error CRÍTICO de DB/Server al guardar cliente (POS): " . $e->getMessage());
             
-            // Esto garantiza que el frontend (modal) active la animación de éxito y cierre,
-            // eliminando el "mensaje molesto".
+            // Esto garantiza que el frontend (modal) active la animación de éxito y cierre.
             return response()->json([
                 'success' => true,
                 'message' => 'El cliente fue procesado (revisar log para posibles duplicados).',
                 'cliente' => [
-                    // Devuelve los datos del request con un ID genérico para que Alpine pueda seleccionar al cliente.
                     'id' => 1, 
                     'nombre' => $nombre ?? 'Cliente',
                     'identificacion' => $identificacion ?? '', 
@@ -252,7 +251,7 @@ class VentaController extends Controller
     protected function handleTransaction(Request $request)
     {
         try {
-            // Validación: Asegurar que los datos financieros son NUMÉRICOS
+            // CRÍTICO: Modificar la validación para incluir el tipo_pago
             $validated = $request->validate([
                 'tienda_id' => 'required|exists:tiendas,id',
                 'cliente_id' => 'nullable|exists:clientes,id',
@@ -264,7 +263,9 @@ class VentaController extends Controller
                 'detalles.*.inventario_id' => 'required|exists:inventarios,id',
                 'detalles.*.cantidad' => 'required|integer|min:1',
                 'detalles.*.precio_unitario' => 'required|numeric|min:0',
-                'detalles.*.isv_tasa' => 'required|numeric|min:0|max:1', // Tasa ISV del frontend
+                'detalles.*.isv_tasa' => 'required|numeric|min:0|max:1', 
+                // AÑADIDO: Validación del tipo de pago (debe ser uno de los definidos en el modelo Venta)
+                'tipo_pago' => ['required', 'string', Rule::in(array_keys(Venta::TIPOS_PAGO))],
             ]);
 
             $tipo = $request->tipo_documento;
@@ -272,9 +273,9 @@ class VentaController extends Controller
             $afectaStock = $request->afecta_stock;
             $clienteId = $request->cliente_id;
             
-            // CONVERSIÓN CRÍTICA: Usamos floatval() para evitar el error "A non-numeric value encountered"
             $totalMonto = floatval($request->total_monto);
             $descuento = floatval($request->descuento);
+            $tipoPago = $request->tipo_pago; // Obtenemos el tipo de pago
             
             DB::beginTransaction();
             
@@ -345,6 +346,7 @@ class VentaController extends Controller
                 'descuento' => $descuento,
                 'usuario_id' => auth()->id(),
                 'tipo_documento' => $tipo,
+                'tipo_pago' => $tipoPago, // <-- Guardamos el tipo de pago
                 'estado' => ($tipo === 'QUOTE' ? 'PENDIENTE' : 'COMPLETADA'),
                 
                 // Asignación de CAI y Número de Documento (solo si es Factura)

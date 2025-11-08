@@ -32,7 +32,9 @@ return new class extends Migration
             
             // Tipo de Documento: TICKET, QUOTE, INVOICE (solo Factura usa CAI)
             $table->string('tipo_documento', 20)->default('TICKET');
-            $table->string('tipo_pago', 20)->nullable(); // Pago: Efectivo, Tarjeta, Transferencia, etc.
+            
+            // CORRECCIÓN: Usamos ENUM para restringir los tipos de pago
+            $table->enum('tipo_pago', ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'OTRO'])->nullable(); 
             
             // Campos Fiscales (solo llenos para INVOICE)
             $table->string('cai', 100)->nullable();

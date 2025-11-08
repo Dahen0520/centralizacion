@@ -14,9 +14,9 @@
     {{-- CRÍTICO: Asegurar que Alpine.js esté cargado para que x-data funcione --}}
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    {{-- AÑADIDO: Listener de evento global para seleccionar cliente --}}
+    {{-- Se inyecta la lista de tipos de pago desde el backend --}}
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-6" 
-         x-data="posModule()" 
+         x-data="posModule({{ json_encode($tiposPago ?? []) }})" 
          @keydown.window="handleKeyboard($event)"
          @new-client-saved.window="setClientAfterModal($event.detail.client)"> 
 
@@ -323,8 +323,26 @@
 
                         {{-- Resumen y total --}}
                         <div class="p-6 border-t border-gray-200 dark:border-gray-700 space-y-3 bg-gray-50 dark:bg-gray-900/50">
+                            
+                            {{-- NUEVO SELECT DE TIPO DE PAGO --}}
+                            <div class="space-y-2">
+                                <label for="payment_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <i class="fas fa-money-check-alt mr-1 text-teal-600"></i> Tipo de Pago:
+                                </label>
+                                <select id="payment_type" x-model="selectedPaymentType"
+                                        class="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition text-gray-900 dark:text-white text-sm font-semibold">
+                                    <template x-for="(label, key) in tiposPago" :key="key">
+                                        <option :value="key" x-text="label"></option>
+                                    </template>
+                                </select>
+                                <p x-show="selectedPaymentType === 'CREDITO' && !(clientId > 0)" 
+                                   class="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center gap-1">
+                                    <i class="fas fa-exclamation-triangle"></i> Se requiere cliente registrado para ventas a Crédito.
+                                </p>
+                            </div>
+                            
                             {{-- Cliente asignado --}}
-                            <div class="border-b pb-3 mb-3 text-xs" x-cloak>
+                            <div class="border-b pt-2 pb-3 mb-3 text-xs" x-cloak>
                                 <div class="flex items-center justify-between">
                                     <span class="text-gray-500 dark:text-gray-400">Venta para:</span>
                                     <span class="font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
@@ -400,7 +418,7 @@
 
                             {{-- Botón procesar venta (TICKET DE VENTA) --}}
                             <button @click="processSale('TICKET')"
-                                                :disabled="!cart.length || isProcessing"
+                                                :disabled="!isSaleReady('TICKET') || isProcessing"
                                                 class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none">
                                 <span x-show="!isProcessing" class="flex items-center justify-center gap-2">
                                     <i class="fas fa-receipt text-xl"></i>
@@ -420,13 +438,15 @@
                                                 class="flex-1 px-3 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 text-sm rounded-lg transition-colors">
                                     <i class="fas fa-trash-alt mr-1"></i> Limpiar
                                 </button>
+                                {{-- Cotización --}}
                                 <button @click="processSale('QUOTE')" 
-                                                :disabled="!cart.length || isProcessing || !(clientId > 0)"
+                                                :disabled="!isSaleReady('QUOTE') || isProcessing"
                                                 class="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors">
                                     <i class="fas fa-file-alt mr-1"></i> Cotizar
                                 </button>
+                                {{-- Facturar --}}
                                 <button @click="processSale('INVOICE')" 
-                                                :disabled="!cart.length || isProcessing || !(clientId > 0)"
+                                                :disabled="!isSaleReady('INVOICE') || isProcessing"
                                                 class="flex-1 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors">
                                     <i class="fas fa-file-invoice-dollar mr-1"></i> Facturar
                                 </button>
@@ -559,16 +579,6 @@
                         </div>
                     </div>
 
-                    {{-- 🛑 ESTO FUE ELIMINADO PARA QUITAR LOS MENSAJES DE ERROR DEL MODAL --}}
-                    {{-- <div x-show="newClientError" 
-                                      x-transition
-                                      class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                        <p class="text-red-600 dark:text-red-400 text-sm flex items-start gap-2">
-                            <i class="fas fa-exclamation-circle mt-0.5"></i>
-                            <span x-text="newClientError"></span>
-                        </p>
-                    </div> --}}
-
                     <div class="flex justify-end pt-4 gap-3 border-t dark:border-gray-700">
                         <button type="button" 
                                 @click="closeNewClientModal"
@@ -591,9 +601,9 @@
         </div>
     </div>
 
-    {{-- SCRIPT JS/ALPINE CON LA CORRECCIÓN DE SINCRONIZACIÓN APLICADA --}}
+    {{-- SCRIPT JS/ALPINE CON LA LÓGICA DE PAGO INTEGRADA --}}
     <script>
-        function posModule() {
+        function posModule(tiposPago) {
             return {
                 // Estado general
                 tiendaId: @json(old('tienda_id', '')),
@@ -629,8 +639,12 @@
                 // Modal cliente
                 showNewClientModal: false,
                 newClientSaving: false,
-                newClientError: '', // Se mantiene la variable, aunque no se muestre
+                newClientError: '', 
                 newClientForm: { nombre: '', identificacion: '', email: '', telefono: '' },
+                
+                // ESTADO DE PAGO AÑADIDO
+                tiposPago: tiposPago, // Inyectado desde el backend
+                selectedPaymentType: 'EFECTIVO', // Valor por defecto
 
                 init() {
                     if (this.tiendaId) this.fetchProductos();
@@ -638,6 +652,21 @@
                     this.showWelcomeNotification();
                 },
 
+                // ==========================================
+                // LÓGICA DE PAGO
+                // ==========================================
+                isSaleReady(type) {
+                    if (!this.cart.length || this.tiendaId === '') return false;
+                    
+                    // Factura y Cotización requieren cliente registrado
+                    if ((type === 'INVOICE' || type === 'QUOTE') && !(this.clientId > 0)) return false;
+
+                    // Crédito requiere cliente registrado
+                    if (this.selectedPaymentType === 'CREDITO' && !(this.clientId > 0)) return false;
+
+                    return true;
+                },
+                
                 // ==========================================
                 // NOTIFICACIONES Y MENSAJES
                 // ==========================================
@@ -997,41 +1026,15 @@
                             });
 
                         } else if (response.status === 422) {
-                            // En caso de error de validación, aunque no se muestre en el modal,
-                            // podemos registrarlo o ignorarlo, pero no cerramos el modal.
+                            // Errores de validación
                             console.error('Error de validación 422 (Cliente):', data.errors);
                             
-                            // Como ya eliminaste la visualización, solo debes evitar el cierre.
-                            // Si quieres mostrar un Toast genérico de error de validación (no detallado):
-                            /*
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Datos Incompletos',
-                                text: 'Revise los campos obligatorios del formulario.',
-                                timer: 2500,
-                                showConfirmButton: false,
-                                position: 'top-end',
-                                toast: true
-                            });
-                            */
-                            
-                            // Opcional: Asignar el error para debug si lo reactivas
-                            // this.newClientError = data.message || 'Error de validación.';
-
                         } else {
                             // Otros errores de servidor (500)
                             console.error('Error de servidor (Cliente):', data);
-                            
-                            // Si recibes este error, es mejor no hacer nada para evitar el destello,
-                            // solo dejar que el `finally` se ejecute, pero el modal no se cerrará.
-
-                            /*
-                            this.newClientError = data.message || 'Error desconocido al guardar el cliente.';
-                            */
                         }
                     } catch (err) {
                         console.error('Error de conexión o JSON inválido:', err);
-                        // this.newClientError = 'Error de conexión. Intente nuevamente.';
                     } finally {
                         this.newClientSaving = false;
                     }
@@ -1200,29 +1203,40 @@
                 },
 
                 // ==========================================
-                // PROCESAR VENTA / COTIZACIÓN / FACTURA  
+                // VALIDACIÓN Y PROCESAMIENTO DE VENTA
                 // ==========================================
-                async processSale(type) {
-                    if (!this.cart.length || this.isProcessing) return;
-
-                    if (!this.tiendaId) {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Tienda no seleccionada',
-                            text: 'Debe seleccionar una tienda para procesar la transacción.',
-                            confirmButtonColor: '#f59e0b'
-                        });
-                        return;
-                    }
+                isSaleReady(type) {
+                    if (!this.cart.length || this.tiendaId === '') return false;
                     
-                    if ((type === 'INVOICE' || type === 'QUOTE') && !(this.clientId > 0)) {
-                        Swal.fire({
-                            icon: 'info',
-                            title: `Se requiere Cliente para ${type === 'INVOICE' ? 'Factura' : 'Cotización'}`,
-                            text: 'Seleccione un cliente o cree uno nuevo antes de continuar.',
-                            confirmButtonColor: '#3b82f6'
-                        });
-                        document.getElementById('client_search_input')?.focus();
+                    // Factura y Cotización requieren cliente registrado
+                    if ((type === 'INVOICE' || type === 'QUOTE') && !(this.clientId > 0)) return false;
+
+                    // Crédito requiere cliente registrado
+                    if (this.selectedPaymentType === 'CREDITO' && !(this.clientId > 0)) return false;
+
+                    return true;
+                },
+
+                async processSale(type) {
+                    if (!this.isSaleReady(type) || this.isProcessing) {
+                         if (!this.isSaleReady(type)) {
+                            // Muestra una alerta si falta el cliente para Crédito/Factura
+                            if (this.selectedPaymentType === 'CREDITO' && !(this.clientId > 0)) {
+                                Swal.fire({
+                                    icon: 'info',
+                                    title: 'Cliente Requerido',
+                                    text: 'Para ventas a Crédito, debe seleccionar un cliente registrado.',
+                                    confirmButtonColor: '#3b82f6'
+                                });
+                            } else if ((type === 'INVOICE' || type === 'QUOTE') && !(this.clientId > 0)) {
+                                Swal.fire({
+                                    icon: 'info',
+                                    title: `Cliente Requerido`,
+                                    text: `Seleccione un cliente para generar la ${type === 'INVOICE' ? 'Factura' : 'Cotización'}.`,
+                                    confirmButtonColor: '#3b82f6'
+                                });
+                            }
+                        }
                         return;
                     }
 
@@ -1238,16 +1252,6 @@
                         'INVOICE': '{{ route('ventas.store-invoice') }}'
                     };
                     
-                    const successTitleMap = {
-                        'TICKET': '¡Venta Procesada!',
-                        'QUOTE': '¡Cotización Guardada!',
-                        'INVOICE': '¡Factura Generada!'
-                    };
-                    const successTextMap = {
-                        'TICKET': 'La venta ha sido registrada con éxito.',
-                        'QUOTE': 'La cotización ha sido guardada y está lista para ser impresa/enviada.',
-                        'INVOICE': 'La factura ha sido emitida y registrada con éxito.'
-                    };
                     const successColorMap = {
                         'TICKET': '#10b981',  
                         'QUOTE': '#3b82f6',  
@@ -1263,7 +1267,8 @@
                         title: titleMap[type],
                         html: `
                             <div class="text-left space-y-2">
-                                <strong>Tipo:</strong> ${type === 'TICKET' ? 'Ticket de Venta' : (type === 'QUOTE' ? 'Cotización' : 'Factura')}
+                                <p class="text-sm text-gray-600">
+                                    <strong>Tipo de Pago:</strong> ${this.tiposPago[this.selectedPaymentType] || 'N/A'}
                                 </p>
                                 <p class="text-sm text-gray-600">
                                     <strong>Cliente:</strong> ${this.selectedClientName}
@@ -1289,7 +1294,6 @@
                     this.isProcessing = true;
                     const url = endpointMap[type];
 
-                    // PREPARAR DETALLES PARA EL BACKEND (incluyendo la tasa ISV)
                     const detalles = this.cart.map(item => ({
                         inventario_id: item.inventario_id,
                         cantidad: item.cantidad,
@@ -1302,9 +1306,10 @@
                         tienda_id: this.tiendaId,
                         cliente_id: this.clientId,
                         tipo_documento: type,  
-                        total_monto: this.total, // Total incluyendo ISV, antes de descuento
+                        total_monto: this.total, 
                         descuento: this.discount,
-                        detalles: detalles
+                        detalles: detalles,
+                        tipo_pago: this.selectedPaymentType // <--- AÑADIDO EL TIPO DE PAGO
                     };
 
                     try {
@@ -1325,25 +1330,9 @@
                         if (res.ok && data.success) {
                             await Swal.fire({
                                 icon: 'success',
-                                title: successTitleMap[type],
-                                html: `
-                                    <div class="text-center space-y-3">
-                                        <p class="text-gray-700">${successTextMap[type]}</p>
-                                        ${data.documento_id ? `
-                                            <div class="bg-gray-50 rounded-lg p-3 mt-3">
-                                                <p class="text-lg font-bold text-gray-800">
-                                                    ${type === 'QUOTE' ? 'Cotización' : (type === 'INVOICE' ? 'Factura' : 'Venta')} #${data.documento_id}
-                                                </p>
-                                            </div>
-                                        ` : ''}
-                                            
-                                        ${data.documento_url ? `
-                                            <a href="${data.documento_url}" target="_blank" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                                <i class="fas fa-print mr-2"></i> Imprimir / Descargar
-                                            </a>
-                                        ` : ''}
-                                    </div>
-                                `,
+                                title: data.documento_id ? `Transacción #${data.documento_id}` : '¡Transacción Procesada!',
+                                html: `<p class="text-gray-700">${data.message}</p>` + 
+                                      (data.documento_url ? `<a href="${data.documento_url}" target="_blank" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"><i class="fas fa-print mr-2"></i> Imprimir / Descargar</a>` : ''),
                                 confirmButtonColor: successColorMap[type],
                                 confirmButtonText: 'Hecho'
                             });
