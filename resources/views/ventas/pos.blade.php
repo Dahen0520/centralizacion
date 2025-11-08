@@ -338,10 +338,6 @@
                                         <option value="{{ $key }}">{{ $label }}</option>
                                     @endforeach
                                 </select>
-                                <p x-show="selectedPaymentType === 'CREDITO' && !(clientId > 0)" 
-                                   class="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center gap-1">
-                                    <i class="fas fa-exclamation-triangle"></i> Se requiere cliente registrado para ventas a Crédito.
-                                </p>
                             </div>
                             
                             {{-- Cliente asignado --}}
