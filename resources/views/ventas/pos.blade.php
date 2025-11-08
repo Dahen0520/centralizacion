@@ -201,7 +201,7 @@
                                                 </span>
                                             </div>
                                         </div>
-                                        <button @click.stop="addToCart(producto)"
+                                        <button @click.stop.prevent="addToCart(producto)"
                                             :disabled="producto.stock_actual === 0"
                                             class="flex-shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 disabled:transform-none">
                                             <i class="fas fa-plus mr-1"></i>
@@ -288,7 +288,7 @@
                                         <div class="flex items-center gap-2">
                                             <label class="text-xs text-gray-600 dark:text-gray-400 font-medium">Cant:</label>
                                             <div class="flex items-center gap-1">
-                                                <button @click="decrementQuantity(index)"
+                                                <button @click.stop.prevent="decrementQuantity(index)"
                                                     class="w-8 h-8 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-lg transition-colors flex items-center justify-center text-gray-700 dark:text-gray-200">
                                                     <i class="fas fa-minus text-xs"></i>
                                                 </button>
@@ -298,7 +298,7 @@
                                                     :max="item.stockMax"
                                                     @input="updateCart"
                                                     class="w-16 px-2 py-1.5 text-center text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 text-gray-900 dark:text-white font-semibold">
-                                                <button @click="incrementQuantity(index, item.stockMax)"
+                                                <button @click.stop.prevent="incrementQuantity(index, item.stockMax)"
                                                     :disabled="item.cantidad >= item.stockMax"
                                                     class="w-8 h-8 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-400 rounded-lg transition-colors flex items-center justify-center text-white disabled:cursor-not-allowed">
                                                     <i class="fas fa-plus text-xs"></i>
@@ -611,9 +611,13 @@
                 filteredProductos: [],
                 cart: [],
                 
-                // Nuevas variables para prevenir doble click/escaneo rápido
+                // Variables de control para prevenir doble clic/escaneo rápido
                 lastAddedProductId: null, 
                 lastAddedTimestamp: 0, 
+
+                // **NUEVAS VARIABLES DE CONTROL PARA EL CARRITO**
+                lastCartUpdateId: null,
+                lastCartUpdateTimestamp: 0,
 
                 // Totales
                 total: 0.00, 
@@ -1026,9 +1030,7 @@
                             // 2. LÓGICA DE ERROR DE VALIDACIÓN (422)
                             console.error('Error de validación 422 (Cliente):', data.errors);
                             
-                            // Ya que el problema podría ser que el cliente existe, lo seleccionamos para no forzar la creación.
-                            // Si Laravel devolvió el error 422 (duplicado, por ejemplo), asumimos que el usuario quería seleccionarlo 
-                            // y cerramos el modal, manteniendo el flujo.
+                            // Si falla por validación (ej. duplicado), cerramos el modal para seguir el flujo
                             this.$nextTick(() => {
                                 setTimeout(() => {
                                     this.closeNewClientModal(); 
@@ -1068,7 +1070,7 @@
                         return;
                     }
 
-                    // Lógica para prevenir doble clic/escaneo rápido: Asegura que solo se procese una adición por 200ms
+                    // Lógica para prevenir doble clic/escaneo rápido (CORRECCIÓN LISTADO PRODUCTOS)
                     const now = Date.now();
                     if (this.lastAddedProductId === producto.inventario_id && (now - this.lastAddedTimestamp) < 200) {
                         return; // Ignora la segunda llamada rápida
@@ -1082,9 +1084,6 @@
                     
                     if (existing) {
                         if (existing.cantidad < existing.stockMax) {
-                            // CORREGIDO: Incremento de 1 en 1. Aunque el doble click ejecuta dos veces,
-                            // la validación de tiempo arriba debería detener la segunda.
-                            // Lo ponemos explícito por si acaso.
                             existing.cantidad = existing.cantidad + 1; 
                             this.showNotification('success', 'Cantidad actualizada', `${producto.producto_nombre} (${existing.cantidad})`);
                         } else {
@@ -1134,18 +1133,44 @@
                     });
                 },
 
+                // FUNCIÓN CORREGIDA PARA PREVENIR DOBLE INCREMENTO
                 incrementQuantity(index, maxStock) {
-                    if (this.cart[index].cantidad < maxStock) {
-                        this.cart[index].cantidad++;
+                    const item = this.cart[index];
+                    const now = Date.now();
+
+                    // Control de tiempo para prevenir doble clic en el mismo item
+                    if (this.lastCartUpdateId === item.inventario_id && (now - this.lastCartUpdateTimestamp) < 200) {
+                        return; 
+                    }
+                    
+                    this.lastCartUpdateId = item.inventario_id;
+                    this.lastCartUpdateTimestamp = now;
+                    // Fin de control
+
+                    if (item.cantidad < maxStock) {
+                        item.cantidad++; 
                         this.updateCart();
                     } else {
                         this.showNotification('warning', 'Stock máximo', 'No hay más unidades disponibles');
                     }
                 },
 
+                // FUNCIÓN CORREGIDA PARA PREVENIR DOBLE DECREMENTO
                 decrementQuantity(index) {
-                    if (this.cart[index].cantidad > 1) {
-                        this.cart[index].cantidad--;
+                    const item = this.cart[index];
+                    const now = Date.now();
+
+                    // Control de tiempo para prevenir doble clic en el mismo item
+                    if (this.lastCartUpdateId === item.inventario_id && (now - this.lastCartUpdateTimestamp) < 200) {
+                        return;
+                    }
+                    
+                    this.lastCartUpdateId = item.inventario_id;
+                    this.lastCartUpdateTimestamp = now;
+                    // Fin de control
+
+                    if (item.cantidad > 1) {
+                        item.cantidad--; 
                         this.updateCart();
                     }
                 },
@@ -1219,6 +1244,7 @@
                         if (result.isConfirmed) {
                             this.cart = [];
                             this.discount = 0;
+                            this.selectedPaymentType = 'EFECTIVO';
                             this.updateCart();
                             this.showNotification('info', 'Carrito vacío', 'Se han eliminado todos los productos');
                         }
