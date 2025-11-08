@@ -15,7 +15,7 @@ class Venta extends Model
     public const TIPOS_PAGO = [
         'EFECTIVO'      => 'Efectivo',
         'TARJETA'       => 'Tarjeta (Crédito/Débito)',
-        'OTRO'          => 'Otro (Transferencia, Cheque, Crédito, etc.)'
+        'OTRO'          => 'Otro (Transferencia, Cheque, etc.)'
     ];
 
     protected $fillable = [
