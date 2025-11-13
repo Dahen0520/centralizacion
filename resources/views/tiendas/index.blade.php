@@ -45,22 +45,25 @@
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-16">
                                     #
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                                    <i class="fas fa-fingerprint mr-1"></i> ID
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-1/5">
+                                    <i class="fas fa-store mr-1"></i> Tienda
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                                    <i class="fas fa-store mr-1"></i> Nombre de la Tienda
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-1/5">
+                                    <i class="fas fa-hashtag mr-1"></i> RTN
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-1/4">
-                                    <i class="fas fa-city mr-1"></i> Municipio
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-1/5">
+                                    <i class="fas fa-map-marker-alt mr-1"></i> Dirección / Municipio
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-1/4">
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-1/5">
+                                    <i class="fas fa-phone mr-1"></i> Teléfono
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-1/5">
                                     <i class="fas fa-cogs mr-1"></i> Acciones
                                 </th>
                             </tr>
                         </thead>
                         <tbody id="tiendas-table-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
-                            {{-- Las tiendas se cargarán aquí --}}
+                            {{-- Las tiendas se cargarán aquí (tiendas.partials.tiendas_table_rows) --}}
                             @include('tiendas.partials.tiendas_table_rows')
                         </tbody>
                     </table>
@@ -103,6 +106,7 @@
         const noResultsMessage = document.getElementById('no-results-message');
 
         let searchTimeout;
+        // Asumiendo que tienes una meta tag para el token CSRF en tu layout principal
         const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
 
 
@@ -204,7 +208,7 @@
             const url = `{{ route('tiendas.index') }}?page=${page}&search=${encodeURIComponent(query)}`;
 
             // Muestra estado de carga
-            tiendasTableBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-blue-500 dark:text-blue-400"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando tiendas...</td></tr>';
+            tiendasTableBody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-blue-500 dark:text-blue-400"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando tiendas...</td></tr>';
             noResultsMessage.classList.add('hidden');
 
             fetch(url, {
@@ -224,7 +228,12 @@
                 paginationLinksContainer.innerHTML = data.pagination_links;
 
                 // Manejar el mensaje de no resultados (asumiendo que el controlador devuelve el conteo)
-                if (data.tiendas_count === 0) {
+                // Nota: Tu controlador actual no devuelve 'tiendas_count' en el JSON, 
+                // por lo que esta lógica podría necesitar un ajuste en el controlador o en el partial.
+                // Usaremos un chequeo básico del contenido del partial.
+                const hasRows = tiendasTableBody.querySelector('tr') && !tiendasTableBody.querySelector('tr td[colspan="6"]');
+                
+                if (!hasRows) {
                     noResultsMessage.classList.remove('hidden');
                 } else {
                     noResultsMessage.classList.add('hidden');
@@ -235,7 +244,7 @@
             })
             .catch(error => {
                 console.error('Error al buscar tiendas:', error);
-                tiendasTableBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-red-500 dark:text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i> Error al cargar.</td></tr>';
+                tiendasTableBody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-red-500 dark:text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i> Error al cargar.</td></tr>';
                 Swal.fire('Error de Carga', 'No se pudieron cargar las tiendas. Detalles: ' + error.message, 'error');
             });
         }

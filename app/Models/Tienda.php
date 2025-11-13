@@ -13,6 +13,9 @@ class Tienda extends Model
 
     protected $fillable = [
         'nombre',
+        'rtn',          // <--- AÑADIDO: Registro Tributario Nacional
+        'direccion',    // <--- AÑADIDO: Dirección de la tienda
+        'telefono',     // <--- AÑADIDO: Teléfono de la tienda
         'municipio_id',
     ];
     

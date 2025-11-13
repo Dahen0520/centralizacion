@@ -24,7 +24,7 @@
                         Modificar Tienda: <span class="text-blue-600 dark:text-blue-400">{{ $tienda->nombre }}</span>
                     </h3>
                     <p class="text-md text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                        Actualiza el nombre y la ubicación de este punto de venta.
+                        Actualiza la información básica y fiscal de este punto de venta.
                     </p>
                     
                     <a href="{{ route('tiendas.index') }}" 
@@ -57,38 +57,92 @@
                     @csrf
                     @method('PUT')
 
-                    {{-- Campo Nombre de la Tienda --}}
-                    <div class="mb-6">
-                        <label for="nombre" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Nombre de la Tienda <span class="text-red-500">*</span></label>
-                        <input type="text" id="nombre" name="nombre" value="{{ old('nombre', $tienda->nombre) }}" required 
-                               placeholder="Ej: Mall Multiplaza, Sucursal Centro..."
-                               class="w-full px-5 py-3.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition @error('nombre') border-red-500 ring-red-500 @enderror">
-                        @error('nombre')
-                            <p class="text-red-500 text-xs italic mt-2 flex items-center font-medium">
-                                <i class="fas fa-info-circle mr-1"></i> {{ $message }}
-                            </p>
-                        @enderror
+                    {{-- 1. INFORMACIÓN BÁSICA Y FISCAL --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                        {{-- Campo Nombre de la Tienda --}}
+                        <div class="mb-4 md:mb-0 md:col-span-2">
+                            <label for="nombre" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nombre de la Tienda <span class="text-red-500">*</span></label>
+                            <input type="text" id="nombre" name="nombre" value="{{ old('nombre', $tienda->nombre) }}" required 
+                                placeholder="Ej: Mall Multiplaza, Sucursal Centro..."
+                                class="w-full px-5 py-3.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition @error('nombre') border-red-500 ring-red-500 @enderror">
+                            @error('nombre')
+                                <p class="text-red-500 text-xs italic mt-2 flex items-center font-medium">
+                                    <i class="fas fa-info-circle mr-1"></i> {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
+                        {{-- Campo RTN (NUEVO) --}}
+                        <div class="mb-4">
+                            <label for="rtn" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">RTN</label>
+                            <input type="text" id="rtn" name="rtn" value="{{ old('rtn', $tienda->rtn) }}" 
+                                placeholder="Ej: 08011980123456"
+                                maxlength="50"
+                                class="w-full px-5 py-3.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition @error('rtn') border-red-500 ring-red-500 @enderror">
+                            @error('rtn')
+                                <p class="text-red-500 text-xs italic mt-2 flex items-center font-medium">
+                                    <i class="fas fa-info-circle mr-1"></i> {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
+                        {{-- Campo Teléfono (NUEVO) --}}
+                        <div class="mb-4">
+                            <label for="telefono" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Teléfono</label>
+                            <input type="text" id="telefono" name="telefono" value="{{ old('telefono', $tienda->telefono) }}" 
+                                placeholder="Ej: 9999-9999"
+                                maxlength="20"
+                                class="w-full px-5 py-3.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition @error('telefono') border-red-500 ring-red-500 @enderror">
+                            @error('telefono')
+                                <p class="text-red-500 text-xs italic mt-2 flex items-center font-medium">
+                                    <i class="fas fa-info-circle mr-1"></i> {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
                     </div>
 
-                    {{-- Campo Municipio --}}
-                    <div class="mb-8">
-                        <label for="municipio_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Municipio <span class="text-red-500">*</span></label>
-                        <select name="municipio_id" id="municipio_id" required 
-                                class="w-full px-5 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition @error('municipio_id') border-red-500 ring-red-500 @enderror">
-                            <option value="">Seleccione un municipio</option>
-                            @foreach($municipios as $municipio)
-                                <option value="{{ $municipio->id }}" @selected(old('municipio_id', $tienda->municipio_id) == $municipio->id)>
-                                    {{ $municipio->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('municipio_id')
-                            <p class="text-red-500 text-xs italic mt-2 flex items-center font-medium">
-                                <i class="fas fa-info-circle mr-1"></i> {{ $message }}
-                            </p>
-                        @enderror
-                    </div>
+                    <hr class="my-8 border-gray-200 dark:border-gray-700 opacity-60">
+                    
+                    {{-- 2. INFORMACIÓN DE UBICACIÓN --}}
 
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                        {{-- Campo Municipio --}}
+                        <div class="mb-6">
+                            <label for="municipio_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Municipio <span class="text-red-500">*</span></label>
+                            <select name="municipio_id" id="municipio_id" required 
+                                    class="w-full px-5 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition @error('municipio_id') border-red-500 ring-red-500 @enderror">
+                                <option value="">Seleccione un municipio</option>
+                                @foreach($municipios as $municipio)
+                                    <option value="{{ $municipio->id }}" @selected(old('municipio_id', $tienda->municipio_id) == $municipio->id)>
+                                        {{ $municipio->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('municipio_id')
+                                <p class="text-red-500 text-xs italic mt-2 flex items-center font-medium">
+                                    <i class="fas fa-info-circle mr-1"></i> {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+                        
+                        {{-- Campo Dirección (NUEVO) --}}
+                        <div class="mb-6">
+                            <label for="direccion" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Dirección Completa</label>
+                            <input type="text" id="direccion" name="direccion" value="{{ old('direccion', $tienda->direccion) }}" 
+                                placeholder="Colonia, calle, referencia..."
+                                maxlength="255"
+                                class="w-full px-5 py-3.5 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition @error('direccion') border-red-500 ring-red-500 @enderror">
+                            @error('direccion')
+                                <p class="text-red-500 text-xs italic mt-2 flex items-center font-medium">
+                                    <i class="fas fa-info-circle mr-1"></i> {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
+                    </div>
+                    
                     <hr class="my-10 border-gray-200 dark:border-gray-700 opacity-60">
 
                     <button type="submit" 

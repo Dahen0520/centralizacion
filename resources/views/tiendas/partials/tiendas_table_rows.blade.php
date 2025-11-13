@@ -11,19 +11,29 @@
         {{ $startIndex + $index }}
     </td>
 
-    {{-- ID (font-normal y color sutil) --}}
-    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-        <span class="font-normal text-gray-600 dark:text-gray-400">{{ $tienda->id }}</span>
-    </td>
-    
-    {{-- NOMBRE --}}
-    <td class="px-6 py-4 whitespace-nowrap text-base font-normal text-gray-900 dark:text-gray-100">
+    {{-- NOMBRE DE LA TIENDA --}}
+    <td class="px-6 py-4 whitespace-nowrap text-base font-semibold text-gray-900 dark:text-gray-100">
         {{ $tienda->nombre }}
     </td>
     
-    {{-- MUNICIPIO --}}
+    {{-- RTN (NUEVO) --}}
     <td class="px-6 py-4 whitespace-nowrap text-sm font-normal text-gray-700 dark:text-gray-300">
-        {{ $tienda->municipio->nombre }}
+        {{ $tienda->rtn ?? 'N/A' }}
+    </td>
+
+    {{-- DIRECCIÓN / MUNICIPIO (COMBINADO) --}}
+    <td class="px-6 py-4 whitespace-nowrap text-sm font-normal text-gray-700 dark:text-gray-300">
+        <span class="font-medium block truncate max-w-xs" title="{{ $tienda->direccion ?? 'Sin dirección' }}">
+            {{ $tienda->direccion ?? 'Sin dirección' }}
+        </span>
+        <span class="text-xs text-gray-500 dark:text-gray-400">
+            ({{ $tienda->municipio->nombre ?? 'N/A' }})
+        </span>
+    </td>
+    
+    {{-- TELÉFONO (NUEVO) --}}
+    <td class="px-6 py-4 whitespace-nowrap text-sm font-normal text-gray-700 dark:text-gray-300">
+        {{ $tienda->telefono ?? 'N/A' }}
     </td>
     
     {{-- ACCIONES (Iconos elegantes) --}}
@@ -41,7 +51,8 @@
                 <button type="button" 
                         class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200 delete-btn" 
                         data-id="{{ $tienda->id }}"
-                        data-name="{{ $tienda->nombre }}"> {{-- Pasamos el nombre para SweetAlert2 --}}
+                        data-name="{{ $tienda->nombre }}"
+                        title="Eliminar">
                     <i class="fas fa-trash-alt"></i>
                 </button>
             </form>
@@ -50,8 +61,8 @@
 </tr>
 @empty
 <tr>
-    {{-- Colspan ajustado para las 5 columnas: #, ID, Nombre, Municipio, Acciones --}}
-    <td colspan="5" class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300 text-center">
+    {{-- Colspan ajustado para las 6 columnas: #, Nombre, RTN, Dirección/Municipio, Teléfono, Acciones --}}
+    <td colspan="6" class="px-6 py-4 text-sm text-gray-500 dark:text-gray-300 text-center">
         No hay tiendas para mostrar.
     </td>
 </tr>

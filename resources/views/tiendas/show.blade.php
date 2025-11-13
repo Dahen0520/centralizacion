@@ -54,12 +54,12 @@
                             </div>
                         </div>
 
-                        {{-- Nombre (Repetido, pero estilizado) --}}
+                        {{-- RTN (NUEVO) --}}
                         <div class="flex items-start">
-                            <i class="fas fa-store-alt mr-4 text-xl mt-1 text-teal-500 dark:text-teal-400"></i>
+                            <i class="fas fa-hashtag mr-4 text-xl mt-1 text-indigo-500 dark:text-indigo-400"></i>
                             <div>
-                                <p class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">Nombre del Punto de Venta</p>
-                                <p class="text-base font-normal text-gray-900 dark:text-white">{{ $tienda->nombre }}</p>
+                                <p class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">RTN</p>
+                                <p class="text-base font-normal text-gray-900 dark:text-white">{{ $tienda->rtn ?? 'N/A' }}</p>
                             </div>
                         </div>
 
@@ -67,11 +67,31 @@
                         <div class="flex items-start">
                             <i class="fas fa-city mr-4 text-xl mt-1 text-purple-500 dark:text-purple-400"></i>
                             <div>
-                                <p class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">Ubicación</p>
+                                <p class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">Municipio</p>
                                 <p class="text-base font-medium text-gray-900 dark:text-white">{{ $tienda->municipio->nombre }}</p>
                             </div>
                         </div>
                         
+                        {{-- Teléfono (NUEVO) --}}
+                        <div class="flex items-start">
+                            <i class="fas fa-phone-alt mr-4 text-xl mt-1 text-pink-500 dark:text-pink-400"></i>
+                            <div>
+                                <p class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">Teléfono</p>
+                                <p class="text-base font-normal text-gray-900 dark:text-white">{{ $tienda->telefono ?? 'N/A' }}</p>
+                            </div>
+                        </div>
+
+                        {{-- Dirección (NUEVO - Se extiende en la fila inferior para mejor lectura) --}}
+                        <div class="md:col-span-2 flex items-start">
+                            <i class="fas fa-map-marker-alt mr-4 text-xl mt-1 text-teal-500 dark:text-teal-400"></i>
+                            <div>
+                                <p class="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400">Dirección Completa</p>
+                                <p class="text-base font-normal text-gray-900 dark:text-white">{{ $tienda->direccion ?? 'Sin dirección especificada' }}</p>
+                            </div>
+                        </div>
+
+                        <hr class="md:col-span-2 my-1 border-gray-100 dark:border-gray-700">
+
                         {{-- Creado en --}}
                         <div class="flex items-start">
                             <i class="fas fa-clock mr-4 text-xl mt-1 text-green-500 dark:text-green-400"></i>
