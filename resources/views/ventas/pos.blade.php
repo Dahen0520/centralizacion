@@ -68,7 +68,7 @@
                                 @keydown.escape="clearClientSearch"
                                 placeholder="Buscar por RTN (Ej: 0615-2003-001441)"
                                 class="w-full pl-4 pr-10 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition text-gray-900 dark:text-white">
-                           
+                            
                             <button x-show="clientSearchQuery.length > 0" @click="clearClientSearch"
                                 x-transition
                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
@@ -421,7 +421,7 @@
                                 class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none">
                                 <span x-show="!isProcessing" class="flex items-center justify-center gap-2">
                                     <i class="fas fa-receipt text-xl"></i>
-                                    <span>Generar Ticket de Venta</span>
+                                    <span>Generar Ticket de Venta (Factura)</span>
                                     <span class="text-xs opacity-75">(F9)</span>
                                 </span>
                                 <span x-show="isProcessing" class="flex items-center justify-center gap-2">
@@ -475,7 +475,7 @@
                                 <kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">F2</kbd>
                             </div>
                             <div class="flex justify-between items-center py-1">
-                                <span class="text-gray-600 dark:text-gray-400">Procesar venta (Ticket)</span>
+                                <span class="text-gray-600 dark:text-gray-400">Procesar venta (Factura)</span>
                                 <kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">F9</kbd>
                             </div>
                             <div class="flex justify-between items-center py-1">
@@ -1202,6 +1202,12 @@
                         if (tasa > 0) {
                             totalGravado += base;
                         } else {
+                            totalExoneradoVenta += $subtotalBase;
+                        }
+
+                        if (tasa > 0) {
+                            totalGravado += base;
+                        } else {
                             totalExento += base;
                         }
                         
@@ -1288,8 +1294,9 @@
                         return;
                     }
 
+                    // 🔑 CLAVE 1: Usar "Factura" como nombre visible para TICKET en la confirmación de SweetAlert
                     const titleMap = {
-                        'TICKET': '¿Confirmar Ticket de Venta?',
+                        'TICKET': '¿Confirmar Factura (Consumidor Final)?', // Etiqueta fiscal visible
                         'QUOTE': '¿Guardar como Cotización?',
                         'INVOICE': '¿Generar Factura?'
                     };
@@ -1376,12 +1383,15 @@
                         });
 
                         if (res.ok && data.success) {
+                            // Usamos el tipo real para los colores y mensajes
+                            const actualType = type; 
+
                             await Swal.fire({
                                 icon: 'success',
                                 title: data.documento_id ? `Transacción #${data.documento_id}` : '¡Transacción Procesada!',
                                 html: `<p class="text-gray-700">${data.message}</p>` + 
                                             (data.documento_url ? `<a href="${data.documento_url}" target="_blank" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"><i class="fas fa-print mr-2"></i> Imprimir / Descargar</a>` : ''),
-                                confirmButtonColor: successColorMap[type],
+                                confirmButtonColor: successColorMap[actualType],
                                 confirmButtonText: 'Hecho'
                             });
 

@@ -15,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
-use Barryvdh\DomPDF\Facade\Pdf; // <--- 🔑 ¡CORRECCIÓN CLAVE AQUÍ!
+use Barryvdh\DomPDF\Facade\Pdf; // Importación correcta para DomPDF
  
 class VentaController extends Controller
 {
@@ -569,7 +569,7 @@ class VentaController extends Controller
             'tienda.rangosCai' 
         ])->findOrFail($id);
         
-        // Obtener el RangoCai activo (asumiendo que tienes la relación en Tienda)
+        // Obtener el RangoCai activo (usamos Collection filter para evitar el error anterior)
         $rangoCaiActivo = $venta->tienda->rangosCai->where('esta_activo', true)
             ->filter(function ($rango) {
                 // Carbon::today() asegura que la comparación incluya el día actual
@@ -577,6 +577,8 @@ class VentaController extends Controller
             })
             ->first();
         
+        // NOTA: La variable $type aquí es el tipo de documento DE LA RUTA. 
+        // Usamos $venta->tipo_documento para la lógica de visualización en la vista de impresión.
         $data = compact('venta', 'type', 'rangoCaiActivo');
         
         // Carga la vista Blade (print.blade.php) como HTML
