@@ -6,13 +6,28 @@
     <title>{{ ($type === 'INVOICE' || $type === 'TICKET') ? 'FACTURA' : strtoupper($type) }} #{{ $venta->numero_documento ?? $venta->id }}</title>
     <style>
         /* Aquí va tu CSS para impresión. DOMPDF/Snappy tienen limitaciones con CSS moderno. */
-        body { font-family: 'Helvetica', Arial, sans-serif; font-size: 10px; }
-        .container { width: 90%; margin: auto; }
+        body { 
+            font-family: 'Helvetica', Arial, sans-serif; 
+            font-size: 10px; 
+            /* Reducir márgenes del cuerpo */
+            margin: 0;
+            padding: 0;
+        }
+        .container { 
+            /* 🔑 AJUSTE CRÍTICO: Ancho fijo para simular 60mm */
+            width: 220px; 
+            margin: 0 auto; 
+            padding: 5px; 
+        }
         .header, .footer { text-align: center; }
-        .line-item th, .line-item td { border-bottom: 1px dashed #ccc; padding: 4px 0; }
+        .line-item th, .line-item td { 
+            border-bottom: 1px dashed #ccc; 
+            padding: 4px 0; 
+            /* Forzar el ajuste de texto en la descripción si es muy larga */
+            word-break: break-word; 
+        }
         .totals table { width: 100%; }
         .totals td { padding: 2px 0; }
-        .document-title { margin: 5px 0; font-size: 16px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -25,7 +40,7 @@
             if ($isFiscalDocument) {
                 $documentTitle = 'FACTURA';
             } elseif ($venta->tipo_documento === 'QUOTE') {
-                $documentTitle = 'COTIZACIÓN'; // 🔑 ESTE ES EL CAMBIO CLAVE
+                $documentTitle = 'COTIZACIÓN'; 
             } else {
                 $documentTitle = strtoupper($venta->tipo_documento);
             }
@@ -56,15 +71,15 @@
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;" class="line-item">
             <thead>
                 <tr>
-                    <th style="width: 10%; text-align: left;">Cant</th>
-                    <th style="width: 60%; text-align: left;">DESCRIPCION</th>
+                    <th style="width: 15%; text-align: left; padding-left: 2px;">Cant</th>
+                    <th style="width: 55%; text-align: left;">DESCRIPCION</th>
                     <th style="width: 30%; text-align: right;">TOTAL</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($venta->detalles as $detalle)
                 <tr>
-                    <td style="text-align: left;">{{ $detalle->cantidad }}</td>
+                    <td style="text-align: left; padding-left: 2px;">{{ $detalle->cantidad }}</td>
                     <td style="text-align: left;">{{ $detalle->inventario->marca->producto->nombre ?? 'Producto Desconocido' }}</td>
                     <td style="text-align: right;">{{ number_format($detalle->subtotal_final, 2) }}</td>
                 </tr>
@@ -113,8 +128,9 @@
             <p style="margin: 0; font-size: 9px;">
                 <strong>CAI:</strong> {{ $venta->cai }}
             </p>
+            {{-- Muestra el rango de autorización completo, usando <strong> en lugar de ** --}}
             <p style="margin: 0; font-size: 9px;">
-                Rango autorizado del: {{ $rangoCaiActivo->rango_inicial }} al: {{ $rangoCaiActivo->rango_final }}
+                Rango autorizado del: <strong style="font-size: 10px;">{{ $rangoCaiActivo->rango_inicial }}</strong> al: <strong style="font-size: 10px;">{{ $rangoCaiActivo->rango_final }}</strong>
             </p>
             <p style="margin: 0; font-size: 9px;">
                 Fecha límite de Emisión: {{ \Carbon\Carbon::parse($rangoCaiActivo->fecha_limite_emision)->format('d/m/Y') }}

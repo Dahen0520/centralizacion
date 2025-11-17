@@ -76,7 +76,7 @@
                     </a>
                     
                     {{-- Botón para anular la venta --}}
-                    <form action="{{ route('ventas.destroy', $venta) }}" method="POST" class="inline delete-form" onsubmit="return false;">
+                    <!--<form action="{{ route('ventas.destroy', $venta) }}" method="POST" class="inline delete-form" onsubmit="return false;">
                         @csrf
                         @method('DELETE')
                         <button type="button" 
@@ -85,7 +85,7 @@
                                 title="Anular Venta y Devolver Stock">
                             <i class="fas fa-ban"></i>
                         </button>
-                    </form>
+                    </form>-->
                 </td>
             </tr>
             @empty

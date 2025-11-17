@@ -15,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
-use Barryvdh\DomPDF\Facade\Pdf; // Importación correcta para DomPDF
+use Barryvdh\DomPDF\Facade\Pdf; 
  
 class VentaController extends Controller
 {
@@ -25,7 +25,6 @@ class VentaController extends Controller
     public function create()
     {
         $tiendas = Tienda::all();
-        // CRÍTICO: Cargar la lista de tipos de pago desde el modelo.
         $tiposPago = Venta::TIPOS_PAGO; 
         return view('ventas.pos', compact('tiendas', 'tiposPago'));
     }
@@ -36,16 +35,13 @@ class VentaController extends Controller
     public function getProductosParaVenta($tienda_id)
     {
         try {
-            // Carga anidada: Inventario -> Marca -> Producto -> Impuesto
             $inventarios = Inventario::with(['marca.producto.impuesto'])
                 ->where('tienda_id', $tienda_id)
                 ->where('stock', '>', 0)
                 ->get();
 
             $productos = $inventarios->map(function ($item) {
-                // Obtener el porcentaje de impuesto (0.15, 0.00, etc.)
                 $impuesto = $item->marca->producto->impuesto;
-                // Si no hay impuesto asignado o es nulo, usamos 0.00. Dividimos entre 100 para obtener la tasa (0.15).
                 $tasa = $impuesto ? ((float) $impuesto->porcentaje / 100) : 0.00;
 
                 return [
@@ -54,7 +50,7 @@ class VentaController extends Controller
                     'codigo_marca' => $item->marca->codigo_marca ?? '',
                     'stock_actual' => (int) $item->stock,
                     'precio' => (float) $item->precio,
-                    'isv_tasa' => $tasa, // Tasa de impuesto real para el cálculo en el frontend
+                    'isv_tasa' => $tasa,
                 ];
             });
 
@@ -73,18 +69,15 @@ class VentaController extends Controller
      */
     public function storeCliente(Request $request)
     {
-        // 1. Saneamiento: Limpiamos y aseguramos que los valores vacíos sean tratados como tales.
         $identificacion = trim($request->input('identificacion', ''));
         $email = trim($request->input('email', ''));
         $telefono = trim($request->input('telefono', ''));
         $nombre = $request->input('nombre');
         
-        // Limpiar RTN antes de la validación
         if (!empty($identificacion)) {
             $identificacion = str_replace('-', '', $identificacion);
         }
 
-        // Fusionar los datos limpios al request para que la validación los use.
         $request->merge([
             'identificacion' => $identificacion,
             'email' => $email,
@@ -93,19 +86,16 @@ class VentaController extends Controller
 
 
         try {
-            // 2. Validación
             $rules = [
                 'nombre' => 'required|string|max:255',
                 'telefono' => 'nullable|string|max:20',
                 
-                // Regla para Identificación: Solo comprueba unicidad si el valor es NOT NULL.
                 'identificacion' => [
                     'nullable', 
                     'string', 
                     'max:50',
                     Rule::unique('clientes', 'identificacion')->where(fn ($query) => $query->whereNotNull('identificacion')),
                 ],
-                // Regla para Email: Solo comprueba unicidad si el valor es NOT NULL.
                 'email' => [
                     'nullable', 
                     'email', 
@@ -116,14 +106,12 @@ class VentaController extends Controller
 
             $validated = $request->validate($rules);
             
-            // 3. Convertir cadenas vacías ('') a NULL.
             $validated = array_map(function ($value) {
                 return (is_string($value) && $value === '') ? null : $value;
             }, $validated);
 
             $cliente = Cliente::create($validated);
 
-            // 4. RESPUESTA DE ÉXITO ESTÁNDAR
             return response()->json([
                 'success' => true,
                 'message' => 'Cliente guardado y seleccionado correctamente.',
@@ -137,7 +125,6 @@ class VentaController extends Controller
             ], 201);
             
         } catch (ValidationException $e) {
-            // Maneja errores de validación (422)
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación.',
@@ -145,10 +132,8 @@ class VentaController extends Controller
             ], 422);
             
         } catch (\Exception $e) {
-            // Manejo de errores no validados, asume fallo y registra.
             Log::error("Error CRÍTICO de DB/Server al guardar cliente (POS): " . $e->getMessage());
             
-            // Devolver error 500 para evitar que el frontend asuma éxito y cierre el modal.
             return response()->json([
                 'success' => false,
                 'message' => 'Error inesperado al guardar el cliente.',
@@ -199,22 +184,18 @@ class VentaController extends Controller
 
     /**
      * Procesar Ticket de Venta (Cliente genérico/NULL permitido)
-     * Debe consumir CAI.
      */
     public function storeTicket(Request $request)
     {
-        // Si no se envía cliente_id, se guardará como NULL, lo cual se asume como Cliente Genérico.
         $request->merge(['tipo_documento' => 'TICKET', 'afecta_stock' => true]);
         return $this->handleTransaction($request);
     }
 
     /**
      * Procesar Factura (Cliente registrado obligatorio)
-     * Debe consumir CAI.
      */
     public function storeInvoice(Request $request)
     {
-        // Factura requiere un cliente_id no nulo
         if (!$request->cliente_id) { 
             return response()->json([
                 'success' => false, 
@@ -228,7 +209,6 @@ class VentaController extends Controller
 
     /**
      * Procesar Cotización (Cliente registrado obligatorio)
-     * NO consume CAI, NO afecta stock.
      */
     public function storeQuote(Request $request)
     {
@@ -252,7 +232,7 @@ class VentaController extends Controller
         try {
             $validated = $request->validate([
                 'tienda_id' => 'required|exists:tiendas,id',
-                'cliente_id' => 'nullable|exists:clientes,id', // Cliente puede ser NULL para TICKET
+                'cliente_id' => 'nullable|exists:clientes,id',
                 'total_monto' => 'required|numeric|min:0',
                 'descuento' => 'nullable|numeric|min:0',
                 'tipo_documento' => 'required|in:TICKET,QUOTE,INVOICE',
@@ -263,6 +243,8 @@ class VentaController extends Controller
                 'detalles.*.precio_unitario' => 'required|numeric|min:0',
                 'detalles.*.isv_tasa' => 'required|numeric|min:0|max:1', 
                 'tipo_pago' => ['required', 'string', Rule::in(array_keys(Venta::TIPOS_PAGO))],
+                'monto_recibido' => 'nullable|numeric|min:0',
+                'vuelto' => 'nullable|numeric',
             ]);
 
             $tipo = $request->tipo_documento;
@@ -274,35 +256,44 @@ class VentaController extends Controller
             $descuento = floatval($request->descuento);
             $tipoPago = $request->tipo_pago;
             
+            $montoRecibido = floatval($request->monto_recibido) ?: 0;
+            $vuelto = floatval($request->vuelto) ?: 0;
+
             DB::beginTransaction();
             
             // =========================================
-            // LÓGICA DE CAI/FACTURACIÓN (TICKET e INVOICE) 🔑
+            // LÓGICA DE CAI/FACTURACIÓN (TICKET e INVOICE)
             // =========================================
             $caiData = [];
-            
+            $rangoCai = null; 
+
             // La asignación de CAI es obligatoria para TICKET e INVOICE
             if ($tipo === 'INVOICE' || $tipo === 'TICKET') {
+
+                // 🔑 0. DESACTIVACIÓN POR FECHA EXPIRADA: Fuerza esta_activo=0 para los vencidos.
+                RangoCai::where('tienda_id', $tiendaId)
+                    ->where('esta_activo', true)
+                    ->whereDate('fecha_limite_emision', '<', Carbon::today()) 
+                    ->update(['esta_activo' => false]);
                 
-                // 1. Bloquear y buscar un rango CAI activo y válido para la tienda
+                // 1. Bloquear y buscar el rango CAI activo y válido
                 $rangoCai = RangoCai::where('tienda_id', $tiendaId)
                     ->where('esta_activo', true)
-                    ->whereDate('fecha_limite_emision', '>=', Carbon::today())
                     ->lockForUpdate() 
                     ->first();
 
                 if (!$rangoCai) {
-                    throw new \Exception('No se encontró un rango CAI activo y válido para esta tienda. No se puede emitir el documento fiscal.');
+                    throw new \Exception('No se encontró un rango CAI activo para esta tienda. No se puede emitir el documento fiscal.');
                 }
                 
-                // 2. Obtener la secuencia numérica
+                // 2. Obtener la secuencia numérica y calcular el nuevo número
                 $numeroActualSecuencia = $rangoCai->numero_actual;
                 $rangoFinalSecuencia = $rangoCai->rango_final;
                 $prefijoSar = $rangoCai->prefijo_sar;
 
                 $nuevoNumeroSecuencia = $numeroActualSecuencia + 1;
                 
-                // 3. Comprobar si se excede el rango
+                // 3. Comprobar si se excede el rango y lanzar excepción
                 if ($nuevoNumeroSecuencia > $rangoFinalSecuencia) {
                     throw new \Exception('El rango de facturación CAI ha sido excedido. Por favor, solicite un nuevo rango.');
                 }
@@ -315,11 +306,16 @@ class VentaController extends Controller
                 $caiData['cai'] = $rangoCai->cai;
                 $caiData['numero_documento'] = $nuevoNumeroFormateado;
                 
-                // 5. Preparar la actualización del CAI
+                // 5. Preparar la actualización del correlativo
                 $rangoCai->numero_actual = $nuevoNumeroSecuencia;
+
+                // 🔑 Desactivación automática si se ALCANZÓ el último número
+                if ($nuevoNumeroSecuencia == $rangoFinalSecuencia) {
+                    $rangoCai->esta_activo = false;
+                }
             }
 
-            // 1. Verificación de Stock (Si afecta stock)
+            // 1. Verificación de Stock
             if ($afectaStock) {
                 foreach ($request->detalles as $detalle) {
                     $inventario = Inventario::lockForUpdate()->find($detalle['inventario_id']);
@@ -340,7 +336,7 @@ class VentaController extends Controller
             // 2. Crear documento (Venta)
             $documento = Venta::create([
                 'tienda_id' => $tiendaId,
-                'cliente_id' => $clienteId, // Permite NULL
+                'cliente_id' => $clienteId,
                 'fecha_venta' => now(),
                 'total_venta' => $totalMonto,
                 'descuento' => $descuento,
@@ -349,9 +345,11 @@ class VentaController extends Controller
                 'tipo_pago' => $tipoPago,
                 'estado' => ($tipo === 'QUOTE' ? 'PENDIENTE' : 'COMPLETADA'),
                 
-                // Asignación de CAI y Número de Documento
                 'cai' => $caiData['cai'] ?? null,
                 'numero_documento' => $caiData['numero_documento'] ?? null,
+
+                'monto_recibido' => ($tipoPago === 'EFECTIVO' ? $montoRecibido : null),
+                'vuelto' => ($tipoPago === 'EFECTIVO' ? $vuelto : null),
             ]);
 
             // 3. Procesar detalles, calcular ISV y totales fiscales
@@ -366,7 +364,6 @@ class VentaController extends Controller
                 $precioUnitario = (float) $detalleData['precio_unitario'];
                 $isvTasa = (float) $detalleData['isv_tasa'];
                 
-                // Cálculos
                 $subtotalBase = $cantidad * $precioUnitario;
                 $isvMonto = round($subtotalBase * $isvTasa, 2); 
                 $subtotalFinal = $subtotalBase + $isvMonto; 
@@ -417,8 +414,8 @@ class VentaController extends Controller
             $documento->total_final = ($subtotalNetoVenta + $totalIsv) - $descuento;
             $documento->save();
 
-            // 6. Actualizar el Rango CAI (SOLO si es TICKET o INVOICE)
-            if ($tipo === 'INVOICE' || $tipo === 'TICKET') {
+            // 6. Guardar la actualización del Rango CAI
+            if (($tipo === 'INVOICE' || $tipo === 'TICKET') && $rangoCai) {
                 $rangoCai->save();
             }
 
@@ -569,7 +566,7 @@ class VentaController extends Controller
             'tienda.rangosCai' 
         ])->findOrFail($id);
         
-        // Obtener el RangoCai activo (usamos Collection filter para evitar el error anterior)
+        // Obtener el RangoCai activo 
         $rangoCaiActivo = $venta->tienda->rangosCai->where('esta_activo', true)
             ->filter(function ($rango) {
                 // Carbon::today() asegura que la comparación incluya el día actual
@@ -577,15 +574,21 @@ class VentaController extends Controller
             })
             ->first();
         
-        // NOTA: La variable $type aquí es el tipo de documento DE LA RUTA. 
-        // Usamos $venta->tipo_documento para la lógica de visualización en la vista de impresión.
         $data = compact('venta', 'type', 'rangoCaiActivo');
         
         // Carga la vista Blade (print.blade.php) como HTML
         $html = view('ventas.print', $data)->render();
 
-        // Genera el PDF a partir del HTML
+        // 🔑 AJUSTE CRÍTICO: Genera el PDF con tamaño y márgenes personalizados
         $pdf = Pdf::loadHtml($html);
+        
+        // Configurar el tamaño y los márgenes para simular el rollo térmico de 60mm:
+        // 226.77pt = 60mm
+        $pdf->setPaper([0, 0, 226.77, 841.89], 'portrait'); 
+        $pdf->setOption('margin-top', 0);
+        $pdf->setOption('margin-right', 0);
+        $pdf->setOption('margin-bottom', 0);
+        $pdf->setOption('margin-left', 0);
         
         $filename = "{$type}_" . ($venta->numero_documento ?? $venta->id) . ".pdf";
         

@@ -73,9 +73,12 @@ Route::middleware('auth')->group(function () {
     });
     
     // =========================================================
-    // MODULO DE VENTAS (POS) - AJUSTADO PARA IMPRESIÓN
+    // MODULO DE VENTAS (POS) - AJUSTE CRÍTICO DE RUTA DELETE 🔑
     // =========================================================
     
+    // 🔑 MOVER LA RUTA DELETE AFUERA DEL GRUPO Route::controller
+    Route::delete('ventas/{venta}', [VentaController::class, 'destroy'])->name('ventas.destroy');
+
     Route::controller(VentaController::class)->prefix('ventas')->name('ventas.')->group(function () {
         
         // 1. Interfaz del Punto de Venta (Nombre: ventas.pos)
@@ -91,13 +94,13 @@ Route::middleware('auth')->group(function () {
         Route::post('store-quote', 'storeQuote')->name('store-quote');
         Route::post('store-invoice', 'storeInvoice')->name('store-invoice');
 
-        // ⭐ RUTA DE IMPRESIÓN CORREGIDA Y RENOMBRADA
+        // RUTA DE IMPRESIÓN
         Route::get('documento/{id}/{type}/imprimir', 'printDocument')->name('print');
         
         // 4. CRUD Manual (Historial de ventas)
-        Route::get('/', 'index')->name('index'); // Historial de ventas
-        Route::get('{venta}', 'show')->name('show');
-        Route::delete('{venta}', 'destroy')->name('destroy');
+        Route::get('/', 'index')->name('index');             // ventas/
+        Route::get('{venta}', 'show')->name('show');         // ventas/{id}
+        // NOTA: La ruta DELETE se mueve arriba.
     });
 
 

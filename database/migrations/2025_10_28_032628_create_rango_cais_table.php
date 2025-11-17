@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('tienda_id')->constrained('tiendas')->onDelete('cascade');
             
             // Código de Autorización de Impresión (CAI) emitido por el SAR
-            $table->string('cai', 100)->unique();
+            $table->string('cai', 100);
             
             // 🆕 Campo para almacenar el prefijo o serie de la factura (Ej: '000-001-01-')
             $table->string('prefijo_sar', 20)->comment('Prefijo de la serie de facturación SAR');

@@ -212,7 +212,7 @@
                             </template>
 
                             {{-- Estados vacíos --}}
-                            <div x-show="!isProductsLoading && !filteredProductos.length && searchQuery && tiendaId" 
+                            <div x-show="!isProductsLoading && !filteredProductos.length && searchQuery && tiendaId" 
                                 x-transition
                                 class="text-center py-12">
                                 <i class="fas fa-search text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
@@ -220,7 +220,7 @@
                                 <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Intenta con otro término de búsqueda</p>
                             </div>
                             
-                            <div x-show="!isProductsLoading && tiendaId && !searchQuery && !allProductos.length" 
+                            <div x-show="!isProductsLoading && tiendaId && !searchQuery && !allProductos.length" 
                                 x-transition
                                 class="text-center py-12">
                                 <i class="fas fa-box-open text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
@@ -231,7 +231,7 @@
                     </div>
 
                     {{-- Sección: Mensaje inicial mejorado --}}
-                    <div x-show="!tiendaId" 
+                    <div x-show="!tiendaId" 
                         x-transition
                         class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-sm border-2 border-dashed border-gray-300 dark:border-gray-600 p-12 text-center">
                         <div class="animate-bounce mb-4">
@@ -331,13 +331,40 @@
                                 <label for="payment_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     <i class="fas fa-money-check-alt mr-1 text-teal-600"></i> Tipo de Pago: <span class="text-red-500">*</span>
                                 </label>
-                                <select id="payment_type" x-model="selectedPaymentType"
+                                <select id="payment_type" x-model="selectedPaymentType" @change="updateCart"
                                         class="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition text-gray-900 dark:text-white text-sm font-semibold">
                                     <option value="">-- Seleccione Tipo de Pago --</option>
                                     @foreach($tiposPago as $key => $label)
                                         <option value="{{ $key }}">{{ $label }}</option>
                                     @endforeach
                                 </select>
+                            </div>
+
+                            {{-- CAMPO MONTO RECIBIDO Y VUELTO (NUEVO) --}}
+                            <div x-show="cart.length && selectedPaymentType === 'EFECTIVO'">
+                                <label class="flex items-center justify-between text-sm pt-3">
+                                    <span class="text-gray-600 dark:text-gray-400 font-medium">
+                                        <i class="fas fa-money-bill-wave mr-1 text-green-500"></i>
+                                        Monto Recibido (L):
+                                    </span>
+                                    <input type="number" 
+                                        x-model.number="amountReceived" 
+                                        @input="calculateChange"
+                                        min="0" 
+                                        :placeholder="finalTotal.toFixed(2)"
+                                        step="0.01"
+                                        class="w-24 px-2 py-1 text-sm text-right bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 text-gray-900 dark:text-white">
+                                </label>
+
+                                {{-- VUELTO (CAMBIO) --}}
+                                <div class="flex justify-between items-center mt-3 p-3 rounded-lg border border-dashed"
+                                    :class="{'border-green-400 bg-green-50 dark:bg-green-900/20': change > 0, 'border-gray-300': change <= 0}">
+                                    <span class="text-gray-700 dark:text-gray-300 font-semibold text-lg">Cambio (Vuelto):</span>
+                                    <span class="text-2xl font-bold" 
+                                        :class="{'text-green-600 dark:text-green-400': change > 0, 'text-gray-500 dark:text-gray-400': change <= 0}"
+                                        x-text="'L ' + change.toFixed(2)">
+                                    </span>
+                                </div>
                             </div>
                             
                             {{-- Cliente asignado --}}
@@ -1175,6 +1202,7 @@
                     }
                 },
 
+                // 🔑 FUNCIÓN UPDATE CART CORREGIDA PARA CÁLCULOS FISCALES Y DE PRECIO
                 updateCart() {
                     this.cart.forEach(item => {
                         if (typeof item.cantidad !== 'number' || item.cantidad < 1 || isNaN(item.cantidad)) {
@@ -1192,30 +1220,31 @@
                     let totalIsv = 0;
                     
                     this.cart.forEach(item => {
-                        const base = item.precio * item.cantidad;
-                        const tasa = item.isv_tasa && !isNaN(item.isv_tasa) ? parseFloat(item.isv_tasa) : 0.00;
+                        // 1. Asegurar que precio y cantidad sean números válidos
+                        const precioUnitario = parseFloat(item.precio) || 0;
+                        const cantidad = parseInt(item.cantidad) || 0;
+                        
+                        const base = precioUnitario * cantidad; // Base neta de la línea (100 * 1 = 100)
+                        const tasa = parseFloat(item.isv_tasa) || 0.00;
                         const isvMonto = base * tasa;
                         
+                        // 2. Acumulación de totales
                         subtotalNeto += base;  
                         totalIsv += isvMonto;
 
-                        if (tasa > 0) {
-                            totalGravado += base;
-                        } else {
-                            totalExoneradoVenta += $subtotalBase;
-                        }
-
+                        // 3. Acumulación de subtotales por tipo de impuesto (Gravado/Exento)
                         if (tasa > 0) {
                             totalGravado += base;
                         } else {
                             totalExento += base;
                         }
                         
+                        // 4. Actualizar propiedades del ítem (Para mostrar Subtotal L 100.00)
                         item.subtotalBase = base;
                         item.isvMonto = isvMonto;
-                        item.isv_tasa = tasa;  
                     });
 
+                    // 5. Redondeo final y asignación de variables
                     this.subtotalNeto = parseFloat(subtotalNeto.toFixed(2));
                     this.totalExento = parseFloat(totalExento.toFixed(2));
                     this.totalGravado = parseFloat(totalGravado.toFixed(2));
@@ -1234,350 +1263,350 @@
                     this.finalTotal = parseFloat((totalConIsv - this.discount).toFixed(2));
                 },
 
-                clearCart() {
-                    if (!this.cart.length) return;
+                clearCart() {
+                    if (!this.cart.length) return;
 
-                    Swal.fire({
-                        title: '¿Vaciar el carrito?',
-                        text: 'Se eliminarán todos los productos del carrito',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#ef4444',
-                        cancelButtonColor: '#6b7280',
-                        confirmButtonText: 'Sí, vaciar',
-                        cancelButtonText: 'Cancelar'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            this.cart = [];
-                            this.discount = 0;
-                            this.selectedPaymentType = 'EFECTIVO';
-                            this.updateCart();
-                            this.showNotification('info', 'Carrito vacío', 'Se han eliminado todos los productos');
-                        }
-                    });
-                },
+                    Swal.fire({
+                        title: '¿Vaciar el carrito?',
+                        text: 'Se eliminarán todos los productos del carrito',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#ef4444',
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: 'Sí, vaciar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.cart = [];
+                            this.discount = 0;
+                            this.selectedPaymentType = 'EFECTIVO';
+                            this.updateCart();
+                            this.showNotification('info', 'Carrito vacío', 'Se han eliminado todos los productos');
+                        }
+                    });
+                },
 
-                // ==========================================
-                // PROCESAR VENTA / COTIZACIÓN / FACTURA
-                // ==========================================
-                async processSale(type) {
-                    if (!this.isSaleReady(type) || this.isProcessing) {
-                        if (!this.cart.length || this.tiendaId === '') {
-                             Swal.fire({
-                                icon: 'warning',
-                                title: 'Faltan datos',
-                                text: 'Seleccione una tienda y añada productos al carrito para continuar.',
-                                confirmButtonColor: '#f59e0b'
-                            });
-                        } else if (!this.selectedPaymentType) {
-                             Swal.fire({
-                                icon: 'warning',
-                                title: 'Tipo de Pago Requerido',
-                                text: 'Debe seleccionar un tipo de pago antes de procesar la venta.',
-                                confirmButtonColor: '#f59e0b'
-                            });
-                        } else if (this.selectedPaymentType === 'CREDITO' && !(this.clientId > 0)) {
-                             Swal.fire({
-                                icon: 'info',
-                                title: 'Cliente Requerido',
-                                text: 'Para ventas a Crédito, debe seleccionar un cliente registrado.',
-                                confirmButtonColor: '#3b82f6'
-                            });
-                        } else if ((type === 'INVOICE' || type === 'QUOTE') && !(this.clientId > 0)) {
-                             Swal.fire({
-                                icon: 'info',
-                                title: `Cliente Requerido`,
-                                text: `Seleccione un cliente para generar la ${type === 'INVOICE' ? 'Factura' : 'Cotización'}.`,
-                                confirmButtonColor: '#3b82f6'
-                            });
-                        }
-                        return;
-                    }
+                // ==========================================
+                // PROCESAR VENTA / COTIZACIÓN / FACTURA
+                // ==========================================
+                async processSale(type) {
+                    if (!this.isSaleReady(type) || this.isProcessing) {
+                        if (!this.cart.length || this.tiendaId === '') {
+                             Swal.fire({
+                                icon: 'warning',
+                                title: 'Faltan datos',
+                                text: 'Seleccione una tienda y añada productos al carrito para continuar.',
+                                confirmButtonColor: '#f59e0b'
+                            });
+                        } else if (!this.selectedPaymentType) {
+                             Swal.fire({
+                                icon: 'warning',
+                                title: 'Tipo de Pago Requerido',
+                                text: 'Debe seleccionar un tipo de pago antes de procesar la venta.',
+                                confirmButtonColor: '#f59e0b'
+                            });
+                        } else if (this.selectedPaymentType === 'CREDITO' && !(this.clientId > 0)) {
+                             Swal.fire({
+                                icon: 'info',
+                                title: 'Cliente Requerido',
+                                text: 'Para ventas a Crédito, debe seleccionar un cliente registrado.',
+                                confirmButtonColor: '#3b82f6'
+                            });
+                        } else if ((type === 'INVOICE' || type === 'QUOTE') && !(this.clientId > 0)) {
+                             Swal.fire({
+                                icon: 'info',
+                                title: `Cliente Requerido`,
+                                text: `Seleccione un cliente para generar la ${type === 'INVOICE' ? 'Factura' : 'Cotización'}.`,
+                                confirmButtonColor: '#3b82f6'
+                            });
+                        }
+                        return;
+                    }
 
-                    // 🔑 CLAVE 1: Usar "Factura" como nombre visible para TICKET en la confirmación de SweetAlert
-                    const titleMap = {
-                        'TICKET': '¿Confirmar Factura (Consumidor Final)?', // Etiqueta fiscal visible
-                        'QUOTE': '¿Guardar como Cotización?',
-                        'INVOICE': '¿Generar Factura?'
-                    };
-                    
-                    const endpointMap = {
-                        'TICKET': '{{ route('ventas.store-ticket') }}',  
-                        'QUOTE': '{{ route('ventas.store-quote') }}',  
-                        'INVOICE': '{{ route('ventas.store-invoice') }}'
-                    };
-                    
-                    const successColorMap = {
-                        'TICKET': '#10b981',  
-                        'QUOTE': '#3b82f6',  
-                        'INVOICE': '#4f46e5'  
-                    };
-                    const confirmButtonTextMap = {
-                        'TICKET': 'Sí, procesar',
-                        'QUOTE': 'Sí, guardar',
-                        'INVOICE': 'Sí, facturar'
-                    };
+                    // 🔑 CLAVE 1: Usar "Factura" como nombre visible para TICKET en la confirmación de SweetAlert
+                    const titleMap = {
+                        'TICKET': '¿Confirmar Factura (Consumidor Final)?', // Etiqueta fiscal visible
+                        'QUOTE': '¿Guardar como Cotización?',
+                        'INVOICE': '¿Generar Factura?'
+                    };
+                    
+                    const endpointMap = {
+                        'TICKET': '{{ route('ventas.store-ticket') }}',  
+                        'QUOTE': '{{ route('ventas.store-quote') }}',  
+                        'INVOICE': '{{ route('ventas.store-invoice') }}'
+                    };
+                    
+                    const successColorMap = {
+                        'TICKET': '#10b981',  
+                        'QUOTE': '#3b82f6',  
+                        'INVOICE': '#4f46e5'  
+                    };
+                    const confirmButtonTextMap = {
+                        'TICKET': 'Sí, procesar',
+                        'QUOTE': 'Sí, guardar',
+                        'INVOICE': 'Sí, facturar'
+                    };
 
-                    const result = await Swal.fire({
-                        title: titleMap[type],
-                        html: `
-                            <div class="text-left space-y-2">
-                                <p class="text-sm text-gray-600">
-                                    <strong>Tipo de Pago:</strong> ${this.tiposPago[this.selectedPaymentType] || 'N/A'}
-                                </p>
-                                <p class="text-sm text-gray-600">
-                                    <strong>Cliente:</strong> ${this.selectedClientName}
-                                </p>
-                                <p class="text-lg font-bold text-emerald-600 mt-3 pt-3 border-t">
-                                    <strong>Total:</strong> L ${this.finalTotal.toFixed(2)}
-                                </p>
-                            </div>
-                        `,
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonColor: successColorMap[type],
-                        cancelButtonColor: '#6b7280',
-                        confirmButtonText: `<i class="fas fa-check mr-2"></i> ${confirmButtonTextMap[type]}`,
-                        cancelButtonText: '<i class="fas fa-times mr-2"></i> Cancelar',
-                        customClass: {
-                            popup: 'swal-wide'
-                        }
-                    });
+                    const result = await Swal.fire({
+                        title: titleMap[type],
+                        html: `
+                            <div class="text-left space-y-2">
+                                <p class="text-sm text-gray-600">
+                                    <strong>Tipo de Pago:</strong> ${this.tiposPago[this.selectedPaymentType] || 'N/A'}
+                                </p>
+                                <p class="text-sm text-gray-600">
+                                    <strong>Cliente:</strong> ${this.selectedClientName}
+                                </p>
+                                <p class="text-lg font-bold text-emerald-600 mt-3 pt-3 border-t">
+                                    <strong>Total:</strong> L ${this.finalTotal.toFixed(2)}
+                                </p>
+                            </div>
+                        `,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: successColorMap[type],
+                        cancelButtonColor: '#6b7280',
+                        confirmButtonText: `<i class="fas fa-check mr-2"></i> ${confirmButtonTextMap[type]}`,
+                        cancelButtonText: '<i class="fas fa-times mr-2"></i> Cancelar',
+                        customClass: {
+                            popup: 'swal-wide'
+                        }
+                    });
 
-                    if (!result.isConfirmed) return;
+                    if (!result.isConfirmed) return;
 
-                    this.isProcessing = true;
-                    const url = endpointMap[type];
+                    this.isProcessing = true;
+                    const url = endpointMap[type];
 
-                    const detalles = this.cart.map(item => ({
-                        inventario_id: item.inventario_id,
-                        cantidad: item.cantidad,
-                        precio_unitario: item.precio,
-                        isv_tasa: item.isv_tasa  
-                    }));
+                    const detalles = this.cart.map(item => ({
+                        inventario_id: item.inventario_id,
+                        cantidad: item.cantidad,
+                        precio_unitario: item.precio,
+                        isv_tasa: item.isv_tasa  
+                    }));
 
-                    const payload = {
-                        _token: '{{ csrf_token() }}',
-                        tienda_id: this.tiendaId,
-                        cliente_id: this.clientId,
-                        tipo_documento: type,  
-                        total_monto: this.total, 
-                        descuento: this.discount,
-                        detalles: detalles,
-                        tipo_pago: this.selectedPaymentType  
-                    };
+                    const payload = {
+                        _token: '{{ csrf_token() }}',
+                        tienda_id: this.tiendaId,
+                        cliente_id: this.clientId,
+                        tipo_documento: type,  
+                        total_monto: this.total, 
+                        descuento: this.discount,
+                        detalles: detalles,
+                        tipo_pago: this.selectedPaymentType  
+                    };
 
-                    try {
-                        const res = await fetch(url, {
-                            method: 'POST',
-                            headers: {  
-                                'Content-Type': 'application/json',  
-                                'X-Requested-With': 'XMLHttpRequest'  
-                            },
-                            body: JSON.stringify(payload)
-                        });
+                    try {
+                        const res = await fetch(url, {
+                            method: 'POST',
+                            headers: {  
+                                'Content-Type': 'application/json',  
+                                'X-Requested-With': 'XMLHttpRequest'  
+                            },
+                            body: JSON.stringify(payload)
+                        });
 
-                        const data = await res.json().catch(err => {
-                            console.error("Error de JSON.parse en processSale", err);
-                            throw new Error(`El servidor devolvió un error de formato (${res.status}). Revise los logs del servidor.`);
-                        });
+                        const data = await res.json().catch(err => {
+                            console.error("Error de JSON.parse en processSale", err);
+                            throw new Error(`El servidor devolvió un error de formato (${res.status}). Revise los logs del servidor.`);
+                        });
 
-                        if (res.ok && data.success) {
-                            // Usamos el tipo real para los colores y mensajes
-                            const actualType = type; 
+                        if (res.ok && data.success) {
+                            // Usamos el tipo real para los colores y mensajes
+                            const actualType = type; 
 
-                            await Swal.fire({
-                                icon: 'success',
-                                title: data.documento_id ? `Transacción #${data.documento_id}` : '¡Transacción Procesada!',
-                                html: `<p class="text-gray-700">${data.message}</p>` + 
-                                            (data.documento_url ? `<a href="${data.documento_url}" target="_blank" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"><i class="fas fa-print mr-2"></i> Imprimir / Descargar</a>` : ''),
-                                confirmButtonColor: successColorMap[actualType],
-                                confirmButtonText: 'Hecho'
-                            });
+                            await Swal.fire({
+                                icon: 'success',
+                                title: data.documento_id ? `Transacción #${data.documento_id}` : '¡Transacción Procesada!',
+                                html: `<p class="text-gray-700">${data.message}</p>` + 
+                                            (data.documento_url ? `<a href="${data.documento_url}" target="_blank" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"><i class="fas fa-print mr-2"></i> Imprimir / Descargar</a>` : ''),
+                                confirmButtonColor: successColorMap[actualType],
+                                confirmButtonText: 'Hecho'
+                            });
 
-                            // Resetear estado después de la venta
-                            this.cart = [];
-                            this.discount = 0;
-                            this.selectedPaymentType = 'EFECTIVO';
-                            this.updateCart();
-                            this.fetchProductos();
-                            this.clearClient();
+                            // Resetear estado después de la venta
+                            this.cart = [];
+                            this.discount = 0;
+                            this.selectedPaymentType = 'EFECTIVO';
+                            this.updateCart();
+                            this.fetchProductos();
+                            this.clearClient();
 
-                        } else if (res.status === 422) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Error de Validación',
-                                text: data.message || `No se pudo procesar la solicitud de ${type}.`,
-                                confirmButtonColor: '#f59e0b'
-                            });
-                            this.fetchProductos();
-                            
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: data.message || `Ocurrió un error al procesar la solicitud de ${type}.`,
-                                confirmButtonColor: '#ef4444'
-                            });
-                        }
+                        } else if (res.status === 422) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Error de Validación',
+                                text: data.message || `No se pudo procesar la solicitud de ${type}.`,
+                                confirmButtonColor: '#f59e0b'
+                            });
+                            this.fetchProductos();
+                            
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message || `Ocurrió un error al procesar la solicitud de ${type}.`,
+                                confirmButtonColor: '#ef4444'
+                            });
+                        }
 
-                    } catch (err) {
-                        console.error(`Error en processSale:`, err);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error Crítico',
-                            text: err.message || 'Error de conexión con el servidor o JSON inválido en la respuesta. Por favor, revise la Consola del navegador (F12).',
-                            confirmButtonColor: '#ef4444'
-                        });
-                    } finally {
-                        this.isProcessing = false;
-                    }
-                }
-            };
-        }
-    </script>
+                    } catch (err) {
+                        console.error(`Error en processSale:`, err);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error Crítico',
+                            text: err.message || 'Error de conexión con el servidor o JSON inválido en la respuesta. Por favor, revise la Consola del navegador (F12).',
+                            confirmButtonColor: '#ef4444'
+                        });
+                    } finally {
+                        this.isProcessing = false;
+                    }
+                }
+            };
+        }
+    </script>
 
-    {{-- Estilos CSS --}}
-    <style>
-        /* Animaciones y Estilos CSS (Incluidos) */
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
+    {{-- Estilos CSS --}}
+    <style>
+        /* Animaciones y Estilos CSS (Incluidos) */
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
 
-        /* Scrollbar personalizado */
-        .overflow-y-auto::-webkit-scrollbar {
-            width: 8px;
-        }
+        /* Scrollbar personalizado */
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 8px;
+        }
 
-        .overflow-y-auto::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 10px;
-        }
+        .overflow-y-auto::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
 
-        .overflow-y-auto::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-        }
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
 
-        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 0, 0, 0.3);
-        }
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
 
-        .dark .overflow-y-auto::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-        }
+        .dark .overflow-y-auto::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
 
-        .dark .overflow-y-auto::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-        }
+        .dark .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+        }
 
-        .dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
+        .dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
 
-        /* Efecto de pulso para elementos importantes */
-        @keyframes pulse-slow {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.8;
-            }
-        }
+        /* Efecto de pulso para elementos importantes */
+        @keyframes pulse-slow {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
 
-        .animate-pulse-slow {
-            animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
+        .animate-pulse-slow {
+            animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
 
-        /* Estilos para el modal de SweetAlert */
-        .swal-wide {
-            width: 600px !important;
-        }
+        /* Estilos para el modal de SweetAlert */
+        .swal-wide {
+            width: 600px !important;
+        }
 
-        /* Mejora de contraste en modo oscuro */
-        .dark input:focus,
-        .dark select:focus,
-        .dark textarea:focus {
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
-        }
+        /* Mejora de contraste en modo oscuro */
+        .dark input:focus,
+        .dark select:focus,
+        .dark textarea:focus {
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+        }
 
-        /* Transiciones suaves */
-        * {
-            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 150ms;
-        }
+        /* Transiciones suaves */
+        * {
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
 
-        /* Ocultar flechas de número en inputs */
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
+        /* Ocultar flechas de número en inputs */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
 
-        input[type="number"] {
-            -moz-appearance: textfield;
-        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
 
-        /* Indicador de carga */
-        .fa-spinner {
-            animation: spin 1s linear infinite;
-        }
+        /* Indicador de carga */
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
 
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
-        }
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
-        /* Efectos hover mejorados */
-        button:not(:disabled):hover {
-            transform: translateY(-1px);
-        }
+        /* Efectos hover mejorados */
+        button:not(:disabled):hover {
+            transform: translateY(-1px);
+        }
 
-        button:not(:disabled):active {
-            transform: translateY(0);
-        }
+        button:not(:disabled):active {
+            transform: translateY(0);
+        }
 
-        /* Badge de stock bajo */
-        .stock-warning {
-            position: relative;
-        }
+        /* Badge de stock bajo */
+        .stock-warning {
+            position: relative;
+        }
 
-        .stock-warning::after {
-            content: '!';
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            width: 16px;
-            height: 16px;
-            background: #ef4444;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: bold;
-        }
-    </style>
+        .stock-warning::after {
+            content: '!';
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 16px;
+            height: 16px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+    </style>
 </x-app-layout>

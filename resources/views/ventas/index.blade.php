@@ -211,7 +211,8 @@
                     iconToggle.classList.add('rotate-180');
                     toggleBtn.querySelector('span').textContent = 'Mostrar filtros';
                 } else {
-                    filtrosContainer.style.maxHeight = filtrosContainer.scrollHeight + 'px';
+                    // Si no está visible, calculamos la altura para la transición fluida
+                    filtrosContainer.style.maxHeight = filtrosContainer.scrollHeight + 100 + 'px'; 
                     filtrosContainer.style.opacity = '1';
                     iconToggle.classList.remove('rotate-180');
                     toggleBtn.querySelector('span').textContent = 'Ocultar filtros';
@@ -219,16 +220,18 @@
             });
 
             // =========================================================
-            // ELIMINAR/ANULAR VENTA
+            // ELIMINAR/ANULAR VENTA (CORREGIDO)
             // =========================================================
             function bindDeleteButtons() {
                 document.querySelectorAll('.delete-btn').forEach(button => {
+                    // Prevenir múltiples listeners
                     button.removeEventListener('click', handleDelete);
                     button.addEventListener('click', handleDelete);
                 });
             }
 
             function handleDelete() {
+                // 🔑 Obtener una referencia al formulario
                 const form = this.closest('form');
                 const itemName = this.getAttribute('data-name') || 'esta venta';
 
@@ -248,6 +251,7 @@
                     }
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        // 🔑 Enviamos el formulario al confirmar
                         form.submit();
                     }
                 });
@@ -302,6 +306,11 @@
                         bindDeleteButtons();
                         actualizarFiltrosActivos();
                         fetchController = null;
+                        
+                        // Si el contenedor de filtros estaba abierto, ajustamos la altura después de cargar
+                        if (filtrosContainer.style.maxHeight && filtrosContainer.style.maxHeight !== '0px') {
+                            filtrosContainer.style.maxHeight = filtrosContainer.scrollHeight + 100 + 'px';
+                        }
                     })
                     .catch(error => {
                         if (error.name !== 'AbortError') {
@@ -399,6 +408,11 @@
 
             bindPaginationListeners();
             actualizarFiltrosActivos();
+            
+            // Inicialmente, ajustamos la altura si los filtros están abiertos por defecto
+            if (filtrosContainer.clientHeight > 0) {
+                filtrosContainer.style.maxHeight = filtrosContainer.scrollHeight + 100 + 'px';
+            }
         });
     </script>
 
