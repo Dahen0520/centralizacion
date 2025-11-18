@@ -34,7 +34,24 @@
                         <i class="fas fa-filter text-blue-600 text-lg mr-2"></i>
                         <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">Filtros de Búsqueda</h3>
                     </div>
-                    <form method="GET" action="{{ route('movimientos.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <form method="GET" action="{{ route('movimientos.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        
+                        {{-- 🆕 FILTRO POR TIENDA --}}
+                        <div>
+                            <label for="tienda_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-store text-blue-500 mr-1"></i> Tienda (Sucursal)
+                            </label>
+                            <select name="tienda_id" id="tienda_id" class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition">
+                                <option value="">Todas las tiendas</option>
+                                @foreach ($tiendas as $tienda)
+                                    <option value="{{ $tienda->id }}" {{ (int)request('tienda_id') === $tienda->id ? 'selected' : '' }}>
+                                        {{ $tienda->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- FILTRO POR TIPO --}}
                         <div>
                             <label for="tipo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fas fa-exchange-alt text-blue-500 mr-1"></i> Tipo de Movimiento
@@ -46,6 +63,7 @@
                             </select>
                         </div>
 
+                        {{-- FECHA DESDE --}}
                         <div>
                             <label for="fecha_desde" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fas fa-calendar-alt text-blue-500 mr-1"></i> Fecha Inicial
@@ -54,6 +72,7 @@
                                    class="block w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-blue-500 focus:ring-blue-500 transition">
                         </div>
 
+                        {{-- FECHA HASTA --}}
                         <div>
                             <label for="fecha_hasta" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fas fa-calendar-check text-blue-500 mr-1"></i> Fecha Final
@@ -63,10 +82,12 @@
                         </div>
 
                         <div class="flex items-end gap-2">
+                            {{-- BOTÓN BUSCAR --}}
                             <button type="submit" class="flex-1 inline-flex justify-center items-center px-4 py-2.5 bg-blue-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm">
                                 <i class="fas fa-search mr-2"></i> Buscar
                             </button>
-                            @if(request()->hasAny(['tipo', 'fecha_desde', 'fecha_hasta']))
+                            {{-- BOTÓN LIMPIAR --}}
+                            @if(request()->hasAny(['tipo', 'fecha_desde', 'fecha_hasta', 'tienda_id']))
                                 <a href="{{ route('movimientos.index') }}" class="inline-flex items-center justify-center px-4 py-2.5 bg-gray-200 dark:bg-gray-600 border border-transparent rounded-lg font-semibold text-xs text-gray-700 dark:text-gray-200 uppercase tracking-widest hover:bg-gray-300 dark:hover:bg-gray-500 transition ease-in-out duration-150 shadow-sm" title="Limpiar filtros">
                                     <i class="fas fa-times"></i>
                                 </a>
@@ -76,7 +97,7 @@
                 </div>
             </div>
 
-            {{-- Tarjetas de Resumen --}}
+            {{-- Tarjetas de Resumen (Resto del código de la vista...) --}}
             @if(isset($resumen))
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div class="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 overflow-hidden shadow-md rounded-xl border border-green-200 dark:border-green-700">
@@ -123,7 +144,7 @@
                 </div>
             @endif
 
-            {{-- Tabla de Movimientos --}}
+            {{-- Tabla de Movimientos (Resto del código de la vista...) --}}
             <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl border border-gray-200 dark:border-gray-700">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-6">

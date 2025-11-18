@@ -14,16 +14,75 @@ use Log;
 class MovimientoInventarioController extends Controller
 {
     /**
-     * Muestra una lista del historial de movimientos de inventario.
+     * Muestra una lista del historial de movimientos de inventario y aplica filtros.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $movimientos = MovimientoInventario::with(['inventario.marca.producto', 'inventario.tienda', 'usuario'])
-            ->latest()
-            ->paginate(20);
+        // 1. Obtener los parámetros de filtro de la URL
+        $tipo = $request->get('tipo');
+        $fechaDesde = $request->get('fecha_desde');
+        $fechaHasta = $request->get('fecha_hasta');
+        $tiendaId = $request->get('tienda_id'); // 🆕 NUEVO FILTRO
 
-        return view('movimientos.index', compact('movimientos'));
+        // 2. Construir la consulta base con relaciones
+        $query = MovimientoInventario::with(['inventario.marca.producto', 'inventario.tienda', 'usuario']);
+
+        // 3. Aplicar Filtros
+        if ($tipo) {
+            $query->where('tipo_movimiento', $tipo);
+        }
+
+        if ($fechaDesde) {
+            $query->whereDate('created_at', '>=', $fechaDesde);
+        }
+
+        if ($fechaHasta) {
+            $query->whereDate('created_at', '<=', $fechaHasta);
+        }
+
+        // 🆕 APLICAR FILTRO POR TIENDA
+        if ($tiendaId) {
+            // Un movimiento se relaciona con una tienda a través del inventario
+            $query->whereHas('inventario', function ($q) use ($tiendaId) {
+                $q->where('tienda_id', $tiendaId);
+            });
+        }
+
+        // 4. Clonar la consulta para el resumen ANTES de añadir el 'latest()'
+        $resumenQuery = clone $query; 
+
+        // 5. Ejecutar consulta de paginación
+        $movimientos = $query->latest()->paginate(20);
+
+        // Aseguramos que los links de paginación mantengan los filtros
+        $movimientos->appends($request->all());
+
+        // 6. Calcular Resumen:
+        $resumen = $resumenQuery
+            ->select('tipo_movimiento', DB::raw('SUM(cantidad) as total_cantidad'))
+            ->groupBy('tipo_movimiento')
+            ->get()
+            ->pluck('total_cantidad', 'tipo_movimiento');
+
+        $resumenData = [
+            'entradas' => $resumen['ENTRADA'] ?? 0,
+            'salidas' => $resumen['SALIDA'] ?? 0,
+            'total' => ($resumen['ENTRADA'] ?? 0) + ($resumen['SALIDA'] ?? 0),
+        ];
+
+        // 🆕 Cargar todas las tiendas para el dropdown de la vista
+        $tiendas = Tienda::all(['id', 'nombre']);
+
+
+        // 7. Devolver la vista con los datos, el resumen y las tiendas
+        return view('movimientos.index', [
+            'movimientos' => $movimientos,
+            'resumen' => $resumenData,
+            'tiendas' => $tiendas, // 🆕 PASAMOS LAS TIENDAS A LA VISTA
+        ]);
     }
+
+    // ... (El resto de los métodos create y store permanecen iguales) ...
 
     /**
      * Muestra el formulario para registrar un nuevo movimiento (Ajuste/Ingreso/Descarte).
@@ -74,9 +133,7 @@ class MovimientoInventarioController extends Controller
         $cantidad = $validated['cantidad'];
         $tipoMovimiento = $validated['tipo_movimiento'];
 
-        // ⭐ SOLUCIÓN DE FORZADO DE VALORES
-        // 1. Usamos el ID de usuario logeado o forzamos el ID 1 (el más común). Si tu usuario ID 1 no existe, debes cambiarlo.
-        // 2. Usamos valores no NULL para movible_id/type para evitar errores de restricción de BD mal aplicadas.
+        // ⭐ Aseguramos ID de usuario y valores por defecto
         $userId = auth()->id() ?: 1; 
         $movibleType = 'Ajuste Manual'; 
         $movibleId = 0; 
@@ -117,13 +174,10 @@ class MovimientoInventarioController extends Controller
             return back()->withErrors($e->errors())->withInput();
 
         } catch (\Exception $e) {
-            // Diagnóstico Final: Esto es lo que se ejecuta cuando la BD falla
             DB::rollBack(); 
             
-            // Registra el error completo en el log
             Log::error("Fallo CRÍTICO de BD en Store: " . $e->getMessage(), ['exception' => $e]);
             
-            // Muestra un mensaje de error más suave para el usuario
             return back()->with('error', '¡ERROR CRÍTICO! Falló la transacción. Revise los logs. Causa: ' . substr($e->getMessage(), 0, 150))->withInput();
         }
     }
