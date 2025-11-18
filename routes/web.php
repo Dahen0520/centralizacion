@@ -22,6 +22,7 @@ use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ImpuestoController; 
 use App\Http\Controllers\MovimientoInventarioController;
 use App\Http\Controllers\RangoCaiController;
+use App\Http\Controllers\ReporteController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -170,7 +171,15 @@ Route::middleware('auth')->group(function () {
     Route::resource('marcas', MarcaController::class);
 
     Route::resource('clientes', ClienteController::class);
-    
+
+        // Formulario de selección de fecha/tienda
+    Route::get('/reportes/cierre-caja', [ReporteController::class, 'showCierreCajaForm'])->name('reportes.cierre_caja.form');
+
+    // Generación del reporte
+    Route::get('/reportes/cierre-caja/generar', [ReporteController::class, 'generarCierreCajaReporte'])->name('reportes.cierre_caja.generar');
+
+    Route::get('/reportes/resumen-afiliados', [ReporteController::class, 'reporte'])->name('reportes.resumen.afiliados');
+        
 });
 
 require __DIR__ . '/auth.php';

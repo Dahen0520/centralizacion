@@ -102,7 +102,7 @@
             {{-- ========================================================= --}}
             {{-- MÓDULO DE INVENTARIO Y VENTAS --}}
             {{-- ========================================================= --}}
-            <div class="{{ request()->routeIs('inventarios.*') || request()->routeIs('ventas.*') || request()->routeIs('movimientos.*') ? 'bg-chorotega-blue-light rounded' : '' }} p-1 space-y-1">
+            <div class="{{ request()->routeIs('inventarios.*') || request()->routeIs('ventas.*') || request()->routeIs('movimientos.*') || request()->routeIs('reportes.cierre_caja.*') || request()->routeIs('reportes.resumen.*') ? 'bg-chorotega-blue-light rounded' : '' }} p-1 space-y-1">
                 
                 {{-- ⭐ CORRECCIÓN: Apunta a ventas.pos --}}
                 <x-nav-link :href="route('ventas.pos')" :active="request()->routeIs('ventas.pos')" 
@@ -119,6 +119,20 @@
                     {{ __('Historial de Ventas') }}
                 </x-nav-link>
                 @endif
+
+                {{-- 🆕 REPORTE DE CIERRE DE CAJA --}}
+                <x-nav-link :href="route('reportes.cierre_caja.form')" :active="request()->routeIs('reportes.cierre_caja.*')"
+                            class="py-1 pl-8 pr-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center text-sm font-bold">
+                    <i class="fas fa-file-alt mr-3 opacity-80"></i>
+                    {{ __('Reporte de Cierre de Caja') }}
+                </x-nav-link>
+                
+                {{-- 🆕 RESUMEN DE INGRESOS POR AFILIADOS --}}
+                <x-nav-link :href="route('reportes.resumen.afiliados')" :active="request()->routeIs('reportes.resumen.afiliados')"
+                            class="py-1 pl-8 pr-4 rounded hover:bg-chorotega-blue-light hover:text-yellow-400 transition duration-200 ease-in-out text-white flex items-center text-sm">
+                    <i class="fas fa-chart-bar mr-3 opacity-80"></i>
+                    {{ __('Resumen Ingresos Afiliados') }}
+                </x-nav-link>
                 
                 {{-- Enlace principal (Gestión/CRUD de Inventario) --}}
                 <x-nav-link :href="route('inventarios.index')" :active="request()->routeIs('inventarios.index')"
