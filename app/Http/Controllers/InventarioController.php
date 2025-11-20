@@ -7,10 +7,14 @@ use App\Models\Marca;
 use App\Models\Tienda;
 use App\Models\Empresa;
 use App\Models\EmpresaTienda;
-use App\Models\MovimientoInventario; // ⭐ IMPORTANTE
+use App\Models\MovimientoInventario;
+use App\Models\Venta; 
+use App\Models\DetalleVenta; 
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB; // ⭐ IMPORTANTE
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Carbon\Carbon;
 
 class InventarioController extends Controller
 {
@@ -240,6 +244,63 @@ class InventarioController extends Controller
             'inventarios' => $inventarios,
             'empresa' => $empresa,
             'tienda' => $tienda,
+        ]);
+    }
+    
+    /**
+     * NUEVO MÉTODO: Listar Ventas (Detalle) de una Empresa en una Tienda.
+     */
+    public function verVentasPorEmpresa(Request $request, Empresa $empresa, Tienda $tienda)
+    {
+        // 1. Obtener los IDs de inventario que pertenecen a esta empresa en esta tienda
+        $inventarioIds = Inventario::where('tienda_id', $tienda->id)
+                                   ->whereHas('marca', function ($q) use ($empresa) {
+                                       $q->where('empresa_id', $empresa->id);
+                                   })
+                                   ->pluck('id');
+
+        // 2. Consulta de DetalleVenta (LÍNEAS DE PRODUCTO)
+        $query = DetalleVenta::with([
+                            'venta' => fn($q) => $q->with('cliente'),
+                            'inventario.marca.producto'
+                        ])
+                        ->whereIn('inventario_id', $inventarioIds)
+                        // Asegurarse de que la venta asociada haya sido completada y no anulada/cotización
+                        ->whereHas('venta', function ($q) {
+                            $q->where('estado', 'COMPLETADA')
+                              ->whereNotIn('tipo_documento', ['QUOTE']);
+                        })
+                        ->orderBy('created_at', 'desc');
+
+        // 3. Aplicar filtros de fecha a través de la relación de Venta
+        if ($request->filled('fecha_inicio')) {
+            $query->whereHas('venta', fn($q) => $q->whereDate('fecha_venta', '>=', $request->fecha_inicio));
+        }
+        if ($request->filled('fecha_fin')) {
+            $query->whereHas('venta', fn($q) => $q->whereDate('fecha_venta', '<=', $request->fecha_fin));
+        }
+        
+        // 4. Clonar la consulta para obtener los totales de agregación
+        $queryForSum = clone $query;
+        
+        // 🔑 CALCULAR LAS TRES SUMATORIAS
+        $totalIngresosNetos = $queryForSum->sum('subtotal_final');
+        $totalCantidadVendida = $queryForSum->sum('cantidad');
+        $totalSubtotalBase = $queryForSum->sum('subtotal_base');
+
+
+        // 5. Paginar y obtener los resultados
+        $detalles = $query->paginate(15)->withQueryString();
+
+        return view('inventario.explorar.ventas_empresa', [
+            'detalles' => $detalles, 
+            'empresa' => $empresa,
+            'tienda' => $tienda,
+            'totalVentasSum' => $totalIngresosNetos,
+            'totalCantidadVendida' => $totalCantidadVendida, // 🔑 Nuevo total
+            'totalSubtotalBase' => $totalSubtotalBase,       // 🔑 Nuevo total
+            'fechaInicio' => $request->fecha_inicio, 
+            'fechaFin' => $request->fecha_fin, 
         ]);
     }
 }

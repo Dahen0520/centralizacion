@@ -167,7 +167,7 @@
                 {{-- CONTENEDOR DE RESULTADOS --}}
                 <div class="px-8 py-8">
                     <div id="resultados-ventas" class="transition-all duration-300">
-                        @include('ventas.partials._ventas_table', ['ventas' => $ventas])
+                        @include('ventas.partials._ventas_table', ['ventas' => $ventas, 'totalVentasSum' => $totalVentasSum])
                     </div>
                 </div>
 
@@ -279,6 +279,9 @@
                     fetchController = new AbortController();
 
                     const formData = new FormData(form);
+                    // Eliminar el parámetro 'export' si se envió previamente
+                    formData.delete('export'); 
+                    
                     const params = new URLSearchParams(formData).toString();
                     const fetchUrl = url ? url : `${form.action}?${params}`;
 
@@ -321,7 +324,7 @@
                                         <i class="fas fa-exclamation-triangle text-3xl text-red-600 dark:text-red-400"></i>
                                     </div>
                                     <h3 class="text-xl font-bold text-red-700 dark:text-red-300 mb-2">Error al cargar el historial</h3>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Por favor, recarga la página e intenta nuevamente</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Por favor, recarga la página e intenta nuevamente</p>
                                 </div>
                             `;
                             resultadosDiv.style.opacity = '1';
@@ -333,6 +336,7 @@
                 if (immediate) {
                     applyFilter();
                 } else {
+                    // Solo aplica debounce si no es una paginación (immediate=false)
                     debounceTimer = setTimeout(applyFilter, 500);
                 }
             }
@@ -342,7 +346,8 @@
                 const badges = [];
                 
                 formData.forEach((value, key) => {
-                    if (value && key !== '_token') {
+                    // Evitar 'filter=1' y claves vacías
+                    if (value && key !== '_token' && key !== 'filter') {
                         let label = '';
                         let displayValue = value;
                         let icon = '';
@@ -366,7 +371,7 @@
                                 break;
                         }
                         
-                        if (displayValue !== 'Todas las Tiendas') {
+                        if (displayValue !== 'Todas las Tiendas' && displayValue !== '') {
                             badges.push(`
                                 <div class="inline-flex items-center gap-2 px-4 py-2 
                                             bg-white dark:bg-gray-800 border-2 border-indigo-200 dark:border-indigo-700
@@ -417,6 +422,7 @@
     </script>
 
     <style>
+        /* Estilos de transición y animación */
         #filtros-container {
             max-height: 2000px;
             opacity: 1;
@@ -438,6 +444,15 @@
 
         #resultados-ventas {
             transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        /* Estilo para el botón de anular en la tabla */
+        .delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            color: inherit;
         }
     </style>
 </x-app-layout>

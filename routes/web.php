@@ -28,6 +28,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/registro-enviado', function () {
+    return view('solicitud-enviada');
+})->name('registro.exito');
+
 // Resultados de búsqueda y detalle de empresas
 Route::get('/resultados/buscar', [SolicitudController::class, 'buscar'])->name('resultados.buscar');
 Route::get('/resultados/{empresa}/detalle', [SolicitudController::class, 'verResultadoDetalle'])->name('resultados.detalle');
@@ -179,6 +183,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/reportes/cierre-caja/generar', [ReporteController::class, 'generarCierreCajaReporte'])->name('reportes.cierre_caja.generar');
 
     Route::get('/reportes/resumen-afiliados', [ReporteController::class, 'reporte'])->name('reportes.resumen.afiliados');
+    Route::get('inventarios/explorar/empresa/{empresa}/tienda/{tienda}/ventas', [InventarioController::class, 'verVentasPorEmpresa'])->name('inventarios.explorar.ventas');
         
 });
 

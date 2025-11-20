@@ -1,4 +1,4 @@
-{{-- resources/views/movimientos/create.blade.php (Versión Mejorada y Funcional) --}}
+{{-- resources/views/movimientos/create.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight text-center">
@@ -12,6 +12,7 @@
         function movimientoModule() {
             return {
                 tiendaSeleccionada: null,
+                empresaSeleccionada: null, // 🔑 NUEVO ESTADO
                 inventariosDisponibles: [],
                 todosLosInventarios: JSON.parse(allInventariosData),
                 stockSeleccionado: 0,
@@ -23,21 +24,32 @@
                 init() {
                     this.inventariosDisponibles = this.todosLosInventarios;
                     this.tiendaSeleccionada = @json(old('tienda_id', ''));
+                    this.empresaSeleccionada = @json(old('empresa_id', '')); // Inicializar
                     this.filterInventario();
                 },
-
+                
+                // 🔑 FUNCIÓN DE FILTRO EN CASCADA
                 filterInventario() {
-                    this.inventariosDisponibles = [];
                     this.stockSeleccionado = 0;
                     this.inventarioSeleccionado = null;
                     
+                    let filtered = this.todosLosInventarios;
+                    
+                    // 1. FILTRAR POR TIENDA
                     if (this.tiendaSeleccionada) {
-                        this.inventariosDisponibles = this.todosLosInventarios.filter(item => 
+                        filtered = filtered.filter(item => 
                             item.tienda_id == this.tiendaSeleccionada
                         );
-                    } else {
-                        this.inventariosDisponibles = [];
                     }
+                    
+                    // 2. FILTRAR POR EMPRESA
+                    if (this.empresaSeleccionada) {
+                        filtered = filtered.filter(item => 
+                            item.empresa_id == this.empresaSeleccionada
+                        );
+                    }
+                    
+                    this.inventariosDisponibles = filtered;
                 },
                 
                 updateStockDisplay(event) {
@@ -56,16 +68,20 @@
                 get stockResultante() {
                     if (!this.cantidad || this.cantidad <= 0) return this.stockSeleccionado;
                     
+                    const currentStock = parseInt(this.stockSeleccionado);
+                    const amount = parseInt(this.cantidad);
+                    
                     if (this.tipoMovimiento === 'ENTRADA') {
-                        return this.stockSeleccionado + parseInt(this.cantidad);
+                        return currentStock + amount;
                     } else if (this.tipoMovimiento === 'SALIDA') {
-                        return Math.max(0, this.stockSeleccionado - parseInt(this.cantidad));
+                        return Math.max(0, currentStock - amount);
                     }
-                    return this.stockSeleccionado;
+                    return currentStock;
                 },
                 
                 get puedeEnviar() {
                     return this.tiendaSeleccionada && 
+                           this.empresaSeleccionada && // 🔑 Empresa es obligatorio ahora
                            this.inventarioSeleccionado && 
                            this.tipoMovimiento && 
                            this.razonSeleccionada && 
@@ -78,7 +94,7 @@
 
     <div class="py-12" x-data="movimientoModule()">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            {{-- Mensajes de Notificación --}}
+            {{-- Mensajes de Notificación (sin cambios) --}}
             @if (session('success'))
                 <div class="bg-green-100 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded relative mb-4 shadow-md" role="alert">
                     <div class="flex items-center">
@@ -121,13 +137,14 @@
                     @csrf
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
                         {{-- 1. Selección de Tienda --}}
-                        <div class="md:col-span-2">
+                        <div class="md:col-span-1">
                             <label for="tienda_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fas fa-store mr-2 text-indigo-500"></i>
-                                Tienda donde ocurre el Movimiento
+                                Tienda
                             </label>
-                            <select id="tienda_id" x-model="tiendaSeleccionada" @change="filterInventario" required
+                            <select id="tienda_id" name="tienda_id" x-model="tiendaSeleccionada" @change="filterInventario" required
                                     class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 text-base py-3 px-4 transition duration-150">
                                 <option value="">-- Seleccione una tienda --</option>
                                 @foreach($tiendas as $tienda)
@@ -135,16 +152,40 @@
                                 @endforeach
                             </select>
                         </div>
+                        
+                        {{-- 🔑 2. Selección de Empresa --}}
+                        <div class="md:col-span-1" :class="{'opacity-50 pointer-events-none': !tiendaSeleccionada}">
+                             <label for="empresa_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <i class="fas fa-building mr-2 text-indigo-500"></i>
+                                Empresa (Proveedor)
+                            </label>
+                            <select id="empresa_id" x-model="empresaSeleccionada" @change="filterInventario" required
+                                    :disabled="!tiendaSeleccionada"
+                                    class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 text-base py-3 px-4 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <option value="">-- Seleccione el proveedor --</option>
+                                @foreach($empresas as $empresa)
+                                    <option value="{{ $empresa->id }}">{{ $empresa->nombre_negocio }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
-                        {{-- 2. Producto/Stock --}}
-                        <div class="md:col-span-2" :class="{'opacity-50 pointer-events-none': !tiendaSeleccionada}">
+
+                        {{-- 3. Producto/Stock --}}
+                        <div class="md:col-span-2" :class="{'opacity-50 pointer-events-none': !tiendaSeleccionada || !empresaSeleccionada}">
                             <label for="inventario_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fas fa-box mr-2 text-indigo-500"></i>
                                 Producto en Stock
                             </label>
-                            <select id="inventario_id" name="inventario_id" required :disabled="!tiendaSeleccionada" @change="updateStockDisplay"
+                            <select id="inventario_id" name="inventario_id" required :disabled="inventariosDisponibles.length === 0" @change="updateStockDisplay"
                                     class="block w-full rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 text-base py-3 px-4 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <option value="">-- Seleccione el producto afectado --</option>
+                                <option value="">
+                                    <template x-if="inventariosDisponibles.length > 0">
+                                        <span>-- Seleccione el producto afectado --</span>
+                                    </template>
+                                    <template x-else>
+                                        <span>-- No hay productos de esta empresa en la tienda seleccionada --</span>
+                                    </template>
+                                </option>
                                 <template x-for="item in inventariosDisponibles" :key="item.id">
                                     <option :value="item.id" x-text="item.nombre_completo"></option>
                                 </template>
@@ -173,7 +214,7 @@
                             </div>
                         </div>
                         
-                        {{-- 3. Tipo de Movimiento --}}
+                        {{-- 4. Tipo de Movimiento --}}
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                                 <i class="fas fa-arrows-alt-v mr-2 text-indigo-500"></i>
@@ -212,7 +253,7 @@
                             @error('tipo_movimiento') <p class="text-sm text-red-500 mt-2 flex items-center"><i class="fas fa-exclamation-triangle mr-1"></i>{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- 4. Razón del Movimiento --}}
+                        {{-- 5. Razón del Movimiento --}}
                         <div class="md:col-span-2">
                             <label for="razon" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fas fa-clipboard-list mr-2 text-indigo-500"></i>
@@ -234,7 +275,7 @@
                             @error('razon') <p class="text-sm text-red-500 mt-1 flex items-center"><i class="fas fa-exclamation-triangle mr-1"></i>{{ $message }}</p> @enderror
                         </div>
 
-                        {{-- 5. Cantidad --}}
+                        {{-- 6. Cantidad --}}
                         <div class="md:col-span-2">
                             <label for="cantidad" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 <i class="fas fa-calculator mr-2 text-indigo-500"></i>

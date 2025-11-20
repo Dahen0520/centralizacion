@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Inventario;
 use App\Models\MovimientoInventario;
 use App\Models\Tienda; 
+use App\Models\Empresa; // 🔑 Importar modelo Empresa
+use App\Models\Marca; // 🔑 Importar modelo Marca (para la relación)
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -22,7 +24,7 @@ class MovimientoInventarioController extends Controller
         $tipo = $request->get('tipo');
         $fechaDesde = $request->get('fecha_desde');
         $fechaHasta = $request->get('fecha_hasta');
-        $tiendaId = $request->get('tienda_id'); // 🆕 NUEVO FILTRO
+        $tiendaId = $request->get('tienda_id'); 
 
         // 2. Construir la consulta base con relaciones
         $query = MovimientoInventario::with(['inventario.marca.producto', 'inventario.tienda', 'usuario']);
@@ -40,9 +42,8 @@ class MovimientoInventarioController extends Controller
             $query->whereDate('created_at', '<=', $fechaHasta);
         }
 
-        // 🆕 APLICAR FILTRO POR TIENDA
+        // APLICAR FILTRO POR TIENDA
         if ($tiendaId) {
-            // Un movimiento se relaciona con una tienda a través del inventario
             $query->whereHas('inventario', function ($q) use ($tiendaId) {
                 $q->where('tienda_id', $tiendaId);
             });
@@ -70,7 +71,7 @@ class MovimientoInventarioController extends Controller
             'total' => ($resumen['ENTRADA'] ?? 0) + ($resumen['SALIDA'] ?? 0),
         ];
 
-        // 🆕 Cargar todas las tiendas para el dropdown de la vista
+        // Cargar todas las tiendas para el dropdown de la vista
         $tiendas = Tienda::all(['id', 'nombre']);
 
 
@@ -78,11 +79,9 @@ class MovimientoInventarioController extends Controller
         return view('movimientos.index', [
             'movimientos' => $movimientos,
             'resumen' => $resumenData,
-            'tiendas' => $tiendas, // 🆕 PASAMOS LAS TIENDAS A LA VISTA
+            'tiendas' => $tiendas, 
         ]);
     }
-
-    // ... (El resto de los métodos create y store permanecen iguales) ...
 
     /**
      * Muestra el formulario para registrar un nuevo movimiento (Ajuste/Ingreso/Descarte).
@@ -90,15 +89,19 @@ class MovimientoInventarioController extends Controller
     public function create()
     {
         $tiendas = Tienda::all(['id', 'nombre']);
-
-        $inventarios = Inventario::with(['marca.producto', 'tienda'])
+        $empresas = Empresa::all(['id', 'nombre_negocio']); // 🔑 Cargar Empresas
+        
+        $inventarios = Inventario::with(['marca.producto', 'tienda', 'marca.empresa'])
             ->get()
             ->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'tienda_id' => $item->tienda_id,
+                    // 🔑 Añadir empresa_id
+                    'empresa_id' => $item->marca->empresa_id ?? null, 
                     'nombre_completo' => ($item->marca->producto->nombre ?? 'N/A') . 
-                                         ' (Stock: ' . $item->stock . ' u. en ' . ($item->tienda->nombre ?? 'N/A') . ')',
+                                         ' (' . ($item->marca->codigo_marca ?? 'N/A') . ')' .
+                                         ' (Stock: ' . $item->stock . ' u.)',
                     'stock_actual' => $item->stock,
                 ];
             })->toJson();
@@ -108,7 +111,7 @@ class MovimientoInventarioController extends Controller
             'SALIDA'  => ['Descarte por Daño', 'Ajuste Negativo', 'Muestra', 'Transferencia Enviada']
         ];
         
-        return view('movimientos.create', compact('tiendas', 'inventarios', 'razones'));
+        return view('movimientos.create', compact('tiendas', 'inventarios', 'razones', 'empresas')); // 🔑 Pasar Empresas
     }
 
     /**

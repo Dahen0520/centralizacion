@@ -135,7 +135,7 @@ class RegistroController extends Controller
                 'rubro_id'             => 'required|exists:rubros,id',
                 'tipo_organizacion_id' => 'required|exists:tipo_organizacions,id',
                 'pais_exportacion_id'  => 'nullable|exists:paises,id',
-                'facturacion'          => 'nullable|boolean', // <-- VALIDACIÓN DEL CAMPO DE EMPRESA
+                'facturacion'          => 'nullable|boolean',
                 'tiendas'              => 'required|array',
                 'tiendas.*'            => 'exists:tiendas,id',
                 'productos_json'       => 'required|json',
@@ -157,7 +157,6 @@ class RegistroController extends Controller
                 'descripcion'         => 'nullable|string',
                 'subcategoria_id'     => 'required|exists:subcategorias,id',
                 'impuesto_id'         => 'required|exists:impuestos,id',
-                // 'permite_facturacion' => 'required|boolean', <-- ESTE CAMPO HA SIDO ELIMINADO
             ]);
 
             if ($validator->fails()) {
@@ -204,7 +203,7 @@ class RegistroController extends Controller
                 'rubro_id'             => $validatedData['rubro_id'],
                 'tipo_organizacion_id' => $validatedData['tipo_organizacion_id'],
                 'pais_exportacion_id'  => $validatedData['pais_exportacion_id'],
-                'facturacion'          => $request->has('facturacion'), // <-- ALMACENAMIENTO DE FACTURACION DE EMPRESA
+                'facturacion'          => $request->has('facturacion'),
             ]);
 
             foreach ($validatedData['tiendas'] as $tiendaId) {
@@ -225,7 +224,7 @@ class RegistroController extends Controller
                     'descripcion'         => $productoItem['descripcion'],
                     'subcategoria_id'     => $productoItem['subcategoria_id'],
                     'impuesto_id'         => $productoItem['impuesto_id'],
-                    'permite_facturacion' => false, // <-- SE ELIMINA EL CAMPO Y SE FIJA A FALSE POR DEFECTO
+                    'permite_facturacion' => false,
                     'estado'              => 'pendiente',
                 ]);
                 
@@ -244,8 +243,8 @@ class RegistroController extends Controller
 
             DB::commit();
 
-            return redirect()->route('afiliados.list')
-                             ->with('success', 'Afiliado, Empresa y Productos registrados exitosamente.');
+            // 🚨 REDIRECCIÓN A LA VISTA DE ÉXITO
+            return redirect()->route('registro.exito');
 
         } catch (\Exception $e) {
             DB::rollBack();

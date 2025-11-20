@@ -474,13 +474,20 @@ class VentaController extends Controller
             $query->whereDate('fecha_venta', '<=', $fechaFin);
         }
 
+        // 1. Clonar la consulta antes de la paginación
+        $queryForSum = clone $query;
+        $totalVentasSum = $queryForSum->sum('total_final'); // Sumar el total final
+
+        // 2. Paginar la consulta principal
         $ventas = $query->paginate(15)->withQueryString();
         
+        $data = compact('ventas', 'tiendas', 'totalVentasSum'); // Incluir la suma
+
         if ($request->ajax()) {
-            return view('ventas.partials._ventas_table', compact('ventas'));
+            return view('ventas.partials._ventas_table', $data);
         }
         
-        return view('ventas.index', compact('ventas', 'tiendas'));
+        return view('ventas.index', $data);
     }
 
     /**

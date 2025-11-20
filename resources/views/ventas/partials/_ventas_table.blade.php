@@ -10,7 +10,8 @@
                     <i class="fas fa-calendar-alt mr-1"></i> Fecha/Hora
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                    <i class="fas fa-user mr-1"></i> Cliente </th>
+                    <i class="fas fa-user mr-1"></i> Cliente 
+                </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                     <i class="fas fa-store mr-1"></i> Tienda
                 </th>
@@ -50,7 +51,7 @@
                     {{ $venta->usuario->name ?? 'Sistema' }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center text-lg font-extrabold text-indigo-600 dark:text-indigo-400">
-                    L {{ number_format($venta->total_venta, 2) }}
+                    L {{ number_format($venta->total_final, 2) }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
                     
@@ -74,18 +75,6 @@
                         title="Ver Detalles Internos">
                         <i class="fas fa-info-circle"></i>
                     </a>
-                    
-                    {{-- Botón para anular la venta --}}
-                    <!--<form action="{{ route('ventas.destroy', $venta) }}" method="POST" class="inline delete-form" onsubmit="return false;">
-                        @csrf
-                        @method('DELETE')
-                        <button type="button" 
-                                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200 delete-btn" 
-                                data-name="Venta #{{ $venta->id }}"
-                                title="Anular Venta y Devolver Stock">
-                            <i class="fas fa-ban"></i>
-                        </button>
-                    </form>-->
                 </td>
             </tr>
             @empty
@@ -98,6 +87,20 @@
             </tr>
             @endforelse
         </tbody>
+        
+        {{-- SUMATORIA TOTAL DE VENTAS 🔑 FOOTER CON TOTAL --}}
+        <tfoot class="bg-gray-100 dark:bg-gray-700 border-t-2 border-emerald-500 dark:border-emerald-600">
+            <tr>
+                {{-- Colspan 5 porque tenemos 7 columnas y el total ocupa 1 --}}
+                <td colspan="5" class="px-6 py-3 text-right text-lg font-extrabold text-gray-900 dark:text-white">
+                    TOTAL DE VENTAS:
+                </td>
+                <td class="px-6 py-3 text-center text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                    L. {{ number_format($totalVentasSum, 2) }}
+                </td>
+                <td class="px-6 py-3 text-right"></td> {{-- Espacio para Acciones --}}
+            </tr>
+        </tfoot>
     </table>
 </div>
 
