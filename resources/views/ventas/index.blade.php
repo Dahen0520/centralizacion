@@ -167,6 +167,7 @@
                 {{-- CONTENEDOR DE RESULTADOS --}}
                 <div class="px-8 py-8">
                     <div id="resultados-ventas" class="transition-all duration-300">
+                        {{-- La tabla parcial se carga aquí --}}
                         @include('ventas.partials._ventas_table', ['ventas' => $ventas, 'totalVentasSum' => $totalVentasSum])
                     </div>
                 </div>
@@ -177,6 +178,22 @@
     
     {{-- SCRIPTS --}}
     <script>
+        // 🔑 FUNCIÓN GLOBAL PARA EXPANDIR DETALLES (Requerida por el partial)
+        function toggleDetalle(ventaId) {
+            const detalleRow = document.getElementById('detalle-row-' + ventaId);
+            const icon = document.getElementById('toggle-icon-' + ventaId);
+
+            if (detalleRow.style.display === 'none' || !detalleRow.style.display) {
+                detalleRow.style.display = 'table-row';
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                detalleRow.style.display = 'none';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-right');
+            }
+        }
+        
         document.addEventListener('DOMContentLoaded', function () {
             // =========================================================
             // SWEETALERT - MENSAJES

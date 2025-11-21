@@ -455,7 +455,8 @@ class VentaController extends Controller
     {
         $tiendas = Tienda::orderBy('nombre')->get();
         
-        $query = Venta::with(['tienda', 'usuario', 'cliente'])
+        // 🔑 EAGER LOAD: Cargamos los detalles para la expansión de filas en la vista
+        $query = Venta::with(['tienda', 'usuario', 'cliente', 'detalles.inventario.marca.producto'])
             ->orderBy('fecha_venta', 'desc');
             
         if ($request->filled('tienda_id') && $request->tienda_id != '') {
