@@ -84,7 +84,6 @@ class VentaController extends Controller
             'telefono' => $telefono,
         ]);
 
-
         try {
             $rules = [
                 'nombre' => 'required|string|max:255',
@@ -140,7 +139,6 @@ class VentaController extends Controller
             ], 500);
         }
     }
-
 
     /**
      * Búsqueda de clientes en tiempo real
@@ -267,16 +265,12 @@ class VentaController extends Controller
             $caiData = [];
             $rangoCai = null; 
 
-            // La asignación de CAI es obligatoria para TICKET e INVOICE
             if ($tipo === 'INVOICE' || $tipo === 'TICKET') {
-
-                // 🔑 0. DESACTIVACIÓN POR FECHA EXPIRADA: Fuerza esta_activo=0 para los vencidos.
                 RangoCai::where('tienda_id', $tiendaId)
                     ->where('esta_activo', true)
                     ->whereDate('fecha_limite_emision', '<', Carbon::today()) 
                     ->update(['esta_activo' => false]);
                 
-                // 1. Bloquear y buscar el rango CAI activo y válido
                 $rangoCai = RangoCai::where('tienda_id', $tiendaId)
                     ->where('esta_activo', true)
                     ->lockForUpdate() 
@@ -286,19 +280,16 @@ class VentaController extends Controller
                     throw new \Exception('No se encontró un rango CAI activo para esta tienda. No se puede emitir el documento fiscal.');
                 }
                 
-                // 2. Obtener la secuencia numérica y calcular el nuevo número
                 $numeroActualSecuencia = $rangoCai->numero_actual;
                 $rangoFinalSecuencia = $rangoCai->rango_final;
                 $prefijoSar = $rangoCai->prefijo_sar;
 
                 $nuevoNumeroSecuencia = $numeroActualSecuencia + 1;
                 
-                // 3. Comprobar si se excede el rango y lanzar excepción
                 if ($nuevoNumeroSecuencia > $rangoFinalSecuencia) {
                     throw new \Exception('El rango de facturación CAI ha sido excedido. Por favor, solicite un nuevo rango.');
                 }
                 
-                // 4. Reconstruir el número de factura completo
                 $ceroPad = 8; 
                 $numeroSecuencialFormateado = str_pad($nuevoNumeroSecuencia, $ceroPad, '0', STR_PAD_LEFT);
                 $nuevoNumeroFormateado = $prefijoSar . $numeroSecuencialFormateado;
@@ -306,16 +297,14 @@ class VentaController extends Controller
                 $caiData['cai'] = $rangoCai->cai;
                 $caiData['numero_documento'] = $nuevoNumeroFormateado;
                 
-                // 5. Preparar la actualización del correlativo
                 $rangoCai->numero_actual = $nuevoNumeroSecuencia;
 
-                // 🔑 Desactivación automática si se ALCANZÓ el último número
                 if ($nuevoNumeroSecuencia == $rangoFinalSecuencia) {
                     $rangoCai->esta_activo = false;
                 }
             }
 
-            // 1. Verificación de Stock
+            // Verificación de Stock
             if ($afectaStock) {
                 foreach ($request->detalles as $detalle) {
                     $inventario = Inventario::lockForUpdate()->find($detalle['inventario_id']);
@@ -333,7 +322,7 @@ class VentaController extends Controller
                 }
             }
             
-            // 2. Crear documento (Venta)
+            // Crear documento (Venta)
             $documento = Venta::create([
                 'tienda_id' => $tiendaId,
                 'cliente_id' => $clienteId,
@@ -352,14 +341,13 @@ class VentaController extends Controller
                 'vuelto' => ($tipoPago === 'EFECTIVO' ? $vuelto : null),
             ]);
 
-            // 3. Procesar detalles, calcular ISV y totales fiscales
+            // Procesar detalles, calcular ISV y totales fiscales
             $totalIsv = 0;
             $subtotalNetoVenta = 0;
             $subtotalGravadoVenta = 0;
             $subtotalExoneradoVenta = 0;
             
             foreach ($request->detalles as $detalleData) {
-                
                 $cantidad = (int) $detalleData['cantidad'];
                 $precioUnitario = (float) $detalleData['precio_unitario'];
                 $isvTasa = (float) $detalleData['isv_tasa'];
@@ -388,7 +376,7 @@ class VentaController extends Controller
                     'subtotal_final' => $subtotalFinal, 
                 ]);
 
-                // 4. Afectar Stock y Registrar Movimiento (solo si afecta stock)
+                // Afectar Stock y Registrar Movimiento
                 if ($afectaStock) {
                     $inventario = Inventario::lockForUpdate()->find($detalleData['inventario_id']);
                     
@@ -406,7 +394,7 @@ class VentaController extends Controller
                 }
             }
 
-            // 5. Actualizar totales fiscales en el documento principal
+            // Actualizar totales fiscales en el documento principal
             $documento->subtotal_neto = $subtotalNetoVenta;
             $documento->subtotal_gravado = $subtotalGravadoVenta;
             $documento->subtotal_exonerado = $subtotalExoneradoVenta;
@@ -414,7 +402,7 @@ class VentaController extends Controller
             $documento->total_final = ($subtotalNetoVenta + $totalIsv) - $descuento;
             $documento->save();
 
-            // 6. Guardar la actualización del Rango CAI
+            // Guardar la actualización del Rango CAI
             if (($tipo === 'INVOICE' || $tipo === 'TICKET') && $rangoCai) {
                 $rangoCai->save();
             }
@@ -455,7 +443,6 @@ class VentaController extends Controller
     {
         $tiendas = Tienda::orderBy('nombre')->get();
         
-        // 🔑 EAGER LOAD: Cargamos los detalles para la expansión de filas en la vista
         $query = Venta::with(['tienda', 'usuario', 'cliente', 'detalles.inventario.marca.producto'])
             ->orderBy('fecha_venta', 'desc');
             
@@ -475,14 +462,12 @@ class VentaController extends Controller
             $query->whereDate('fecha_venta', '<=', $fechaFin);
         }
 
-        // 1. Clonar la consulta antes de la paginación
         $queryForSum = clone $query;
-        $totalVentasSum = $queryForSum->sum('total_final'); // Sumar el total final
+        $totalVentasSum = $queryForSum->sum('total_final');
 
-        // 2. Paginar la consulta principal
         $ventas = $query->paginate(15)->withQueryString();
         
-        $data = compact('ventas', 'tiendas', 'totalVentasSum'); // Incluir la suma
+        $data = compact('ventas', 'tiendas', 'totalVentasSum');
 
         if ($request->ajax()) {
             return view('ventas.partials._ventas_table', $data);
@@ -545,7 +530,6 @@ class VentaController extends Controller
                 }
             }
             
-            // Si era una Factura/Ticket, no se revierte el número CAI, solo se marca como anulada.
             $venta->update(['estado' => 'ANULADA']);
 
             DB::commit();
@@ -574,24 +558,18 @@ class VentaController extends Controller
             'tienda.rangosCai' 
         ])->findOrFail($id);
         
-        // Obtener el RangoCai activo 
         $rangoCaiActivo = $venta->tienda->rangosCai->where('esta_activo', true)
             ->filter(function ($rango) {
-                // Carbon::today() asegura que la comparación incluya el día actual
                 return Carbon::parse($rango->fecha_limite_emision)->gte(Carbon::today());
             })
             ->first();
         
         $data = compact('venta', 'type', 'rangoCaiActivo');
         
-        // Carga la vista Blade (print.blade.php) como HTML
         $html = view('ventas.print', $data)->render();
 
-        // 🔑 AJUSTE CRÍTICO: Genera el PDF con tamaño y márgenes personalizados
         $pdf = Pdf::loadHtml($html);
         
-        // Configurar el tamaño y los márgenes para simular el rollo térmico de 60mm:
-        // 226.77pt = 60mm
         $pdf->setPaper([0, 0, 226.77, 841.89], 'portrait'); 
         $pdf->setOption('margin-top', 0);
         $pdf->setOption('margin-right', 0);
@@ -600,7 +578,148 @@ class VentaController extends Controller
         
         $filename = "{$type}_" . ($venta->numero_documento ?? $venta->id) . ".pdf";
         
-        // Devuelve el PDF para que se muestre en el navegador
         return $pdf->stream($filename); 
+    }
+
+    // ======================================================================================
+    // MÉTODOS DE DEVOLUCIÓN PARCIAL / ANULACIÓN DE PRODUCTO
+    // ======================================================================================
+
+    /**
+     * Muestra el formulario para buscar una venta y listar sus productos.
+     */
+    public function showDevolucionForm(Request $request)
+    {
+        $venta = null;
+        $detalles = collect();
+
+        $numeroDocumento = $request->input('numero_documento');
+        
+        if ($numeroDocumento) {
+            $venta = Venta::where('numero_documento', $numeroDocumento)
+                           ->orWhere('id', $numeroDocumento)
+                           ->with(['detalles', 'detalles.inventario.marca.producto', 'cliente']) 
+                           ->first();
+            
+            if ($venta && $venta->estado === 'COMPLETADA') {
+                $detalles = $venta->detalles->where('cantidad', '>', 0);
+            } elseif ($venta && $venta->estado === 'ANULADA') {
+                $venta = null;
+                return back()->with('error', 'La venta ya ha sido ANULADA completamente.');
+            }
+        }
+
+        return view('ventas.devolucion', compact('venta', 'detalles', 'numeroDocumento'));
+    }
+
+    /**
+     * Procesa la devolución de productos seleccionados y ajusta el stock.
+     */
+    public function processDevolucion(Request $request, Venta $venta)
+    {
+        // Validar los productos y cantidades a devolver
+        $validated = $request->validate([
+            'devoluciones' => 'required|array|min:1',
+            'devoluciones.*.detalle_id' => 'required|integer|exists:detalle_ventas,id',
+            'devoluciones.*.cantidad' => 'required|integer|min:1',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $totalMontoAfectado = 0;
+            $isvDevueltoGlobal = 0; 
+            $baseDevueltaGlobal = 0;
+            $baseGravadaDevuelta = 0;
+            $baseExoneradaDevuelta = 0;
+
+            foreach ($validated['devoluciones'] as $devolucion) {
+                $detalleId = $devolucion['detalle_id'];
+                $cantidadDevuelta = $devolucion['cantidad'];
+
+                $detalle = DetalleVenta::lockForUpdate()->findOrFail($detalleId);
+                $detalle->load('inventario.marca.producto');
+                $inventario = Inventario::lockForUpdate()->findOrFail($detalle->inventario_id);
+
+                if ($cantidadDevuelta > $detalle->cantidad) {
+                    throw ValidationException::withMessages([
+                        'cantidad' => 'La cantidad devuelta excede la cantidad vendida para el producto ' . ($detalle->inventario->marca->producto->nombre ?? 'N/A')
+                    ]);
+                }
+
+                // Calcular valores afectados
+                $montoUnitarioBase = (float) $detalle->precio_unitario;
+                $isvTasa = (float) $detalle->isv_tasa;
+
+                $montoBaseDevuelto = $cantidadDevuelta * $montoUnitarioBase;
+                $isvDevuelto = round($montoBaseDevuelto * $isvTasa, 2);
+                $totalLineaDevuelta = $montoBaseDevuelto + $isvDevuelto;
+                
+                $totalMontoAfectado += $totalLineaDevuelta;
+                $isvDevueltoGlobal += $isvDevuelto;
+                $baseDevueltaGlobal += $montoBaseDevuelto;
+                
+                // Separar base gravada vs exonerada
+                if ($isvTasa > 0) {
+                    $baseGravadaDevuelta += $montoBaseDevuelto;
+                } else {
+                    $baseExoneradaDevuelta += $montoBaseDevuelto;
+                }
+
+                // Registrar Movimiento de ENTRADA (Devolución)
+                MovimientoInventario::create([
+                    'inventario_id' => $inventario->id,
+                    'tipo_movimiento' => 'ENTRADA',
+                    'razon' => "Devolución Parcial/Anulación de Detalle (Venta #{$venta->id})",
+                    'cantidad' => $cantidadDevuelta,
+                    'movible_id' => $detalle->id,
+                    'movible_type' => DetalleVenta::class,
+                    'usuario_id' => auth()->id(),
+                ]);
+
+                // Ajustar Stock
+                $inventario->increment('stock', $cantidadDevuelta);
+
+                // Actualizar el Detalle de Venta
+                $detalle->cantidad -= $cantidadDevuelta;
+                $detalle->subtotal_base -= $montoBaseDevuelto;
+                $detalle->isv_monto -= $isvDevuelto;
+                $detalle->subtotal_final -= $totalLineaDevuelta;
+                    
+                if ($detalle->cantidad <= 0) {
+                     $detalle->delete();
+                } else {
+                     $detalle->save();
+                }
+            }
+
+            // Actualizar Totales del Documento (Venta)
+            $venta->subtotal_neto -= $baseDevueltaGlobal; 
+            $venta->subtotal_gravado -= $baseGravadaDevuelta;
+            $venta->subtotal_exonerado -= $baseExoneradaDevuelta;
+            $venta->total_isv -= $isvDevueltoGlobal;
+            $venta->total_final -= $totalMontoAfectado;
+            
+            // Si la venta queda sin detalles, marcar como ANULADA
+            if ($venta->detalles()->count() === 0) {
+                 $venta->estado = 'ANULADA'; 
+            }
+            
+            $venta->save();
+            
+            DB::commit();
+
+            return redirect()->route('ventas.index')
+                ->with('success', "Devolución de productos registrada exitosamente. Stock ajustado y Venta #{$venta->id} actualizada.");
+
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return back()->withErrors($e->errors())->withInput();
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error al procesar devolución de productos: " . $e->getMessage());
+            return back()->with('error', 'Error crítico al procesar la devolución: ' . $e->getMessage());
+        }
     }
 }

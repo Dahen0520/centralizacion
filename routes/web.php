@@ -78,34 +78,36 @@ Route::middleware('auth')->group(function () {
     });
     
     // =========================================================
-    // MODULO DE VENTAS (POS) - AJUSTE CRÍTICO DE RUTA DELETE 🔑
+    // MODULO DE VENTAS (POS) - AJUSTES DE DEVOLUCIÓN Y CRUD
     // =========================================================
     
-    // 🔑 MOVER LA RUTA DELETE AFUERA DEL GRUPO Route::controller
+    // 🔑 1. RUTAS DE DEVOLUCIÓN Y PROCESAMIENTO (Separadas por método HTTP)
+    Route::get('/ventas/devolucion', [VentaController::class, 'showDevolucionForm'])->name('ventas.devolucion.form');
+    Route::post('/ventas/{venta}/devolver', [VentaController::class, 'processDevolucion'])->name('ventas.devolucion.process');
+
+    // 2. RUTA DE ANULACIÓN TOTAL
     Route::delete('ventas/{venta}', [VentaController::class, 'destroy'])->name('ventas.destroy');
 
+    // 3. GRUPO DE RUTAS PRINCIPALES DE VENTA
     Route::controller(VentaController::class)->prefix('ventas')->name('ventas.')->group(function () {
         
-        // 1. Interfaz del Punto de Venta (Nombre: ventas.pos)
+        // Interfaz y Auxiliares
         Route::get('pos', 'create')->name('pos'); 
-        
-        // 2. Rutas Auxiliares
         Route::get('buscar-clientes', 'buscarClientes')->name('buscar-clientes');
         Route::post('store-cliente', 'storeCliente')->name('store-cliente');
         Route::get('productos-por-tienda/{tienda_id}', 'getProductosParaVenta')->name('productos-por-tienda');
         
-        // 3. Rutas de Transacción (POST)
+        // Transacción (POST)
         Route::post('store-ticket', 'storeTicket')->name('store-ticket');
         Route::post('store-quote', 'storeQuote')->name('store-quote');
         Route::post('store-invoice', 'storeInvoice')->name('store-invoice');
 
-        // RUTA DE IMPRESIÓN
+        // Impresión
         Route::get('documento/{id}/{type}/imprimir', 'printDocument')->name('print');
         
-        // 4. CRUD Manual (Historial de ventas)
-        Route::get('/', 'index')->name('index');             // ventas/
-        Route::get('{venta}', 'show')->name('show');         // ventas/{id}
-        // NOTA: La ruta DELETE se mueve arriba.
+        // Historial (CRUD)
+        Route::get('/', 'index')->name('index');
+        Route::get('{venta}', 'show')->name('show');
     });
 
 
@@ -118,6 +120,7 @@ Route::middleware('auth')->group(function () {
     Route::get('inventarios/explorar/tiendas', [InventarioController::class, 'explorarTiendas'])->name('inventarios.explorar.tiendas');
     Route::get('inventarios/explorar/tienda/{tienda}', [InventarioController::class, 'explorarEmpresasPorTienda'])->name('inventarios.explorar.empresas');
     Route::get('inventarios/explorar/empresa/{empresa}/tienda/{tienda}', [InventarioController::class, 'mostrarInventarioPorEmpresa'])->name('inventarios.explorar.inventario');
+    Route::get('inventarios/explorar/empresa/{empresa}/tienda/{tienda}/ventas', [InventarioController::class, 'verVentasPorEmpresa'])->name('inventarios.explorar.ventas');
     Route::resource('inventarios', InventarioController::class);
 
 
@@ -176,14 +179,12 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('clientes', ClienteController::class);
 
-        // Formulario de selección de fecha/tienda
+    // =========================================================
+    // REPORTES
+    // =========================================================
     Route::get('/reportes/cierre-caja', [ReporteController::class, 'showCierreCajaForm'])->name('reportes.cierre_caja.form');
-
-    // Generación del reporte
     Route::get('/reportes/cierre-caja/generar', [ReporteController::class, 'generarCierreCajaReporte'])->name('reportes.cierre_caja.generar');
-
     Route::get('/reportes/resumen-afiliados', [ReporteController::class, 'reporte'])->name('reportes.resumen.afiliados');
-    Route::get('inventarios/explorar/empresa/{empresa}/tienda/{tienda}/ventas', [InventarioController::class, 'verVentasPorEmpresa'])->name('inventarios.explorar.ventas');
         
 });
 
