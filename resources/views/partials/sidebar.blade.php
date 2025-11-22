@@ -106,10 +106,6 @@
                        class="py-2 px-4 rounded-lg flex items-center text-sm transition-all duration-200 hover:translate-x-1 {{ request()->routeIs('inventarios.explorar.*') ? 'text-yellow-400 font-semibold' : 'text-white hover:bg-chorotega-blue-light' }}">
                         <i class="fas fa-search-location mr-3 text-xs"></i>Explorar Inventario
                     </a>
-                    <a href="{{ route('reportes.cierre_caja.form') }}"
-                       class="py-2 px-4 rounded-lg flex items-center text-sm transition-all duration-200 hover:translate-x-1 {{ request()->routeIs('reportes.cierre_caja.*') ? 'text-yellow-400 font-semibold' : 'text-white hover:bg-chorotega-blue-light' }}">
-                        <i class="fas fa-file-alt mr-3 text-xs"></i>Reporte Cierre Caja
-                    </a>
                     <a href="{{ route('reportes.resumen.afiliados') }}"
                        class="py-2 px-4 rounded-lg flex items-center text-sm transition-all duration-200 hover:translate-x-1 {{ request()->routeIs('reportes.resumen.*') ? 'text-yellow-400 font-semibold' : 'text-white hover:bg-chorotega-blue-light' }}">
                         <i class="fas fa-chart-bar mr-3 text-xs"></i>Resumen Ingresos Afiliados
