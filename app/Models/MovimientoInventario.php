@@ -13,18 +13,14 @@ class MovimientoInventario extends Model
 
     protected $fillable = [
         'inventario_id',
-        'tipo_movimiento', // 'ENTRADA' o 'SALIDA'
-        'razon',           // 'Venta', 'Ingreso por Compra', 'Descarte', etc.
+        'tipo_movimiento', 
+        'razon',          
         'cantidad',
-        'movible_id',      // Clave Polimórfica
-        'movible_type',    // Tipo Polimórfico (e.g., App\Models\DetalleVenta)
+        'movible_id',     
+        'movible_type',   
         'usuario_id',
     ];
     
-    /**
-     * Define los tipos de datos para la conversión automática.
-     * CRÍTICO: Asegura que los campos numéricos siempre se traten como números.
-     */
     protected $casts = [
         'inventario_id' => 'integer',
         'cantidad' => 'integer',
@@ -32,26 +28,17 @@ class MovimientoInventario extends Model
         'usuario_id' => 'integer',
     ];
     
-    /**
-     * Obtiene el registro de inventario (stock) afectado.
-     */
+ 
     public function inventario()
     {
         return $this->belongsTo(Inventario::class);
     }
 
-    /**
-     * Define la relación polimórfica.
-     * Permite saber qué origen el movimiento (e.g., DetalleVenta, Compra, Ajuste).
-     */
     public function movible()
     {
         return $this->morphTo();
     }
     
-    /**
-     * Obtiene el usuario que registró el movimiento.
-     */
     public function usuario()
     {
         return $this->belongsTo(\App\Models\User::class); 

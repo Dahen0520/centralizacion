@@ -67,7 +67,7 @@
                 <button type="button" 
                         class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200 delete-btn" 
                         data-id="{{ $marca->id }}"
-                        data-name="{{ $marca->codigo_marca }}"> {{-- Usamos el código como identificador para SweetAlert2 --}}
+                        data-name="{{ $marca->codigo_marca }}"> 
                     <i class="fas fa-trash-alt"></i>
                 </button>
             </form>

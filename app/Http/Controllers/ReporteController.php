@@ -12,29 +12,21 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReporteController extends Controller
 {
-    /**
-     * Muestra el menú principal de reportes (Index).
-     */
+
     public function index()
     {
         return view('reportes.index');
     }
 
-    /**
-     * Muestra el formulario para seleccionar la fecha y la tienda del cierre.
-     */
     public function showCierreCajaForm()
     {
         $tiendas = Tienda::all(['id', 'nombre']);
         return view('reportes.cierre_caja_form', compact('tiendas'));
     }
 
-    /**
-     * Genera el reporte de cierre de caja detallado por Empresa/Proveedor.
-     */
     public function generarCierreCajaReporte(Request $request)
     {
-        // 1. Validación de Parámetros
+
         try {
             $validated = $request->validate([
                 'fecha' => 'required|date',
@@ -47,10 +39,8 @@ class ReporteController extends Controller
         $fechaCierre = $validated['fecha'];
         $tiendaId = $validated['tienda_id'];
 
-        // 🛑 SOLUCIÓN AL ERROR 1055: Deshabilitar temporalmente ONLY_FULL_GROUP_BY para la sesión
         DB::statement("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
 
-        // 2. Consulta Agregada por EMPRESA (Detalle de Venta) - CMV simulado a 0
         $ventasPorEmpresa = DB::table('ventas')
             ->join('detalle_ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
             ->join('inventarios', 'detalle_ventas.inventario_id', '=', 'inventarios.id')
@@ -73,7 +63,7 @@ class ReporteController extends Controller
             ->groupBy('empresas.id', 'empresas.nombre_negocio')
             ->get();
             
-        // 3. Cálculo del TOTAL GENERAL
+        // Cálculo del TOTAL GENERAL
         $totalGeneral = DB::table('ventas')
             ->whereDate('fecha_venta', $fechaCierre)
             ->where('tienda_id', $tiendaId)
@@ -91,7 +81,6 @@ class ReporteController extends Controller
              return back()->with('error', 'No se encontraron ventas completadas para la fecha y tienda seleccionadas.')->withInput();
         }
 
-        // 4. Obtener el detalle de métodos de pago
         $pagos = DB::table('ventas')
             ->whereDate('fecha_venta', $fechaCierre)
             ->where('tienda_id', $tiendaId)
@@ -109,7 +98,6 @@ class ReporteController extends Controller
         
         $tienda = Tienda::find($tiendaId);
 
-        // 5. Estructurar el Reporte Final
         $cierreData = [
             'tienda' => $tienda->nombre,
             'fecha' => Carbon::parse($fechaCierre)->format('d/m/Y'),
@@ -125,23 +113,15 @@ class ReporteController extends Controller
         return view('reportes.cierre_caja', compact('cierreData')); 
     }
 
-    /**
-     * Genera el reporte de resumen de ingresos de empresas por afiliado y número de cuenta.
-     */
     public function reporte(Request $request) 
     {
-        // 1. Obtener filtros
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         $tiendaId = $request->input('tienda_id');
-        
-        // 🚨 DETECTAR SOLICITUD DE EXPORTACIÓN
         $export = $request->has('export'); 
 
-        // 🛑 Deshabilitar temporalmente ONLY_FULL_GROUP_BY para la sesión
         DB::statement("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
 
-        // Definir las tasas de forma segura
         $posRate = 0.0125;          // 1.25%
         $tiendaTarjetaRate = 0.094642; // 9.4642%
         $tiendaEfectivoRate = 0.107142; // 10.7142%
@@ -165,7 +145,7 @@ class ReporteController extends Controller
         $totalComisionTiendaSql = "SUM({$ventaTarjetaSql} * {$tiendaTarjetaRate}) + SUM({$ventaEfectivoSql} * {$tiendaEfectivoRate})";
 
 
-        // 2. Consulta de Ingresos Agrupados por Afiliado/Empresa
+        // Consulta de Ingresos Agrupados por Afiliado/Empresa
         $query = DB::table('ventas')
             ->join('detalle_ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
             ->join('inventarios', 'detalle_ventas.inventario_id', '=', 'inventarios.id')
@@ -241,12 +221,12 @@ class ReporteController extends Controller
             ->orderByDesc(DB::raw('SUM(detalle_ventas.subtotal_final)'))
             ->get();
             
-        // 🚨 LÓGICA DE EXPORTACIÓN (CSV)
+        // LÓGICA DE EXPORTACIÓN (CSV)
         if ($export) {
             return $this->exportToCsv($reporte);
         }
 
-        // 3. Devolver la vista con los datos
+        // Devolver la vista con los datos
         $tiendas = Tienda::all(['id', 'nombre']); 
         
         return view('reportes.resumen_afiliados', [
@@ -258,10 +238,6 @@ class ReporteController extends Controller
         ]);
     }
 
-    /**
-     * Función privada para generar la respuesta de descarga CSV.
-     * Incluye encabezados agrupados y formato de dos decimales.
-     */
     private function exportToCsv($reporte)
     {
         $headers = [
@@ -272,16 +248,14 @@ class ReporteController extends Controller
         $callback = function() use ($reporte) {
             $file = fopen('php://output', 'w');
 
-            // --- 1. ENCABEZADOS GRUPALES (Nivel 1) ---
             $headerGroup1 = [
-                'INFORMACIÓN GENERAL', '', '', // 3 columnas
-                'TRANSACCIONES CON TARJETA', '', '', '', '', '', // 6 columnas
-                'TRANSACCIONES EN EFECTIVO', '', '', '', '', '', // 6 columnas (A Depositar es la 15)
-                'RESUMEN FINAL', '', '', // 3 columnas (Total 17 columnas)
+                'INFORMACIÓN GENERAL', '', '', 
+                'TRANSACCIONES CON TARJETA', '', '', '', '', '', 
+                'TRANSACCIONES EN EFECTIVO', '', '', '', '', '', 
+                'RESUMEN FINAL', '', '', 
             ];
             fputcsv($file, $headerGroup1, ';'); 
 
-            // --- 2. ENCABEZADOS DETALLADOS (Nivel 2) ---
             $headerRow2 = [
                 'Núm. Cuenta', 
                 'Cuentahabiente', 
@@ -309,7 +283,6 @@ class ReporteController extends Controller
             ];
             fputcsv($file, $headerRow2, ';'); 
 
-            // 3. FILAS DE DATOS (Formato a 2 decimales para Excel)
             foreach ($reporte as $row) {
                 fputcsv($file, [
                     $row->numero_cuenta,
@@ -332,7 +305,7 @@ class ReporteController extends Controller
                 ], ';');
             }
             
-            // 4. FILA DE TOTALES GENERALES (Formato a 2 decimales para Excel)
+            // FILA DE TOTALES GENERALES (Formato a 2 decimales para Excel)
             $totalRow = [
                 'TOTALES GENERALES', '', '', 
                 number_format($reporte->sum('ingresos_tarjeta'), 2, '.', ''), '',

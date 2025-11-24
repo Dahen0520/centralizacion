@@ -12,11 +12,25 @@
 
     {{-- SCRIPTS CRÍTICOS --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    {{-- CRÍTICO: Asegurar que Alpine.js esté cargado para que x-data funcione --}}
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
+    {{-- CONFIGURACIÓN DE RUTAS PARA EL JS --}}
+    <script>
+        window.posRoutes = {
+            productsByStore: '{{ url('ventas/productos-por-tienda') }}',
+            searchClients: '{{ route('ventas.buscar-clientes') }}',
+            storeClient: '{{ route('ventas.store-cliente') }}',
+            storeTicket: '{{ route('ventas.store-ticket') }}',
+            storeQuote: '{{ route('ventas.store-quote') }}',
+            storeInvoice: '{{ route('ventas.store-invoice') }}',
+            csrfToken: '{{ csrf_token() }}'
+        };
+    </script>
+
+    {{-- ARCHIVO JS EXTERNO --}}
+    <script src="{{ asset('js/ventas/pos.js') }}"></script>
+
     {{-- Contenedor principal con estado Alpine.js --}}
-    {{-- Se inyecta la lista de tipos de pago desde el backend (necesario para la validación interna en JS) --}}
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-6"
         x-data="posModule({{ json_encode($tiposPago ?? []) }})"
         @keydown.window="handleKeyboard($event)"
@@ -137,7 +151,7 @@
                         </div>
                     </div>
 
-                    {{-- Sección: Búsqueda de Productos con Barcode --}}
+                    {{-- Sección: Búsqueda de Productos --}}
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300 hover:shadow-md" x-show="tiendaId" x-cloak>
                         <div class="p-6 border-b border-gray-200 dark:border-gray-700">
                             <div class="flex gap-3">
@@ -171,7 +185,7 @@
                             </div>
                         </div>
 
-                        {{-- Lista de productos con animación --}}
+                        {{-- Lista de productos --}}
                         <div class="p-4 max-h-[450px] overflow-y-auto">
                             <div x-show="isProductsLoading" class="text-center py-12">
                                 <i class="fas fa-spinner fa-spin text-3xl text-emerald-500 mb-3"></i>
@@ -212,7 +226,7 @@
                             </template>
 
                             {{-- Estados vacíos --}}
-                            <div x-show="!isProductsLoading && !filteredProductos.length && searchQuery && tiendaId" 
+                            <div x-show="!isProductsLoading && !filteredProductos.length && searchQuery && tiendaId" 
                                 x-transition
                                 class="text-center py-12">
                                 <i class="fas fa-search text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
@@ -220,7 +234,7 @@
                                 <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Intenta con otro término de búsqueda</p>
                             </div>
                             
-                            <div x-show="!isProductsLoading && tiendaId && !searchQuery && !allProductos.length" 
+                            <div x-show="!isProductsLoading && tiendaId && !searchQuery && !allProductos.length" 
                                 x-transition
                                 class="text-center py-12">
                                 <i class="fas fa-box-open text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
@@ -230,8 +244,8 @@
                         </div>
                     </div>
 
-                    {{-- Sección: Mensaje inicial mejorado --}}
-                    <div x-show="!tiendaId" 
+                    {{-- Mensaje inicial --}}
+                    <div x-show="!tiendaId" 
                         x-transition
                         class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-sm border-2 border-dashed border-gray-300 dark:border-gray-600 p-12 text-center">
                         <div class="animate-bounce mb-4">
@@ -242,7 +256,7 @@
                     </div>
                 </div>
 
-                {{-- COLUMNA DERECHA: CARRITO MEJORADO --}}
+                {{-- COLUMNA DERECHA: CARRITO --}}
                 <div class="space-y-4">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden sticky lg:top-6">
                         <div class="p-6 bg-gradient-to-r from-emerald-500 to-teal-600">
@@ -326,7 +340,7 @@
                         {{-- Resumen y total --}}
                         <div class="p-6 border-t border-gray-200 dark:border-gray-700 space-y-3 bg-gray-50 dark:bg-gray-900/50">
                             
-                            {{-- SELECTOR DE TIPO DE PAGO (Corregido a Blade simple) --}}
+                            {{-- Selector de tipo de pago --}}
                             <div class="space-y-2" x-show="cart.length">
                                 <label for="payment_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     <i class="fas fa-money-check-alt mr-1 text-teal-600"></i> Tipo de Pago: <span class="text-red-500">*</span>
@@ -340,7 +354,7 @@
                                 </select>
                             </div>
 
-                            {{-- CAMPO MONTO RECIBIDO Y VUELTO (NUEVO) --}}
+                            {{-- Monto recibido y vuelto --}}
                             <div x-show="cart.length && selectedPaymentType === 'EFECTIVO'">
                                 <label class="flex items-center justify-between text-sm pt-3">
                                     <span class="text-gray-600 dark:text-gray-400 font-medium">
@@ -356,7 +370,7 @@
                                         class="w-24 px-2 py-1 text-sm text-right bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 text-gray-900 dark:text-white">
                                 </label>
 
-                                {{-- VUELTO (CAMBIO) --}}
+                                {{-- Vuelto --}}
                                 <div class="flex justify-between items-center mt-3 p-3 rounded-lg border border-dashed"
                                     :class="{'border-green-400 bg-green-50 dark:bg-green-900/20': change > 0, 'border-gray-300': change <= 0}">
                                     <span class="text-gray-700 dark:text-gray-300 font-semibold text-lg">Cambio (Vuelto):</span>
@@ -378,7 +392,7 @@
                                 </div>
                             </div>
 
-                            {{-- Descuento opcional --}}
+                            {{-- Descuento --}}
                             <div class="space-y-2" x-show="cart.length">
                                 <label class="flex items-center justify-between text-sm">
                                     <span class="text-gray-600 dark:text-gray-400 font-medium">
@@ -401,19 +415,19 @@
 
                             {{-- DESGLOSE FISCAL --}}
                             <div class="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-1 text-sm text-gray-700 dark:text-gray-300">
-                                {{-- Subtotal Neto (Base de la factura, sin ISV) --}}
+                                {{-- Subtotal Neto --}}
                                 <div class="flex justify-between items-center">
                                     <span class="font-medium text-gray-600 dark:text-gray-400">SubTotal Base (sin ISV):</span>
                                     <span class="font-medium text-gray-700 dark:text-gray-300">L <span x-text="subtotalNeto.toFixed(2)"></span></span>
                                 </div>
                                 
-                                {{-- Total Exonerado/Exento (Según tu factura: Subt.Exento) --}}
+                                {{-- Total Exonerado --}}
                                 <div class="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400" x-show="totalExento > 0">
                                     <span>Importe Exonerado/Exento:</span>
                                     <span>L <span x-text="totalExento.toFixed(2)"></span></span>
                                 </div>
 
-                                {{-- Total Gravado (Suma de las bases que sí llevan impuesto) --}}
+                                {{-- Total Gravado --}}
                                 <div class="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400" x-show="totalGravado > 0">
                                     <span>Subt. Gravado:</span>
                                     <span>L <span x-text="totalGravado.toFixed(2)"></span></span>
@@ -442,7 +456,7 @@
                                 </span>
                             </div>
 
-                            {{-- Botón procesar venta (TICKET DE VENTA) --}}
+                            {{-- Botón procesar venta --}}
                             <button @click="processSale('TICKET')"
                                 :disabled="!isSaleReady('TICKET') || isProcessing"
                                 class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none">
@@ -457,7 +471,7 @@
                                 </span>
                             </button>
 
-                            {{-- Acciones rápidas (Limpiar, Cotizar, Facturar) --}}
+                            {{-- Acciones rápidas --}}
                             <div class="flex gap-2 pt-2">
                                 <button @click="clearCart" 
                                     :disabled="!cart.length"
@@ -515,7 +529,7 @@
             </div>
         </div>
 
-        {{-- MODAL NUEVO CLIENTE MEJORADO (FUNCIONAL) --}}
+        {{-- MODAL NUEVO CLIENTE --}}
         <div x-show="showNewClientModal" x-cloak
             @click.self="closeNewClientModal"
             class="fixed inset-0 z-50 overflow-y-auto bg-gray-900 bg-opacity-75 backdrop-blur-sm flex items-center justify-center transition-opacity duration-300 p-4">
@@ -627,986 +641,146 @@
         </div>
     </div>
 
-    {{-- SCRIPT JS/ALPINE CON LA LÓGICA COMPLETA Y CORREGIDA --}}
-    <script>
-        function posModule(tiposPago) {
-            return {
-                // Estado general
-                tiendaId: @json(old('tienda_id', '')),
-                searchQuery: '',
-                allProductos: [],
-                filteredProductos: [],
-                cart: [],
-                
-                // Variables de control para prevenir doble clic/escaneo rápido
-                lastAddedProductId: null, 
-                lastAddedTimestamp: 0, 
-
-                // **NUEVAS VARIABLES DE CONTROL PARA EL CARRITO**
-                lastCartUpdateId: null,
-                lastCartUpdateTimestamp: 0,
-
-                // Totales
-                total: 0.00, 
-                discount: 0,
-                finalTotal: 0.00,
-
-                // ESTADOS FISCALES
-                subtotalNeto: 0.00,     
-                totalExento: 0.00,      
-                totalGravado: 0.00,     
-                totalIsv: 0.00,         
-                totalImpuestos: 0.00,   
-
-                isProcessing: false,
-                isProductsLoading: false,
-                showKeyboardShortcuts: false,
-
-                // Cliente
-                clientId: null,
-                clientSearchQuery: '',
-                clientSearchResults: [],
-                selectedClientName: 'Cliente Genérico / Sin Registro',
-                selectedClientIndex: 0,
-                isClientLoading: false,
-
-                // Modal cliente
-                showNewClientModal: false,
-                newClientSaving: false,
-                newClientError: '', 
-                newClientForm: { nombre: '', identificacion: '', email: '', telefono: '' },
-                
-                // ESTADO DE PAGO
-                tiposPago: tiposPago, 
-                selectedPaymentType: 'EFECTIVO', // Valor por defecto
-
-                init() {
-                    if (this.tiendaId) this.fetchProductos();
-                    this.updateCart();
-                    this.showWelcomeNotification();
-                },
-
-                // ==========================================
-                // LÓGICA DE PAGO Y HABILITACIÓN DE BOTONES
-                // ==========================================
-                isSaleReady(type) {
-                    if (!this.cart.length || this.tiendaId === '') return false;
-                    if (!this.selectedPaymentType) return false;
-                    
-                    // Factura y Cotización requieren cliente registrado
-                    if ((type === 'INVOICE' || type === 'QUOTE') && !(this.clientId > 0)) return false;
-
-                    // Crédito requiere cliente registrado
-                    if (this.selectedPaymentType === 'CREDITO' && !(this.clientId > 0)) return false;
-
-                    return true;
-                },
-                
-                // ==========================================
-                // NOTIFICACIONES Y MENSAJES
-                // ==========================================
-                showWelcomeNotification() {
-                    const Toast = Swal.mixin({
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 3000,
-                        timerProgressBar: true,
-                    });
-
-                    Toast.fire({
-                        icon: 'info',
-                        title: '¡Bienvenido al POS!',
-                        text: 'Presiona F1 para buscar productos'
-                    });
-                },
-
-                showNotification(type, title, text) {
-                    const Toast = Swal.mixin({
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 3000,
-                        timerProgressBar: true,
-                    });
-
-                    Toast.fire({ icon: type, title: title, text: text });
-                },
-
-                // ==========================================
-                // MANEJO DE TECLADO
-                // ==========================================
-                handleKeyboard(event) {
-                    if (event.key === 'F1') {
-                        event.preventDefault();
-                        if (this.tiendaId) {
-                            this.$refs.productSearch?.focus();
-                            this.showNotification('info', 'Búsqueda de productos', 'Escribe para buscar');
-                        }
-                    }
-                    
-                    if (event.key === 'F2') {
-                        event.preventDefault();
-                        document.getElementById('client_search_input')?.focus();
-                        this.showNotification('info', 'Búsqueda de clientes', 'Busca por nombre o RTN');
-                    }
-                    
-                    if (event.key === 'F9') {
-                        event.preventDefault();
-                        if (this.isSaleReady('TICKET') && !this.isProcessing) {
-                            this.processSale('TICKET');
-                        }
-                    }
-                    
-                    if (event.ctrlKey && event.key === 'x') {
-                        event.preventDefault();
-                        if (this.cart.length) {
-                            this.clearCart();
-                        }
-                    }
-
-                    if (event.key === 'Escape') {
-                        if (this.showNewClientModal) {
-                            this.closeNewClientModal();
-                        }
-                    }
-
-                    // Navegación en resultados de clientes (solo si el dropdown está visible)
-                    if (document.activeElement.id === 'client_search_input' && this.clientSearchResults.length > 0) {
-                        if (event.key === 'ArrowDown') {
-                            event.preventDefault();
-                            this.selectedClientIndex = Math.min(
-                                this.selectedClientIndex + 1, 
-                                this.clientSearchResults.length - 1
-                            );
-                        } else if (event.key === 'ArrowUp') {
-                            event.preventDefault();
-                            this.selectedClientIndex = Math.max(this.selectedClientIndex - 1, 0);
-                        } else if (event.key === 'Enter') {
-                            event.preventDefault();
-                            this.selectClient(this.clientSearchResults[this.selectedClientIndex]);
-                        }
-                    }
-                },
-
-                // ==========================================
-                // PRODUCTOS
-                // ==========================================
-                async fetchProductos() {
-                    this.searchQuery = '';
-                    this.allProductos = [];
-                    this.filteredProductos = [];
-                    this.cart = [];
-                    this.updateCart();
-                    this.isProductsLoading = true;
-
-                    if (!this.tiendaId) {
-                        this.isProductsLoading = false;
-                        return;
-                    }
-
-                    try {
-                        const res = await fetch(`{{ url('ventas/productos-por-tienda') }}/${this.tiendaId}`);
-                        if (!res.ok) throw new Error('Error de red o de servidor al obtener productos');
-                        const data = await res.json();
-                        
-                        // Capturamos la tasa ISV real del backend
-                        const productos = data.map(p => ({
-                            ...p,
-                            // Convertir la tasa a float, debe venir del backend.
-                            isv_tasa: p.isv_tasa !== undefined ? parseFloat(p.isv_tasa) : 0.00,
-                        }));
-                        
-                        this.allProductos = productos;
-                        this.filteredProductos = productos;
-                        
-                        this.showNotification('success', 'Productos cargados', `${data.length} productos disponibles`);
-                    } catch (err) {
-                        console.error('Error al cargar productos:', err);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: err.message || 'No se pudieron cargar los productos. Intente nuevamente.',
-                            confirmButtonColor: '#ef4444'
-                        });
-                    } finally {
-                        this.isProductsLoading = false;
-                    }
-                },
-
-                filterProductos() {
-                    const q = (this.searchQuery || '').toLowerCase().trim();
-                    
-                    if (!q) {
-                        this.filteredProductos = this.allProductos;
-                        return;
-                    }
-
-                    this.filteredProductos = this.allProductos.filter(p => {
-                        const nombre = (p.producto_nombre || '').toLowerCase();
-                        const codigo = (p.codigo_marca || '').toLowerCase();
-                        
-                        return nombre.includes(q) || codigo.includes(q);
-                    });
-
-                    // Si hay un solo resultado y el query coincide exactamente con el código de barras, agrégalo al carrito
-                    if (this.filteredProductos.length === 1) {
-                        const producto = this.filteredProductos[0];
-                        if (producto.codigo_marca && producto.codigo_marca.toLowerCase() === q) {
-                            this.addToCart(producto);
-                            this.clearSearch(); // Limpiar búsqueda después de escanear/añadir
-                        }
-                    }
-                },
-
-                clearSearch() {
-                    this.searchQuery = '';
-                    this.filteredProductos = this.allProductos;
-                },
-
-                // ==========================================
-                // CLIENTES
-                // ==========================================
-                async onClientSearchInput() {
-                    this.clientSearchQuery = this.clientSearchQuery || '';
-                    this.selectedClientIndex = 0;
-                    
-                    if (this.clientSearchQuery.length < 2) {
-                        this.clientSearchResults = [];
-                        return;
-                    }
-
-                    this.isClientLoading = true;
-
-                    try {
-                        const res = await fetch(
-                            `{{ route('ventas.buscar-clientes') }}?query=${encodeURIComponent(this.clientSearchQuery)}`
-                        );
-                        
-                        if (!res.ok) {
-                            const errorData = await res.json().catch(() => ({ message: `Error ${res.status}: El servidor no devolvió JSON esperado.` }));
-                            throw new Error(errorData.message || 'Error de red o de servidor');
-                        }
-                        
-                        const data = await res.json();
-                        this.clientSearchResults = data;
-                    } catch (err) {
-                        console.error('Error buscando clientes:', err);
-                        this.clientSearchResults = [];
-                        this.showNotification('error', 'Error', err.message || 'No se pudieron buscar clientes');
-                    } finally {
-                        this.isClientLoading = false;
-                    }
-                },
-
-                selectClient(client) {
-                    this.clientId = client.id > 0 ? parseInt(client.id) : null; 
-                    
-                    this.selectedClientName = `${client.nombre}${client.identificacion ? ' (' + client.identificacion + ')' : ''}`;
-                    this.clientSearchQuery = ''; 
-                    this.clientSearchResults = [];
-                    this.selectedClientIndex = 0;
-                    
-                    this.showNotification('success', 'Cliente seleccionado', client.nombre);
-                    this.updateCart();
-                },
-                
-                setClientAfterModal(client) {
-                    if (!client || !client.id || isNaN(parseInt(client.id))) {
-                        console.error('Error: Cliente creado no devolvió un ID válido.');
-                        this.clearClient(); 
-                        return;
-                    }
-                    
-                    this.clientId = parseInt(client.id); 
-                    this.selectedClientName = `${client.nombre}${client.identificacion ? ' (' + client.identificacion + ')' : ''}`;
-                    this.clientSearchQuery = ''; 
-                    this.clientSearchResults = [];
-                    this.updateCart(); 
-                    
-                    this.$nextTick(() => {
-                        this.$refs.productSearch?.focus();
-                    });
-                },
-
-                clearClientSearch() {
-                    this.clientSearchQuery = '';
-                    this.clientSearchResults = [];
-                    this.selectedClientIndex = 0;
-                },
-
-                clearClient() {
-                    this.clientId = null;
-                    this.selectedClientName = 'Cliente Genérico / Sin Registro';
-                    this.clientSearchQuery = '';
-                    this.clientSearchResults = [];
-                    this.updateCart();
-                },
-
-                // ==========================================
-                // FORMATO DE CAMPOS
-                // ==========================================
-                formatIdentificacion(event, fieldType) {
-                    let value = event.target.value.replace(/\D/g, '');
-                    
-                    if (value.length > 4 && value.length <= 8) {
-                        value = value.replace(/^(\d{4})(\d+)/, '$1-$2');
-                    } else if (value.length > 8) {
-                        value = value.replace(/^(\d{4})(\d{4})(\d{0,6}).*/, '$1-$2-$3');
-                    }
-                    
-                    if (fieldType === 'clientSearch') {
-                        this.clientSearchQuery = value;
-                        this.$nextTick(() => {
-                            const el = document.getElementById('client_search_input');
-                            if (el) el.value = value;
-                        });
-                    } else if (fieldType === 'newClient') {
-                        this.newClientForm.identificacion = value;
-                        this.$nextTick(() => {
-                            const el = document.getElementById('new_client_identificacion');
-                            if (el) el.value = value;
-                        });
-                    }
-                },
-
-                formatTelefono(event) {
-                    let value = event.target.value.replace(/\D/g, '');
-                    
-                    if (value.length > 4) {
-                        value = value.replace(/^(\d{4})(\d{0,4}).*/, '$1-$2');
-                    }
-                    
-                    this.newClientForm.telefono = value;
-                    this.$nextTick(() => {
-                        const el = document.getElementById('new_client_telefono');
-                        if (el) el.value = value;
-                    });
-                },
-
-                // ==========================================
-                // MODAL NUEVO CLIENTE (CORREGIDO)
-                // ==========================================
-                openNewClientModal() {
-                    this.resetNewClientForm(); // <-- Resetear antes de abrir
-                    this.showNewClientModal = true;
-                    
-                    // Enfoca el primer campo del modal al abrir (Mejora UX)
-                    this.$nextTick(() => {
-                        document.querySelector('input[x-model="newClientForm.nombre"]').focus();
-                    });
-                },
-
-                closeNewClientModal() {
-                    this.showNewClientModal = false;
-                    this.resetNewClientForm(); // <-- Resetear después de cerrar
-                },
-
-                resetNewClientForm() {
-                    // Asegura que todos los campos del formulario modal estén en blanco
-                    this.newClientForm = { nombre: '', identificacion: '', email: '', telefono: '' };
-                    this.newClientError = '';
-                },
-
-                async saveNewClient() {
-                    this.newClientSaving = true;
-                    this.newClientError = ''; 
-
-                    const payload = {
-                        _token: '{{ csrf_token() }}',
-                        ...this.newClientForm
-                    };
-
-                    try {
-                        const response = await fetch('{{ route('ventas.store-cliente') }}', {
-                            method: 'POST',
-                            headers: {  
-                                'Content-Type': 'application/json',  
-                                'X-Requested-With': 'XMLHttpRequest'  
-                            },
-                            body: JSON.stringify(payload)
-                        });
-
-                        const data = await response.json();
-
-                        // 1. EVALUACIÓN DE ÉXITO (Código 200-299 Y success: true)
-                        if (response.ok && data.success) {
-                            
-                            window.dispatchEvent(new CustomEvent('new-client-saved', {
-                                detail: { client: data.cliente }
-                            }));
-                            
-                            // Muestra la alerta de éxito
-                            Swal.fire({
-                                icon: 'success',
-                                title: '¡Cliente Registrado!',
-                                text: `${data.cliente.nombre} ha sido guardado y seleccionado.`,
-                                timer: 2000,
-                                showConfirmButton: false,
-                                position: 'top-end',
-                                toast: true
-                            });
-                            
-                            this.$nextTick(() => {
-                                setTimeout(() => {
-                                    this.closeNewClientModal(); // Cierra el modal solo en caso de éxito
-                                }, 100); 
-                            });
-
-                        } else if (response.status === 422) {
-                            // 2. LÓGICA DE ERROR DE VALIDACIÓN (422)
-                            console.error('Error de validación 422 (Cliente):', data.errors);
-                            
-                            // Si falla por validación (ej. duplicado), cerramos el modal para seguir el flujo
-                            this.$nextTick(() => {
-                                setTimeout(() => {
-                                    this.closeNewClientModal(); 
-                                }, 100); 
-                            });
-                            
-                        } else {
-                            // 3. OTROS ERRORES DE SERVIDOR (500, 400, etc.)
-                            console.error('Error de servidor (Cliente):', data);
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: data.message || 'Ocurrió un error al guardar el cliente.',
-                                confirmButtonColor: '#ef4444'
-                            });
-                        }
-                    } catch (err) {
-                        // 4. ERROR CRÍTICO
-                        console.error('Error de conexión o JSON inválido:', err);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error Crítico',
-                            text: 'Error de conexión. Intente nuevamente o revise la consola (F12).',
-                            confirmButtonColor: '#ef4444'
-                        });
-                    } finally {
-                        this.newClientSaving = false;
-                    }
-                },
-
-                // ==========================================
-                // CARRITO Y CÁLCULOS
-                // ==========================================
-                addToCart(producto) {
-                    if (producto.stock_actual === 0) {
-                        this.showNotification('warning', 'Sin stock', 'Este producto no tiene stock disponible');
-                        return;
-                    }
-
-                    // Lógica para prevenir doble clic/escaneo rápido (CORRECCIÓN LISTADO PRODUCTOS)
-                    const now = Date.now();
-                    if (this.lastAddedProductId === producto.inventario_id && (now - this.lastAddedTimestamp) < 200) {
-                        return; // Ignora la segunda llamada rápida
-                    }
-                    
-                    // Actualiza el estado para la siguiente llamada
-                    this.lastAddedProductId = producto.inventario_id;
-                    this.lastAddedTimestamp = now;
-
-                    const existing = this.cart.find(i => i.inventario_id === producto.inventario_id);
-                    
-                    if (existing) {
-                        if (existing.cantidad < existing.stockMax) {
-                            existing.cantidad = existing.cantidad + 1; 
-                            this.showNotification('success', 'Cantidad actualizada', `${producto.producto_nombre} (${existing.cantidad})`);
-                        } else {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Stock máximo',
-                                text: `Solo hay ${existing.stockMax} unidades disponibles.`,
-                                timer: 2000,
-                                showConfirmButton: false,
-                                toast: true,
-                                position: 'top-end'
-                            });
-                        }
-                    } else {
-                        this.cart.push({
-                            inventario_id: producto.inventario_id,
-                            nombre: producto.producto_nombre,
-                            precio: producto.precio,
-                            stockMax: producto.stock_actual,
-                            cantidad: 1, // Cantidad inicial es 1
-                            isv_tasa: producto.isv_tasa 
-                        });
-                        this.showNotification('success', 'Producto añadido', producto.producto_nombre);
-                    }
-                    
-                    this.updateCart();
-                },
-
-                removeFromCart(index) {
-                    const item = this.cart[index];
-                    
-                    Swal.fire({
-                        title: '¿Eliminar producto?',
-                        text: `Se eliminará "${item.nombre}" del carrito`,
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonColor: '#ef4444',
-                        cancelButtonColor: '#6b7280',
-                        confirmButtonText: 'Sí, eliminar',
-                        cancelButtonText: 'Cancelar'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            this.cart.splice(index, 1);
-                            this.updateCart();
-                            this.showNotification('info', 'Producto eliminado', item.nombre);
-                        }
-                    });
-                },
-
-                // FUNCIÓN CORREGIDA PARA PREVENIR DOBLE INCREMENTO
-                incrementQuantity(index, maxStock) {
-                    const item = this.cart[index];
-                    const now = Date.now();
-
-                    // Control de tiempo para prevenir doble clic en el mismo item
-                    if (this.lastCartUpdateId === item.inventario_id && (now - this.lastCartUpdateTimestamp) < 200) {
-                        return; 
-                    }
-                    
-                    this.lastCartUpdateId = item.inventario_id;
-                    this.lastCartUpdateTimestamp = now;
-                    // Fin de control
-
-                    if (item.cantidad < maxStock) {
-                        item.cantidad++; 
-                        this.updateCart();
-                    } else {
-                        this.showNotification('warning', 'Stock máximo', 'No hay más unidades disponibles');
-                    }
-                },
-
-                // FUNCIÓN CORREGIDA PARA PREVENIR DOBLE DECREMENTO
-                decrementQuantity(index) {
-                    const item = this.cart[index];
-                    const now = Date.now();
-
-                    // Control de tiempo para prevenir doble clic en el mismo item
-                    if (this.lastCartUpdateId === item.inventario_id && (now - this.lastCartUpdateTimestamp) < 200) {
-                        return;
-                    }
-                    
-                    this.lastCartUpdateId = item.inventario_id;
-                    this.lastCartUpdateTimestamp = now;
-                    // Fin de control
-
-                    if (item.cantidad > 1) {
-                        item.cantidad--; 
-                        this.updateCart();
-                    }
-                },
-
-                // 🔑 FUNCIÓN UPDATE CART CORREGIDA PARA CÁLCULOS FISCALES Y DE PRECIO
-                updateCart() {
-                    this.cart.forEach(item => {
-                        if (typeof item.cantidad !== 'number' || item.cantidad < 1 || isNaN(item.cantidad)) {
-                            item.cantidad = 1;
-                        }
-                        if (item.cantidad > item.stockMax) {
-                            item.cantidad = item.stockMax;
-                        }
-                        item.cantidad = parseInt(item.cantidad);
-                    });
-
-                    let subtotalNeto = 0;
-                    let totalExento = 0;
-                    let totalGravado = 0;
-                    let totalIsv = 0;
-                    
-                    this.cart.forEach(item => {
-                        // 1. Asegurar que precio y cantidad sean números válidos
-                        const precioUnitario = parseFloat(item.precio) || 0;
-                        const cantidad = parseInt(item.cantidad) || 0;
-                        
-                        const base = precioUnitario * cantidad; // Base neta de la línea (100 * 1 = 100)
-                        const tasa = parseFloat(item.isv_tasa) || 0.00;
-                        const isvMonto = base * tasa;
-                        
-                        // 2. Acumulación de totales
-                        subtotalNeto += base;  
-                        totalIsv += isvMonto;
-
-                        // 3. Acumulación de subtotales por tipo de impuesto (Gravado/Exento)
-                        if (tasa > 0) {
-                            totalGravado += base;
-                        } else {
-                            totalExento += base;
-                        }
-                        
-                        // 4. Actualizar propiedades del ítem (Para mostrar Subtotal L 100.00)
-                        item.subtotalBase = base;
-                        item.isvMonto = isvMonto;
-                    });
-
-                    // 5. Redondeo final y asignación de variables
-                    this.subtotalNeto = parseFloat(subtotalNeto.toFixed(2));
-                    this.totalExento = parseFloat(totalExento.toFixed(2));
-                    this.totalGravado = parseFloat(totalGravado.toFixed(2));
-                    this.totalIsv = parseFloat(totalIsv.toFixed(2));
-                    this.totalImpuestos = this.totalIsv;  
-
-                    const totalConIsv = this.subtotalNeto + this.totalIsv;
-                    this.total = parseFloat(totalConIsv.toFixed(2));
-
-                    let currentDiscount = parseFloat(this.discount) || 0;  
-
-                    if (currentDiscount < 0) currentDiscount = 0;
-                    if (currentDiscount > totalConIsv) currentDiscount = totalConIsv;
-                    this.discount = parseFloat(currentDiscount.toFixed(2));  
-                    
-                    this.finalTotal = parseFloat((totalConIsv - this.discount).toFixed(2));
-                },
-
-                clearCart() {
-                    if (!this.cart.length) return;
-
-                    Swal.fire({
-                        title: '¿Vaciar el carrito?',
-                        text: 'Se eliminarán todos los productos del carrito',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#ef4444',
-                        cancelButtonColor: '#6b7280',
-                        confirmButtonText: 'Sí, vaciar',
-                        cancelButtonText: 'Cancelar'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            this.cart = [];
-                            this.discount = 0;
-                            this.selectedPaymentType = 'EFECTIVO';
-                            this.updateCart();
-                            this.showNotification('info', 'Carrito vacío', 'Se han eliminado todos los productos');
-                        }
-                    });
-                },
-
-                // ==========================================
-                // PROCESAR VENTA / COTIZACIÓN / FACTURA
-                // ==========================================
-                async processSale(type) {
-                    if (!this.isSaleReady(type) || this.isProcessing) {
-                        if (!this.cart.length || this.tiendaId === '') {
-                             Swal.fire({
-                                icon: 'warning',
-                                title: 'Faltan datos',
-                                text: 'Seleccione una tienda y añada productos al carrito para continuar.',
-                                confirmButtonColor: '#f59e0b'
-                            });
-                        } else if (!this.selectedPaymentType) {
-                             Swal.fire({
-                                icon: 'warning',
-                                title: 'Tipo de Pago Requerido',
-                                text: 'Debe seleccionar un tipo de pago antes de procesar la venta.',
-                                confirmButtonColor: '#f59e0b'
-                            });
-                        } else if (this.selectedPaymentType === 'CREDITO' && !(this.clientId > 0)) {
-                             Swal.fire({
-                                icon: 'info',
-                                title: 'Cliente Requerido',
-                                text: 'Para ventas a Crédito, debe seleccionar un cliente registrado.',
-                                confirmButtonColor: '#3b82f6'
-                            });
-                        } else if ((type === 'INVOICE' || type === 'QUOTE') && !(this.clientId > 0)) {
-                             Swal.fire({
-                                icon: 'info',
-                                title: `Cliente Requerido`,
-                                text: `Seleccione un cliente para generar la ${type === 'INVOICE' ? 'Factura' : 'Cotización'}.`,
-                                confirmButtonColor: '#3b82f6'
-                            });
-                        }
-                        return;
-                    }
-
-                    // 🔑 CLAVE 1: Usar "Factura" como nombre visible para TICKET en la confirmación de SweetAlert
-                    const titleMap = {
-                        'TICKET': '¿Confirmar Factura (Consumidor Final)?', // Etiqueta fiscal visible
-                        'QUOTE': '¿Guardar como Cotización?',
-                        'INVOICE': '¿Generar Factura?'
-                    };
-                    
-                    const endpointMap = {
-                        'TICKET': '{{ route('ventas.store-ticket') }}',  
-                        'QUOTE': '{{ route('ventas.store-quote') }}',  
-                        'INVOICE': '{{ route('ventas.store-invoice') }}'
-                    };
-                    
-                    const successColorMap = {
-                        'TICKET': '#10b981',  
-                        'QUOTE': '#3b82f6',  
-                        'INVOICE': '#4f46e5'  
-                    };
-                    const confirmButtonTextMap = {
-                        'TICKET': 'Sí, procesar',
-                        'QUOTE': 'Sí, guardar',
-                        'INVOICE': 'Sí, facturar'
-                    };
-
-                    const result = await Swal.fire({
-                        title: titleMap[type],
-                        html: `
-                            <div class="text-left space-y-2">
-                                <p class="text-sm text-gray-600">
-                                    <strong>Tipo de Pago:</strong> ${this.tiposPago[this.selectedPaymentType] || 'N/A'}
-                                </p>
-                                <p class="text-sm text-gray-600">
-                                    <strong>Cliente:</strong> ${this.selectedClientName}
-                                </p>
-                                <p class="text-lg font-bold text-emerald-600 mt-3 pt-3 border-t">
-                                    <strong>Total:</strong> L ${this.finalTotal.toFixed(2)}
-                                </p>
-                            </div>
-                        `,
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonColor: successColorMap[type],
-                        cancelButtonColor: '#6b7280',
-                        confirmButtonText: `<i class="fas fa-check mr-2"></i> ${confirmButtonTextMap[type]}`,
-                        cancelButtonText: '<i class="fas fa-times mr-2"></i> Cancelar',
-                        customClass: {
-                            popup: 'swal-wide'
-                        }
-                    });
-
-                    if (!result.isConfirmed) return;
-
-                    this.isProcessing = true;
-                    const url = endpointMap[type];
-
-                    const detalles = this.cart.map(item => ({
-                        inventario_id: item.inventario_id,
-                        cantidad: item.cantidad,
-                        precio_unitario: item.precio,
-                        isv_tasa: item.isv_tasa  
-                    }));
-
-                    const payload = {
-                        _token: '{{ csrf_token() }}',
-                        tienda_id: this.tiendaId,
-                        cliente_id: this.clientId,
-                        tipo_documento: type,  
-                        total_monto: this.total, 
-                        descuento: this.discount,
-                        detalles: detalles,
-                        tipo_pago: this.selectedPaymentType  
-                    };
-
-                    try {
-                        const res = await fetch(url, {
-                            method: 'POST',
-                            headers: {  
-                                'Content-Type': 'application/json',  
-                                'X-Requested-With': 'XMLHttpRequest'  
-                            },
-                            body: JSON.stringify(payload)
-                        });
-
-                        const data = await res.json().catch(err => {
-                            console.error("Error de JSON.parse en processSale", err);
-                            throw new Error(`El servidor devolvió un error de formato (${res.status}). Revise los logs del servidor.`);
-                        });
-
-                        if (res.ok && data.success) {
-                            // Usamos el tipo real para los colores y mensajes
-                            const actualType = type; 
-
-                            await Swal.fire({
-                                icon: 'success',
-                                title: data.documento_id ? `Transacción #${data.documento_id}` : '¡Transacción Procesada!',
-                                html: `<p class="text-gray-700">${data.message}</p>` + 
-                                            (data.documento_url ? `<a href="${data.documento_url}" target="_blank" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"><i class="fas fa-print mr-2"></i> Imprimir / Descargar</a>` : ''),
-                                confirmButtonColor: successColorMap[actualType],
-                                confirmButtonText: 'Hecho'
-                            });
-
-                            // Resetear estado después de la venta
-                            this.cart = [];
-                            this.discount = 0;
-                            this.selectedPaymentType = 'EFECTIVO';
-                            this.updateCart();
-                            this.fetchProductos();
-                            this.clearClient();
-
-                        } else if (res.status === 422) {
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'Error de Validación',
-                                text: data.message || `No se pudo procesar la solicitud de ${type}.`,
-                                confirmButtonColor: '#f59e0b'
-                            });
-                            this.fetchProductos();
-                            
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: data.message || `Ocurrió un error al procesar la solicitud de ${type}.`,
-                                confirmButtonColor: '#ef4444'
-                            });
-                        }
-
-                    } catch (err) {
-                        console.error(`Error en processSale:`, err);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error Crítico',
-                            text: err.message || 'Error de conexión con el servidor o JSON inválido en la respuesta. Por favor, revise la Consola del navegador (F12).',
-                            confirmButtonColor: '#ef4444'
-                        });
-                    } finally {
-                        this.isProcessing = false;
-                    }
-                }
-            };
-        }
-    </script>
-
-    {{-- Estilos CSS --}}
-    <style>
-        /* Animaciones y Estilos CSS (Incluidos) */
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
-        /* Scrollbar personalizado */
-        .overflow-y-auto::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .overflow-y-auto::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 10px;
-        }
-
-        .overflow-y-auto::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-        }
-
-        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 0, 0, 0.3);
-        }
-
-        .dark .overflow-y-auto::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        .dark .overflow-y-auto::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        /* Efecto de pulso para elementos importantes */
-        @keyframes pulse-slow {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.8;
-            }
-        }
-
-        .animate-pulse-slow {
-            animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        /* Estilos para el modal de SweetAlert */
-        .swal-wide {
-            width: 600px !important;
-        }
-
-        /* Mejora de contraste en modo oscuro */
-        .dark input:focus,
-        .dark select:focus,
-        .dark textarea:focus {
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
-        }
-
-        /* Transiciones suaves */
-        * {
-            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 150ms;
-        }
-
-        /* Ocultar flechas de número en inputs */
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        input[type="number"] {
-            -moz-appearance: textfield;
-        }
-
-        /* Indicador de carga */
-        .fa-spinner {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Efectos hover mejorados */
-        button:not(:disabled):hover {
-            transform: translateY(-1px);
-        }
-
-        button:not(:disabled):active {
-            transform: translateY(0);
-        }
-
-        /* Badge de stock bajo */
-        .stock-warning {
-            position: relative;
-        }
-
-        .stock-warning::after {
-            content: '!';
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            width: 16px;
-            height: 16px;
-            background: #ef4444;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: bold;
-        }
-    </style>
+    {{-- ESTILOS CSS --}}
+    <style>
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Scrollbar personalizado */
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .dark .overflow-y-auto::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .dark .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Efecto de pulso para elementos importantes */
+        @keyframes pulse-slow {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        .animate-pulse-slow {
+            animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Estilos para el modal de SweetAlert */
+        .swal-wide {
+            width: 600px !important;
+        }
+
+        /* Mejora de contraste en modo oscuro */
+        .dark input:focus,
+        .dark select:focus,
+        .dark textarea:focus {
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Transiciones suaves */
+        * {
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+
+        /* Ocultar flechas de número en inputs */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        /* Indicador de carga */
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Efectos hover mejorados */
+        button:not(:disabled):hover {
+            transform: translateY(-1px);
+        }
+
+        button:not(:disabled):active {
+            transform: translateY(0);
+        }
+
+        /* Badge de stock bajo */
+        .stock-warning {
+            position: relative;
+        }
+
+        .stock-warning::after {
+            content: '!';
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 16px;
+            height: 16px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+    </style>
 </x-app-layout>

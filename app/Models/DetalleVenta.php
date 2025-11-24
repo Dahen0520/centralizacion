@@ -22,12 +22,8 @@ class DetalleVenta extends Model
         'subtotal_final',  
     ];
     
-    /**
-     * Define los tipos de datos para la conversión automática.
-     * Esta es la corrección crítica para los campos de cálculo.
-     */
     protected $casts = [
-        'cantidad' => 'integer', // La cantidad debe ser un entero
+        'cantidad' => 'integer', 
         'precio_unitario' => 'float',
         'subtotal_base' => 'float',
         'isv_tasa' => 'float',

@@ -6,9 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    
     public function up(): void
     {
         Schema::create('empresas', function (Blueprint $table) {
@@ -16,8 +14,6 @@ return new class extends Migration
             $table->string('nombre_negocio');
             $table->string('direccion');
             
-            // NUEVO CAMPO BOLEANO PARA FACTURACIÓN
-            // Indica si la empresa tiene habilitada la facturación (default: falso)
             $table->boolean('facturacion')->default(false); 
             
             // Relaciones
@@ -37,9 +33,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('empresas');

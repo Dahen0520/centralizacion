@@ -25,10 +25,8 @@
                     ];
                 @endphp
 
-                {{-- HEADER DE ACCIONES, FILTROS Y BÚSQUEDA --}}
                 <div class="flex flex-col lg:flex-row justify-between items-center mb-8 gap-4">
                     
-                    {{-- Botón Crear --}}
                     <a href="{{ route('marcas.create') }}" 
                        class="w-full md:w-auto inline-flex items-center justify-center px-8 py-3 
                               bg-gradient-to-r from-blue-600 to-indigo-700 text-white 
@@ -39,10 +37,8 @@
                         <i class="fas fa-plus-circle mr-2 text-lg"></i> Crear Marca
                     </a>
 
-                    {{-- GRUPO DE FILTRO DESPLEGABLE Y BÚSQUEDA --}}
                     <div class="flex flex-col sm:flex-row justify-end items-center gap-3 w-full lg:w-3/5">
                         
-                        {{-- Filtro Desplegable de Estado --}}
                         <select id="estado-filter" class="filter-select select-styled px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl shadow-md text-gray-700 dark:text-gray-200 dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500 transition duration-150 w-full sm:w-auto">
                             @foreach ($statuses as $statusKey => $statusData)
                                 @php
@@ -55,7 +51,6 @@
                             @endforeach
                         </select>
                         
-                        {{-- Barra de búsqueda --}}
                         <div class="relative w-full sm:w-2/3">
                             <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400"></i>
                             <input type="text" id="search-input" placeholder="Buscar por producto..."
@@ -67,7 +62,6 @@
                     </div>
                 </div>
 
-                {{-- CONTENEDOR DE LA TABLA --}}
                 <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-100 dark:bg-gray-700">
@@ -100,7 +94,6 @@
                         </tbody>
                     </table>
                     
-                    {{-- Mensaje de No Resultados --}}
                     <div id="no-results-message" class="hidden p-10 text-center bg-white dark:bg-gray-800">
                         <i class="fas fa-tag text-5xl text-blue-400 dark:text-blue-600 mb-3"></i>
                         <p class="font-extrabold text-xl text-gray-900 dark:text-white">¡Vaya! No se encontraron marcas.</p>
@@ -108,7 +101,6 @@
                     </div>
                 </div>
 
-                {{-- Paginación --}}
                 <div id="pagination-links" class="mt-8">
                     {{ $marcas->links() }}
                 </div>
@@ -116,7 +108,6 @@
         </div>
     </div>
 
-    {{-- Estilos personalizados para el select --}}
     <style>
         .select-styled {
             -webkit-appearance: none;
@@ -135,182 +126,12 @@
     </style>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            
-            const successMessage = '{{ session('success') }}';
-            if (successMessage) {
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Operación Exitosa!',
-                    text: successMessage,
-                    showConfirmButton: false,
-                    timer: 3000,
-                    toast: true,
-                    position: 'top-end'
-                });
-            }
-
-            const searchInput = document.getElementById('search-input');
-            const marcasTableBody = document.getElementById('marcas-table-body');
-            const paginationLinksContainer = document.getElementById('pagination-links');
-            const noResultsMessage = document.getElementById('no-results-message');
-            const estadoFilter = document.getElementById('estado-filter'); // Nuevo selector
-
-            let searchTimeout;
-            const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
-
-            // Obtener el estado actual del selector
-            function getCurrentStatus() {
-                return estadoFilter.value;
-            }
-
-            // Función principal para obtener y mostrar las marcas
-            function fetchMarcas(page = 1) {
-                const query = searchInput.value;
-                const status = getCurrentStatus();
-                const url = `{{ route('marcas.index') }}?page=${page}&search=${encodeURIComponent(query)}&estado=${status}`;
-
-                // Muestra estado de carga
-                marcasTableBody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-blue-500 dark:text-blue-400"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando marcas...</td></tr>';
-                noResultsMessage.classList.add('hidden');
-
-                fetch(url, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('La respuesta de la red no fue correcta: ' + response.statusText);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Actualizar URL del navegador para persistencia
-                    window.history.pushState({}, '', url);
-
-                    marcasTableBody.innerHTML = data.table_rows;
-                    paginationLinksContainer.innerHTML = data.pagination_links;
-                    
-                    // Actualizar conteos (Aunque el selector no los muestra, es bueno tener la lógica si se necesita)
-                    // Si el selector se actualiza, la vista principal ya tiene los datos seleccionados
-                    
-                    // Manejar el mensaje de no resultados
-                    if (data.marcas_count === 0) {
-                        noResultsMessage.classList.remove('hidden');
-                    } else {
-                        noResultsMessage.classList.add('hidden');
-                    }
-
-                    attachDeleteListeners();
-                    attachPaginationListeners();
-                })
-                .catch(error => {
-                    console.error('Error al buscar marcas:', error);
-                    marcasTableBody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-red-500 dark:text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i> Error al cargar.</td></tr>';
-                    Swal.fire('Error de Carga', 'No se pudieron cargar las marcas. Detalles: ' + error.message, 'error');
-                });
-            }
-
-            function getCurrentPage() {
-                const urlParams = new URLSearchParams(window.location.search);
-                return urlParams.get('page') || 1;
-            }
-
-            // --- LISTENERS DE EVENTOS ---
-            
-            // Listener para el input de búsqueda (con debounce)
-            searchInput.addEventListener('input', function () {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    fetchMarcas(1); 
-                }, 300);
-            });
-
-            // Listener para el filtro desplegable de estado (inmediato)
-            estadoFilter.addEventListener('change', function() {
-                fetchMarcas(1);
-            });
-
-            // Función para adjuntar listeners de eliminación a los botones
-            function attachDeleteListeners() {
-                const deleteButtons = document.querySelectorAll('.delete-btn');
-                deleteButtons.forEach(button => {
-                    const newButton = button.cloneNode(true);
-                    button.parentNode.replaceChild(newButton, button);
-                    newButton.addEventListener('click', handleDeleteClick);
-                });
-            }
-
-            // Función para manejar el clic en el botón de eliminar
-            function handleDeleteClick(e) {
-                e.preventDefault();
-                const form = this.closest('form');
-                const marcaName = this.getAttribute('data-name') || 'esta marca';
-
-                Swal.fire({
-                    title: '¿Eliminar ' + marcaName + '?',
-                    text: '¡Esta acción es irreversible!',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#EF4444', 
-                    cancelButtonColor: '#6B7280',
-                    confirmButtonText: 'Sí, ¡Eliminar!',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        fetch(form.action, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'X-CSRF-TOKEN': csrfToken,
-                                'Accept': 'application/json'
-                            }
-                        })
-                        .then(response => {
-                            if (!response.ok) {
-                                return response.json().then(err => { throw new Error(err.message || 'Error al eliminar la marca'); });
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.success) {
-                                Swal.fire('¡Eliminado!', data.message, 'success');
-                                fetchMarcas(getCurrentPage());
-                            } else {
-                                Swal.fire('Error', data.message || 'No se pudo eliminar la marca.', 'error');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error en fetch handleDeleteClick:', error);
-                            Swal.fire('Error', 'Ocurrió un error inesperado al eliminar: ' + error.message, 'error');
-                        });
-                    }
-                });
-            }
-
-            // Función para adjuntar listeners de paginación a los enlaces
-            function attachPaginationListeners() {
-                const links = paginationLinksContainer.querySelectorAll('a');
-                links.forEach(link => {
-                    const newLink = link.cloneNode(true);
-                    link.parentNode.replaceChild(newLink, link);
-                    newLink.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const url = new URL(this.href);
-                        const page = url.searchParams.get('page');
-                        
-                        const newUrl = `{{ route('marcas.index') }}?page=${page}&search=${encodeURIComponent(searchInput.value)}&estado=${getCurrentStatus()}`;
-                        window.history.pushState({}, '', newUrl);
-                        fetchMarcas(page);
-                    });
-                });
-            }
-
-            // Inicialización:
-            attachDeleteListeners();
-            attachPaginationListeners();
-        });
+        window.AppConfig = {
+            marcasIndexRoute: '{{ route('marcas.index') }}',
+            csrfToken: document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '',
+            sessionSuccess: '{{ session('success') }}'
+        };
     </script>
+    
+    <script src="{{ asset('js/marcas/index.js') }}"></script>
 </x-app-layout>

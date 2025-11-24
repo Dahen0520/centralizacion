@@ -5,6 +5,7 @@
         </h2>
     </x-slot>
 
+    {{-- Script de SweetAlert2 (CDN) --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <div class="py-12">
@@ -15,6 +16,7 @@
                 
                 @php
                     $currentStatus = $currentStatus ?? request('estado', 'aprobado');
+                    // Asegúrate de que $statusCounts se inicialice si no viene del controlador para evitar errores
                     $statusCounts = $statusCounts ?? ['todos' => 0, 'aprobado' => 0, 'pendiente' => 0, 'rechazado' => 0];
 
                     $statuses = [
@@ -83,11 +85,9 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                                     <i class="fas fa-industry mr-1"></i> Rubro
                                 </th>
-                                {{-- NUEVO ENCABEZADO DE FACTURACIÓN --}}
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-24">
                                     <i class="fas fa-file-invoice mr-1"></i> Facturación
                                 </th>
-                                {{-- FIN NUEVO ENCABEZADO --}}
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider w-24">
                                     <i class="fas fa-check-circle mr-1"></i> Estado
                                 </th>
@@ -115,217 +115,18 @@
         </div>
     </div>
 
+    {{-- Bloque para pasar datos de Blade a JavaScript --}}
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            
-            const successMessage = '{{ session('success') }}';
-            if (successMessage) {
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Operación Exitosa!',
-                    text: successMessage,
-                    showConfirmButton: false,
-                    timer: 3000,
-                    toast: true,
-                    position: 'top-end'
-                });
-            }
-
-            const searchInput = document.getElementById('search-input');
-            const empresasTableBody = document.getElementById('empresas-table-body');
-            const paginationLinksContainer = document.getElementById('pagination-links');
-            const noResultsMessage = document.getElementById('no-results-message');
-            const filterButtons = document.querySelectorAll('.status-filter');
-            
-            const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
-            let searchTimeout;
-            
-            // Constante para el número total de columnas
-            const COLUMN_COUNT = 7; 
-
-
-            function getCurrentStatus() {
-                const activeFilter = document.querySelector('.status-filter.bg-blue-600');
-                if (activeFilter) {
-                    return activeFilter.getAttribute('data-status');
-                }
-                const urlParams = new URLSearchParams(window.location.search);
-                return urlParams.get('estado') || 'aprobado';
-            }
-            
-            function updateStatusCounts(counts) {
-                const statuses = ['todos', 'aprobado', 'pendiente', 'rechazado'];
-                const currentStatus = getCurrentStatus();
-                
-                statuses.forEach(status => {
-                    const countElement = document.getElementById(`count-${status}`);
-                    
-                    if (countElement) {
-                        const count = counts[status] ?? 0;
-                        countElement.textContent = count;
-                        
-                        if (status === currentStatus) {
-                             countElement.classList.remove('bg-blue-100', 'dark:bg-gray-900', 'text-blue-600', 'dark:text-blue-400');
-                             countElement.classList.add('bg-white/30');
-                        } else {
-                             countElement.classList.add('bg-blue-100', 'dark:bg-gray-900', 'text-blue-600', 'dark:text-blue-400');
-                             countElement.classList.remove('bg-white/30');
-                        }
-                    }
-                });
-            }
-
-
-            filterButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    filterButtons.forEach(btn => {
-                        btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
-                        btn.classList.add('bg-transparent', 'text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-200', 'dark:hover:bg-gray-600');
-                    });
-                    
-                    this.classList.remove('bg-transparent', 'text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-200', 'dark:hover:bg-gray-600');
-                    this.classList.add('bg-blue-600', 'text-white', 'shadow-md');
-                    
-                    fetchEmpresas(1);
-                });
-            });
-
-            function handleDeleteClick(e) {
-                e.preventDefault();
-                const deleteButton = this;
-                const form = deleteButton.closest('form');
-                const empresaName = deleteButton.getAttribute('data-name') || 'esta empresa'; 
-
-                Swal.fire({
-                    title: '¿Eliminar ' + empresaName + '?',
-                    text: '¡Esta acción es irreversible! Se eliminarán todos los registros asociados.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#EF4444', 
-                    cancelButtonColor: '#6B7280',
-                    confirmButtonText: 'Sí, ¡Eliminar!',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        fetch(form.action, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'X-CSRF-TOKEN': csrfToken,
-                                'Content-Type': 'application/json'
-                            },
-                        })
-                        .then(response => {
-                            if (!response.ok) {
-                                return response.json().then(err => { throw new Error(err.message || 'Error al eliminar la empresa'); });
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.success) {
-                                Swal.fire('¡Eliminado!', data.message, 'success');
-                                fetchEmpresas(getCurrentPage()); 
-                            } else {
-                                Swal.fire('Error', data.message || 'No se pudo eliminar la empresa.', 'error');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error en fetch handleDeleteClick:', error);
-                            Swal.fire('Error', 'Ocurrió un error inesperado al eliminar: ' + error.message, 'error');
-                        });
-                    }
-                });
-            }
-
-            function attachDeleteListeners() {
-                document.querySelectorAll('.delete-btn').forEach(button => {
-                    const newButton = button.cloneNode(true);
-                    button.parentNode.replaceChild(newButton, button);
-                    newButton.addEventListener('click', handleDeleteClick);
-                });
-            }
-
-            function attachPaginationListeners() {
-                paginationLinksContainer.querySelectorAll('a').forEach(link => {
-                    const newLink = link.cloneNode(true);
-                    link.parentNode.replaceChild(newLink, link);
-                    newLink.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const url = new URL(this.href);
-                        const page = url.searchParams.get('page');
-                        
-                        const newUrl = `{{ route('empresas.index') }}?page=${page}&search=${encodeURIComponent(searchInput.value)}&estado=${getCurrentStatus()}`;
-                        window.history.pushState({}, '', newUrl);
-                        fetchEmpresas(page);
-                    });
-                });
-            }
-
-            function fetchEmpresas(page = 1) {
-                const query = searchInput.value;
-                const status = getCurrentStatus();
-                const url = `{{ route('empresas.index') }}?page=${page}&search=${encodeURIComponent(query)}&estado=${status}`;
-
-                // Usamos COLUMN_COUNT (7) para el colspan
-                empresasTableBody.innerHTML = '<tr><td colspan="' + COLUMN_COUNT + '" class="p-6 text-center text-blue-500 dark:text-blue-400"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando empresas...</td></tr>';
-                noResultsMessage.classList.add('hidden');
-                
-                fetch(url, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('La respuesta de la red no fue correcta: ' + response.statusText);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    empresasTableBody.innerHTML = data.table_rows;
-                    paginationLinksContainer.innerHTML = data.pagination_links;
-                    
-                    if (data.status_counts) {
-                        updateStatusCounts(data.status_counts);
-                    }
-                    
-                    if (data.empresas_count === 0) {
-                        noResultsMessage.classList.remove('hidden');
-                        empresasTableBody.innerHTML = '';
-                    } else {
-                        noResultsMessage.classList.add('hidden');
-                    }
-
-                    attachDeleteListeners();
-                    attachPaginationListeners();
-                })
-                .catch(error => {
-                    console.error('Error al buscar empresas:', error);
-                    // Usamos COLUMN_COUNT (7) para el colspan
-                    empresasTableBody.innerHTML = '<tr><td colspan="' + COLUMN_COUNT + '" class="p-6 text-center text-red-500 dark:text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i> Error al cargar.</td></tr>';
-                    Swal.fire('Error de Carga', 'No se pudieron cargar las empresas. Inténtalo de nuevo. Detalles: ' + error.message, 'error');
-                });
-            }
-
-            function getCurrentPage() {
-                const urlParams = new URLSearchParams(window.location.search);
-                return urlParams.get('page') || 1;
-            }
-
-            searchInput.addEventListener('input', function () {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    fetchEmpresas(1);
-                }, 300);
-            });
-
-            const initialStatus = getCurrentStatus();
-            const initialSearch = searchInput.value;
-            window.history.replaceState({}, '', `{{ route('empresas.index') }}?estado=${initialStatus}&search=${encodeURIComponent(initialSearch)}`);
-            
-            attachDeleteListeners();
-            attachPaginationListeners();
-        });
+        window.AppConfig = {
+            empresasIndexRoute: '{{ route('empresas.index') }}',
+            csrfToken: document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '',
+            // Pasamos el conteo inicial de estados
+            statusCounts: @json($statusCounts),
+            currentStatus: '{{ $currentStatus }}',
+            columnCount: 7 
+        };
     </script>
+    
+    {{-- Enlace al archivo JavaScript separado --}}
+    <script src="{{ asset('js/empresas/index.js') }}"></script>
 </x-app-layout>

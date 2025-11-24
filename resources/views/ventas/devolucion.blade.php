@@ -1,4 +1,3 @@
-{{-- resources/views/ventas/devolucion.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
@@ -6,16 +5,21 @@
         </h2>
     </x-slot>
 
-    @php
-        $detallesJson = $detalles->keyBy('id')->toJson();
-    @endphp>
+    <script>
+        window.DevolucionData = {
+            detallesJson: '{{ $detalles->keyBy('id')->toJson() }}',
+            numeroDocumento: '{{ $numeroDocumento ?? '' }}',
+            ventaId: {{ $venta->id ?? 'null' }},
+            totalFinal: {{ $venta->total_final ?? '0' }}
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('js/ventas/devolucion.js') }}"></script>
 
     <div class="py-12 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 min-h-screen" 
-         data-detalles-json='{{ $detallesJson }}'
          x-data="devolucionModule()">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
             
-            {{-- Mensajes --}}
             @if (session('success'))
                 <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 text-green-800 p-5 rounded-xl mb-6 shadow-lg animate-fade-in">
                     <div class="flex items-center">
@@ -52,7 +56,6 @@
                 </div>
             @endif
 
-            {{-- Búsqueda --}}
             <div class="bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-8 mb-8 border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-shadow duration-300">
                 <div class="flex items-center mb-6">
                     <div class="bg-indigo-100 dark:bg-indigo-900 p-3 rounded-xl mr-4">
@@ -91,10 +94,8 @@
             </div>
 
             @if (isset($venta))
-                {{-- Resultados --}}
                 <div class="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl overflow-hidden border border-red-200 dark:border-red-900">
                     
-                    {{-- Header --}}
                     <div class="bg-gradient-to-r from-red-500 to-rose-600 p-6">
                         <div class="flex items-center text-white">
                             <div class="bg-white/20 backdrop-blur-sm p-3 rounded-xl mr-4">
@@ -114,7 +115,6 @@
                     </div>
 
                     <div class="p-8">
-                        {{-- Info de la venta --}}
                         <div class="mb-8 p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-xl border border-gray-200 dark:border-gray-600">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="flex items-center">
@@ -158,7 +158,6 @@
                               @submit.prevent="handleSubmit($event)">
                             @csrf
                             
-                            {{-- Tabla de productos --}}
                             <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 mb-8 shadow-md">
                                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                     <thead class="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
@@ -242,7 +241,6 @@
                                 </table>
                             </div>
 
-                            {{-- Total a devolver --}}
                             <div class="bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 p-6 rounded-xl border-2 border-red-300 dark:border-red-700 mb-6 shadow-lg">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
@@ -265,7 +263,6 @@
                                 </div>
                             </div>
 
-                            {{-- Botón de acción --}}
                             <div class="flex justify-end gap-4">
                                 <a href="{{ route('ventas.index') }}" 
                                    class="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-200 flex items-center">
@@ -305,105 +302,4 @@
             @endif
         </div>
     </div>
-    
-    <style>
-        @keyframes fade-in {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .animate-fade-in {
-            animation: fade-in 0.5s ease-out;
-        }
-    </style>
-    
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('devolucionModule', () => {
-                let detallesPorId = {};
-                
-                try {
-                    const jsonString = document.querySelector('div[data-detalles-json]')?.getAttribute('data-detalles-json');
-                    if (jsonString && jsonString.length > 0) {
-                        detallesPorId = JSON.parse(jsonString);
-                    }
-                } catch (e) {
-                    console.error("Error al inicializar JSON:", e);
-                    detallesPorId = {};
-                }
-
-                return {
-                    totalDevolucion: 0.00,
-                    productosDevolver: {}, 
-                    detallesPorId: detallesPorId,
-                    
-                    init() {
-                        this.updateDevolucionTotal(); 
-                    },
-                    
-                    updateDevolucionTotal() {
-                        let total = 0;
-                        for (const detalleId in this.productosDevolver) {
-                             if (this.productosDevolver.hasOwnProperty(detalleId)) {
-                                 const cantidadDevuelta = parseFloat(this.productosDevolver[detalleId]);
-                                 const detalle = this.detallesPorId[detalleId];
-                                 
-                                 if (detalle && cantidadDevuelta > 0) {
-                                     const montoUnitarioBase = parseFloat(detalle.precio_unitario);
-                                     const isvTasa = parseFloat(detalle.isv_tasa);
-                                     
-                                     const montoBase = cantidadDevuelta * montoUnitarioBase;
-                                     const isvMonto = Math.round(montoBase * isvTasa * 100) / 100; 
-                                     const totalLineaDevuelta = montoBase + isvMonto;
-                                     
-                                     total += totalLineaDevuelta;
-                                 }
-                             }
-                        }
-                        this.totalDevolucion = total;
-                    },
-                    
-                    handleSubmit(event) {
-                        if (Object.keys(this.productosDevolver).length === 0) {
-                            alert('Debe seleccionar al menos un producto para devolver.');
-                            return;
-                        }
-                        
-                        const form = event.target;
-                        
-                        const existingFields = form.querySelectorAll('input[name^="devoluciones"]');
-                        existingFields.forEach(field => field.remove());
-                        
-                        let index = 0;
-                        for (const detalleId in this.productosDevolver) {
-                            if (this.productosDevolver.hasOwnProperty(detalleId)) {
-                                const cantidad = this.productosDevolver[detalleId];
-                                
-                                const inputDetalleId = document.createElement('input');
-                                inputDetalleId.type = 'hidden';
-                                inputDetalleId.name = `devoluciones[${index}][detalle_id]`;
-                                inputDetalleId.value = detalleId;
-                                form.appendChild(inputDetalleId);
-                                
-                                const inputCantidad = document.createElement('input');
-                                inputCantidad.type = 'hidden';
-                                inputCantidad.name = `devoluciones[${index}][cantidad]`;
-                                inputCantidad.value = cantidad;
-                                form.appendChild(inputCantidad);
-                                
-                                index++;
-                            }
-                        }
-                        
-                        form.submit();
-                    }
-                };
-            });
-        });
-    </script>
 </x-app-layout>

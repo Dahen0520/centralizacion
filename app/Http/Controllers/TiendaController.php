@@ -8,24 +8,17 @@ use Illuminate\Validation\Rule;
 
 class TiendaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse
-     */
+
     public function index(Request $request)
     {
         $query = Tienda::query();
 
-        // Search logic
         if ($request->has('search')) {
             $query->where('nombre', 'like', '%' . $request->search . '%');
         }
 
         $tiendas = $query->with('municipio')->paginate(10);
 
-        // Return JSON response for AJAX requests
         if ($request->ajax()) {
             return response()->json([
                 'table_rows' => view('tiendas.partials.tiendas_table_rows', compact('tiendas'))->render(),
@@ -33,7 +26,6 @@ class TiendaController extends Controller
             ]);
         }
 
-        // Return full view for regular requests
         return view('tiendas.index', compact('tiendas'));
     }
 
@@ -43,19 +35,14 @@ class TiendaController extends Controller
         return view('tiendas.create', compact('municipios'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
             'nombre' => 'required|string|max:255|unique:tiendas,nombre',
             'municipio_id' => 'required|exists:municipios,id',
-            // --- NUEVAS REGLAS AÑADIDAS ---
             'rtn' => 'nullable|string|max:50',
             'direccion' => 'nullable|string|max:255',
             'telefono' => 'nullable|string|max:20',
-            // -----------------------------
         ]);
 
         Tienda::create($request->all());
@@ -73,9 +60,6 @@ class TiendaController extends Controller
         return view('tiendas.edit', compact('tienda', 'municipios'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Tienda $tienda)
     {
         $request->validate([
@@ -86,24 +70,15 @@ class TiendaController extends Controller
                 Rule::unique('tiendas')->ignore($tienda->id),
             ],
             'municipio_id' => 'required|exists:municipios,id',
-            // --- NUEVAS REGLAS AÑADIDAS ---
             'rtn' => 'nullable|string|max:50',
             'direccion' => 'nullable|string|max:255',
             'telefono' => 'nullable|string|max:20',
-            // -----------------------------
         ]);
 
         $tienda->update($request->all());
         return redirect()->route('tiendas.index')->with('success', 'Tienda actualizada exitosamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Tienda  $tienda
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
-     */
     public function destroy(Request $request, Tienda $tienda)
     {
         try {

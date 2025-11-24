@@ -5,7 +5,7 @@
         </h2>
     </x-slot>
 
-    {{-- INCLUSIÓN DE SWEETALERT2 PARA NOTIFICACIONES --}}
+    {{-- Script de SweetAlert2 (CDN) --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <div class="py-12">
@@ -14,7 +14,7 @@
                         rounded-2xl shadow-3xl p-8 lg:p-10 
                         border-t-4 border-blue-600 dark:border-blue-500">
                 
-                {{-- HEADER DE ACCIONES, BÚSQUEDA Y FILTROS ELEGANTES --}}
+                {{-- HEADER DE ACCIONES Y BÚSQUEDA --}}
                 <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                     
                     {{-- Botón Crear --}}
@@ -76,172 +76,19 @@
         </div>
     </div>
 
+    {{-- Bloque para pasar datos de Blade a JavaScript --}}
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // --- 1. CONFIGURACIÓN Y SWEETALERT2 PARA NOTIFICACIONES ---
-
-            const successMessage = '{{ session('success') }}';
-            if (successMessage) {
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Operación Exitosa!',
-                    text: successMessage,
-                    showConfirmButton: false,
-                    timer: 3000,
-                    toast: true,
-                    position: 'top-end'
-                });
-            }
-
-            const searchInput = document.getElementById('search-input');
-            const impuestosTableBody = document.getElementById('impuestos-table-body');
-            const paginationLinksContainer = document.getElementById('pagination-links');
-            const noResultsMessage = document.getElementById('no-results-message');
-
-            let searchTimeout;
-            // Configuración del token CSRF (asumiendo que está en una meta tag)
-            const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
-
-            // --- 2. MANEJO DE ELIMINACIÓN (SWEETALERT2) ---
-            function handleDeleteClick(e) {
-                e.preventDefault();
-                const form = this.closest('form');
-                const impuestoName = this.getAttribute('data-name') || 'este impuesto';
-
-                Swal.fire({
-                    title: '¿Eliminar ' + impuestoName + '?',
-                    text: '¡Esta acción es irreversible! Asegúrate de que no esté asignado a ningún producto.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#EF4444', 
-                    cancelButtonColor: '#6B7280',
-                    confirmButtonText: 'Sí, ¡Eliminar!',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        fetch(form.action, {
-                            method: 'POST', // Usamos POST porque el método real es DELETE
-                            body: new FormData(form),
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'X-CSRF-TOKEN': csrfToken
-                            }
-                        })
-                        .then(response => {
-                            if (!response.ok) {
-                                // Captura el mensaje de error del controlador (ej. 409 Conflict)
-                                return response.json().then(err => { throw new Error(err.message || 'Error al eliminar el impuesto'); });
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.success) {
-                                Swal.fire('¡Eliminado!', data.message, 'success');
-                                fetchImpuestos(getCurrentPage());
-                            } else {
-                                Swal.fire('Error', data.message || 'No se pudo eliminar el impuesto.', 'error');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error en fetch handleDeleteClick:', error);
-                            // Muestra el error de la clave foránea capturado
-                            Swal.fire('Error', error.message, 'error'); 
-                        });
-                    }
-                });
-            }
-
-            // --- 3. LÓGICA AJAX PARA BÚSQUEDA Y PAGINACIÓN ---
-
-            function attachDeleteListeners() {
-                const deleteButtons = document.querySelectorAll('.delete-btn');
-                deleteButtons.forEach(button => {
-                    const newButton = button.cloneNode(true);
-                    button.parentNode.replaceChild(newButton, button);
-                    newButton.addEventListener('click', handleDeleteClick);
-                });
-            }
-
-            function handlePaginationClick(e) {
-                e.preventDefault();
-                const url = new URL(this.href);
-                const page = url.searchParams.get('page');
-                fetchImpuestos(page);
-            }
-
-            function attachPaginationListeners() {
-                const links = paginationLinksContainer.querySelectorAll('a');
-                links.forEach(link => {
-                    const newLink = link.cloneNode(true);
-                    link.parentNode.replaceChild(newLink, link);
-                    newLink.addEventListener('click', handlePaginationClick);
-                });
-            }
-
-            function fetchImpuestos(page = 1) {
-                const query = searchInput.value;
-
-                // Construcción de la URL de búsqueda/filtrado
-                const url = `{{ route('impuestos.index') }}?page=${page}&search=${encodeURIComponent(query)}`;
-
-                // Mostrar estado de carga
-                impuestosTableBody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-blue-500 dark:text-blue-400"><i class="fas fa-spinner fa-spin mr-2"></i> Cargando impuestos...</td></tr>';
-                noResultsMessage?.classList.add('hidden'); // Ocultar mensaje si existe
-
-                fetch(url, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('La respuesta de la red no fue correcta: ' + response.statusText);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Actualizar URL del navegador para persistencia
-                    window.history.pushState({}, '', url);
-
-                    impuestosTableBody.innerHTML = data.table_rows;
-                    paginationLinksContainer.innerHTML = data.pagination_links;
-                    
-                    // Manejar el mensaje de no resultados
-                    if (data.impuestos_count === 0) {
-                        noResultsMessage?.classList.remove('hidden');
-                    } else {
-                        noResultsMessage?.classList.add('hidden');
-                    }
-                    
-                    attachDeleteListeners();
-                    attachPaginationListeners();
-                })
-                .catch(error => {
-                    console.error('Error al buscar impuestos:', error);
-                    impuestosTableBody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-red-500 dark:text-red-400"><i class="fas fa-exclamation-triangle mr-2"></i> Error al cargar los impuestos.</td></tr>';
-                    Swal.fire('Error de Carga', 'No se pudieron cargar los impuestos. Detalles: ' + error.message, 'error');
-                });
-            }
-
-            function getCurrentPage() {
-                const urlParams = new URLSearchParams(window.location.search);
-                return urlParams.get('page') || 1;
-            }
-
-            // --- 4. ASIGNACIÓN DE EVENTOS ---
+        window.AppConfig = {
+            // Variables de entorno y rutas
+            impuestosIndexRoute: '{{ route('impuestos.index') }}',
+            csrfToken: document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '',
             
-            // Evento que dispara la búsqueda a la página 1
-            searchInput.addEventListener('input', function () {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    fetchImpuestos(1); 
-                }, 300);
-            });
-
-            // Adjuntar listeners iniciales cuando la página se carga
-            attachDeleteListeners();
-            attachPaginationListeners();
-        });
+            // Variables dinámicas de la vista
+            sessionSuccess: '{{ session('success') }}',
+            columnCount: 4 
+        };
     </script>
+    
+    {{-- Enlace al archivo JavaScript separado --}}
+    <script src="{{ asset('js/impuestos/index.js') }}"></script>
 </x-app-layout>

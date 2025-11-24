@@ -19,9 +19,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
  
 class VentaController extends Controller
 {
-    /**
-     * Mostrar interfaz del POS
-     */
+
     public function create()
     {
         $tiendas = Tienda::all();
@@ -29,9 +27,6 @@ class VentaController extends Controller
         return view('ventas.pos', compact('tiendas', 'tiposPago'));
     }
 
-    /**
-     * Obtener productos con stock de una tienda (CON TASA DE IMPUESTO DINÁMICA)
-     */
     public function getProductosParaVenta($tienda_id)
     {
         try {
@@ -64,9 +59,6 @@ class VentaController extends Controller
         }
     }
 
-    /**
-     * Guardar nuevo cliente desde el POS
-     */
     public function storeCliente(Request $request)
     {
         $identificacion = trim($request->input('identificacion', ''));
@@ -140,9 +132,6 @@ class VentaController extends Controller
         }
     }
 
-    /**
-     * Búsqueda de clientes en tiempo real
-     */
     public function buscarClientes(Request $request)
     {
         try {
@@ -180,18 +169,12 @@ class VentaController extends Controller
         }
     }
 
-    /**
-     * Procesar Ticket de Venta (Cliente genérico/NULL permitido)
-     */
     public function storeTicket(Request $request)
     {
         $request->merge(['tipo_documento' => 'TICKET', 'afecta_stock' => true]);
         return $this->handleTransaction($request);
     }
 
-    /**
-     * Procesar Factura (Cliente registrado obligatorio)
-     */
     public function storeInvoice(Request $request)
     {
         if (!$request->cliente_id) { 
@@ -205,9 +188,6 @@ class VentaController extends Controller
         return $this->handleTransaction($request);
     }
 
-    /**
-     * Procesar Cotización (Cliente registrado obligatorio)
-     */
     public function storeQuote(Request $request)
     {
         if (!$request->cliente_id) {
@@ -221,10 +201,6 @@ class VentaController extends Controller
         return $this->handleTransaction($request);
     }
     
-    /**
-     * Lógica central para procesar transacciones
-     * Asigna CAI para TICKET e INVOICE.
-     */
     protected function handleTransaction(Request $request)
     {
         try {
@@ -259,9 +235,6 @@ class VentaController extends Controller
 
             DB::beginTransaction();
             
-            // =========================================
-            // LÓGICA DE CAI/FACTURACIÓN (TICKET e INVOICE)
-            // =========================================
             $caiData = [];
             $rangoCai = null; 
 
@@ -435,10 +408,7 @@ class VentaController extends Controller
             ], 500);
         }
     }
-    
-    /**
-     * Listado de ventas con filtros
-     */
+
     public function index(Request $request)
     {
         $tiendas = Tienda::orderBy('nombre')->get();
@@ -476,9 +446,6 @@ class VentaController extends Controller
         return view('ventas.index', $data);
     }
 
-    /**
-     * Ver detalle de una venta
-     */
     public function show(Venta $venta)
     {
         $venta->load([
@@ -491,9 +458,6 @@ class VentaController extends Controller
         return view('ventas.show', compact('venta'));
     }
 
-    /**
-     * Anular una venta
-     */
     public function destroy(Venta $venta)
     {
         if ($venta->estado === 'ANULADA') {
@@ -545,9 +509,6 @@ class VentaController extends Controller
         }
     }
 
-    /**
-     * Imprimir documento (Genera PDF)
-     */
     public function printDocument($id, $type)
     {
         $venta = Venta::with([
@@ -581,13 +542,6 @@ class VentaController extends Controller
         return $pdf->stream($filename); 
     }
 
-    // ======================================================================================
-    // MÉTODOS DE DEVOLUCIÓN PARCIAL / ANULACIÓN DE PRODUCTO
-    // ======================================================================================
-
-    /**
-     * Muestra el formulario para buscar una venta y listar sus productos.
-     */
     public function showDevolucionForm(Request $request)
     {
         $venta = null;
@@ -612,12 +566,9 @@ class VentaController extends Controller
         return view('ventas.devolucion', compact('venta', 'detalles', 'numeroDocumento'));
     }
 
-    /**
-     * Procesa la devolución de productos seleccionados y ajusta el stock.
-     */
     public function processDevolucion(Request $request, Venta $venta)
     {
-        // Validar los productos y cantidades a devolver
+
         $validated = $request->validate([
             'devoluciones' => 'required|array|min:1',
             'devoluciones.*.detalle_id' => 'required|integer|exists:detalle_ventas,id',
@@ -700,7 +651,6 @@ class VentaController extends Controller
             $venta->total_isv -= $isvDevueltoGlobal;
             $venta->total_final -= $totalMontoAfectado;
             
-            // Si la venta queda sin detalles, marcar como ANULADA
             if ($venta->detalles()->count() === 0) {
                  $venta->estado = 'ANULADA'; 
             }

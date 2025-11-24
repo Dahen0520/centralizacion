@@ -10,8 +10,6 @@ class Venta extends Model
 {
     use HasFactory;
 
-    // Define los tipos de pago disponibles (Enum-like structure)
-    // Se ha simplificado a 3 opciones clave.
     public const TIPOS_PAGO = [
         'EFECTIVO'      => 'Efectivo',
         'TARJETA'       => 'Tarjeta (Crédito/Débito)',
@@ -35,7 +33,7 @@ class Venta extends Model
         
         // Campos de Facturación / Documento
         'tipo_documento',       
-        'tipo_pago',            // <-- Campo de pago
+        'tipo_pago',           
         'cai',                  
         'numero_documento',     
         'estado',               
@@ -44,9 +42,6 @@ class Venta extends Model
         'cliente_id',
     ];
 
-    /**
-     * Define los tipos de datos para la conversión automática.
-     */
     protected $casts = [
         'fecha_venta' => 'datetime',
         'total_venta' => 'float',

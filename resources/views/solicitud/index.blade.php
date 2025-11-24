@@ -5,15 +5,11 @@
         </h2>
     </x-slot>
 
-    {{-- INCLUSIÓN DE SWEETALERT2 VIA CDN --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
-            {{-- EL BLOQUE DE NOTIFICACIONES HTML NATIVAS HA SIDO ELIMINADO Y REEMPLAZADO POR EL SCRIPT DE SWEETALERT AL FINAL DE LA VISTA --}}
-
-            {{-- LÓGICA DEL FILTRO DE ESTADO --}}
             @php
                 $currentStatus = request('estado', 'pendiente');
                 
@@ -47,7 +43,6 @@
                 $currentStatusData = $statuses[$currentStatus] ?? $statuses['pendiente'];
             @endphp
 
-            {{-- BARRA DE PESTAÑAS MEJORADA --}}
             <div class="mb-8">
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-2">
                     <nav class="flex flex-wrap gap-2" aria-label="Tabs">
@@ -75,7 +70,6 @@
                 </div>
             </div>
             
-            {{-- HEADER CON ESTADÍSTICAS --}}
             <div class="mb-8">
                 <div class="bg-gradient-to-r from-{{ $currentStatusData['color'] }}-50 to-{{ $currentStatusData['color'] }}-100 dark:from-gray-800 dark:to-gray-700 rounded-xl shadow-lg p-6 border-l-4 {{ $currentStatusData['borderColor'] }}">
                     <div class="flex items-center justify-between flex-wrap gap-4">
@@ -100,7 +94,6 @@
                             </div>
                         </div>
 
-                        {{-- Botón de Acciones Rápidas (opcional) --}}
                         @if ($currentStatus === 'pendiente' && $empresas->total() > 0)
                             <div>
                                 <span class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition duration-150">
@@ -113,7 +106,6 @@
                 </div>
             </div>
 
-            {{-- LAYOUT DE TARJETAS MEJORADO --}}
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                 
                 @forelse ($empresas as $empresa)
@@ -122,7 +114,6 @@
                     @endphp
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border-t-4 {{ $cardStatusData['borderColor'] }} hover:shadow-2xl hover:scale-105 transition-all duration-300">
                         
-                        {{-- Header de la Tarjeta --}}
                         <div class="bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 p-5 border-b border-gray-200 dark:border-gray-700">
                             <div class="flex justify-between items-start">
                                 <div class="flex-1 min-w-0">
@@ -141,7 +132,6 @@
                             </div>
                         </div>
 
-                        {{-- Contenido de la Tarjeta --}}
                         <div class="p-5">
                             <div class="space-y-3">
                                 <div class="flex items-start">
@@ -182,7 +172,6 @@
                             </div>
                         </div>
 
-                        {{-- Footer de la Tarjeta --}}
                         <div class="px-5 py-4 bg-gray-50 dark:bg-gray-700/50 border-t border-gray-200 dark:border-gray-700">
                             <a href="{{ route('solicitud.show', $empresa) }}" 
                                class="w-full inline-flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-semibold rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-150 transform hover:scale-105">
@@ -193,7 +182,6 @@
                         </div>
                     </div>
                 @empty
-                    {{-- Estado Vacío Mejorado --}}
                     <div class="col-span-full">
                         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-12 text-center">
                             <div class="inline-flex items-center justify-center w-20 h-20 rounded-full {{ $currentStatusData['bgColor'] }} mb-6">
@@ -223,7 +211,6 @@
                 @endforelse
             </div>
             
-            {{-- Paginación Mejorada --}}
             @if ($empresas->hasPages())
                 <div class="mt-8">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
@@ -234,10 +221,9 @@
         </div>
     </div>
 
-    {{-- SCRIPT DE SWEETALERT2 PARA MOSTRAR NOTIFICACIONES DE SESIÓN --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            @if (session('success'))
+            if ({{ session('success') ? 'true' : 'false' }}) {
                 Swal.fire({
                     icon: 'success',
                     title: '¡Éxito!',
@@ -247,9 +233,9 @@
                     toast: true,
                     position: 'top-end'
                 });
-            @endif
+            }
 
-            @if (session('warning'))
+            if ({{ session('warning') ? 'true' : 'false' }}) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Atención',
@@ -257,9 +243,9 @@
                     showConfirmButton: true,
                     confirmButtonText: 'Entendido'
                 });
-            @endif
+            }
 
-            @if (session('error'))
+            if ({{ session('error') ? 'true' : 'false' }}) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -267,7 +253,7 @@
                     showConfirmButton: true,
                     confirmButtonText: 'Cerrar'
                 });
-            @endif
+            }
         });
     </script>
 </x-app-layout>

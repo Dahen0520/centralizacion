@@ -141,7 +141,6 @@ class RegistroController extends Controller
                 'productos_json'       => 'required|json',
             ]);
         } catch (ValidationException $e) {
-            // Este es el ajuste clave: permite que Laravel maneje la redirección con los errores.
             return back()->withErrors($e->errors())->withInput();
         }
 
@@ -150,7 +149,6 @@ class RegistroController extends Controller
             return back()->with('error', 'Debe agregar al menos un producto.')->withInput();
         }
         
-        // Validar el contenido del JSON de productos de forma manual
         foreach ($productosData as $index => $productoItem) {
             $validator = validator($productoItem, [
                 'nombre'              => 'required|string|max:255',
@@ -243,7 +241,6 @@ class RegistroController extends Controller
 
             DB::commit();
 
-            // 🚨 REDIRECCIÓN A LA VISTA DE ÉXITO
             return redirect()->route('registro.exito');
 
         } catch (\Exception $e) {

@@ -41,23 +41,6 @@
         {{ number_format($producto->impuesto->porcentaje ?? 0, 2) }}%
     </td>
     
-    {{-- ESTADO (Cápsula Estilizada) --}}
-    <td class="px-6 py-4 whitespace-nowrap text-center">
-        @php
-            $colorClass = 'bg-gray-100 text-gray-800';
-            if ($producto->estado == 'pendiente') {
-                $colorClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-300';
-            } elseif ($producto->estado == 'aprobado') {
-                $colorClass = 'bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-300';
-            } elseif ($producto->estado == 'rechazado') {
-                $colorClass = 'bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-300';
-            }
-        @endphp
-        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize {{ $colorClass }}">
-            {{ $producto->estado }}
-        </span>
-    </td>
-
     {{-- ACCIONES (Iconos elegantes) --}}
     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
         <div class="flex items-center justify-center space-x-2">

@@ -5,7 +5,6 @@
         </h2>
     </x-slot>
 
-    {{-- 1. INCLUSIÓN DE SWEETALERT2 VIA CDN --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
 
@@ -24,7 +23,6 @@
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg p-6 mt-4">
                 
-                {{-- PANEL DE ACCIONES Y ESTADO --}}
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 p-4 rounded-lg border-l-8 border-{{ $color }}-600 bg-{{ $color }}-50 dark:bg-gray-700/50 mb-8 shadow-md">
                     
                     <div>
@@ -37,7 +35,6 @@
                     
                     <div class="flex space-x-3">
                         @if ($estado != 'aprobado')
-                            {{-- Llamado a la función JS que abre el modal de comentario --}}
                             <form id="approve-form" method="POST" action="{{ route('solicitud.aprobar', $empresa) }}">
                                 @csrf
                                 <button type="button" onclick="confirmAction('approve')" 
@@ -49,7 +46,6 @@
                         @endif
 
                         @if ($estado != 'rechazado')
-                            {{-- Llamado a la función JS que abre el modal de comentario --}}
                             <form id="reject-form" method="POST" action="{{ route('solicitud.rechazar', $empresa) }}">
                                 @csrf
                                 <button type="button" onclick="confirmAction('reject')" 
@@ -62,7 +58,6 @@
                     </div>
                 </div>
 
-                {{-- TABS/PESTAÑAS DE CONTENIDO --}}
                 <div x-data="{ activeTab: 'general' }">
                     <div class="border-b border-gray-200 dark:border-gray-700 mb-6">
                         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
@@ -81,10 +76,8 @@
                         </nav>
                     </div>
 
-                    {{-- CONTENIDO DE LA PESTAÑA: DATOS GENERALES --}}
                     <div x-show="activeTab === 'general'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
-                        {{-- BLOQUE 1: DATOS DE LA EMPRESA --}}
                         <div class="p-5 border border-blue-100 dark:border-gray-700 rounded-lg bg-blue-50/50 dark:bg-gray-800/50 shadow-inner">
                             <h3 class="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400 flex items-center">
                                 <i class="fas fa-building mr-2"></i> Detalles del Negocio
@@ -95,7 +88,6 @@
                             <p class="mb-2"><strong>País Exporta:</strong> {{ $empresa->paisExportacion->nombre ?? 'No aplica' }}</p>
                         </div>
 
-                        {{-- BLOQUE 2: DATOS DE CUMPLIMIENTO --}}
                         <div class="p-5 border border-purple-100 dark:border-gray-700 rounded-lg bg-purple-50/50 dark:bg-gray-800/50 shadow-inner">
                             <h3 class="text-xl font-bold mb-4 text-purple-600 dark:text-purple-400 flex items-center">
                                 <i class="fas fa-file-invoice mr-2"></i> Cumplimiento Fiscal
@@ -118,7 +110,6 @@
                             </p>
                         </div>
 
-                        {{-- BLOQUE 3: DATOS DEL AFILIADO --}}
                         <div class="md:col-span-2 p-5 border border-yellow-100 dark:border-gray-700 rounded-lg bg-yellow-50/50 dark:bg-gray-800/50 shadow-inner">
                             <h3 class="text-xl font-bold mb-4 text-yellow-600 dark:text-yellow-400 flex items-center">
                                 <i class="fas fa-user-tag mr-2"></i> Afiliado Registrante
@@ -133,7 +124,6 @@
                         </div>
                     </div>
 
-                    {{-- CONTENIDO DE LA PESTAÑA: PRODUCTOS/MARCAS --}}
                     <div x-show="activeTab === 'productos'">
                         <h3 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Listado de Productos/Marcas</h3>
                         @forelse ($empresa->productos as $producto)
@@ -142,7 +132,6 @@
                                 $categoriaNombre = $producto->subcategoria->categoria->nombre ?? 'N/A';
                                 $impuestoNombre = $producto->impuesto->nombre ?? 'N/A';
                                 $impuestoTasa = number_format($producto->impuesto->porcentaje ?? 0, 2);
-                                // Nota: El campo permite_facturacion en Producto ahora está fijo a false en el store.
                             @endphp
                             <div class="p-4 border rounded-lg mb-3 bg-gray-50 dark:bg-gray-700 flex justify-between items-start shadow-sm border-l-4 border-{{ $prodColor }}-500">
                                 <div class="w-full">
@@ -153,7 +142,6 @@
                                         </span>
                                     </div>
                                     
-                                    {{-- NUEVOS DETALLES DEL PRODUCTO --}}
                                     <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1 mt-2 p-3 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-600">
                                         <p class="font-semibold">Descripción:</p>
                                         <p class="text-xs italic">{{ $producto->descripcion ?? 'No se proporcionó descripción.' }}</p>
@@ -172,7 +160,6 @@
                                                 <span class="font-medium text-teal-600 dark:text-teal-400">{{ $impuestoNombre }} ({{ $impuestoTasa }}%)</span>
                                             </p>
                                             <p class="col-span-1">
-                                                {{-- Eliminamos el campo Facturación del Producto --}}
                                             </p>
                                         </div>
                                     </div>
@@ -184,7 +171,6 @@
                         @endforelse
                     </div>
 
-                    {{-- CONTENIDO DE LA PESTAÑA: TIENDAS --}}
                     <div x-show="activeTab === 'tiendas'">
                          <h3 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Puntos de Venta Solicitados</h3>
                         @forelse ($empresa->tiendas as $tienda)
@@ -208,9 +194,7 @@
         </div>
     </div>
 
-    {{-- 2. SCRIPT DE SWEETALERT2 PARA CONFIRMACIONES Y NOTIFICACIONES --}}
     <script>
-        // Función para manejar la confirmación de Aprobar/Rechazar con formulario de Comentario
         function confirmAction(type) {
             const isApprove = type === 'approve';
             const title = isApprove ? 'Registrar Aprobación' : 'Registrar Rechazo';
@@ -221,7 +205,7 @@
                 <textarea id="swal-input-comentario" class="swal2-input !h-24" placeholder="Escriba aquí el comentario del resultado..."></textarea>
             `;
             const icon = isApprove ? 'question' : 'warning';
-            const confirmButtonColor = isApprove ? '#10B981' : '#EF4444'; // green-600 o red-600
+            const confirmButtonColor = isApprove ? '#10B981' : '#EF4444';
             const confirmButtonText = isApprove ? 'Sí, ¡Aprobar y Registrar!' : 'Sí, ¡Rechazar y Registrar!';
             const formId = isApprove ? 'approve-form' : 'reject-form';
 
@@ -231,7 +215,7 @@
                 icon: icon,
                 showCancelButton: true,
                 confirmButtonColor: confirmButtonColor,
-                cancelButtonColor: '#6B7280', // gray-500
+                cancelButtonColor: '#6B7280',
                 confirmButtonText: confirmButtonText,
                 cancelButtonText: 'Cancelar',
                 focusConfirm: false,
@@ -248,22 +232,19 @@
                     const comentario = result.value;
                     const form = document.getElementById(formId);
                     
-                    // 1. Crear campo de comentario oculto
                     let input = document.createElement('input');
                     input.type = 'hidden';
                     input.name = 'comentario';
                     input.value = comentario;
                     
-                    // 2. Añadir al formulario y enviarlo
                     form.appendChild(input);
                     form.submit();
                 }
             });
         }
 
-        // Script para mostrar notificaciones de sesión (success, warning, error)
         document.addEventListener('DOMContentLoaded', function() {
-            @if (session('success'))
+            if ({{ session('success') ? 'true' : 'false' }}) {
                 Swal.fire({
                     icon: 'success',
                     title: '¡Éxito!',
@@ -273,9 +254,9 @@
                     toast: true,
                     position: 'top-end'
                 });
-            @endif
+            }
 
-            @if (session('warning'))
+            if ({{ session('warning') ? 'true' : 'false' }}) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Atención',
@@ -283,9 +264,9 @@
                     showConfirmButton: true,
                     confirmButtonText: 'Entendido'
                 });
-            @endif
+            }
 
-            @if (session('error'))
+            if ({{ session('error') ? 'true' : 'false' }}) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -293,7 +274,7 @@
                     showConfirmButton: true,
                     confirmButtonText: 'Cerrar'
                 });
-            @endif
+            }
         });
     </script>
 </x-app-layout>

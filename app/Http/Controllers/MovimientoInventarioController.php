@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Inventario;
 use App\Models\MovimientoInventario;
 use App\Models\Tienda; 
-use App\Models\Empresa; // 🔑 Importar modelo Empresa
-use App\Models\Marca; // 🔑 Importar modelo Marca (para la relación)
+use App\Models\Empresa; 
+use App\Models\Marca; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -15,21 +15,15 @@ use Log;
 
 class MovimientoInventarioController extends Controller
 {
-    /**
-     * Muestra una lista del historial de movimientos de inventario y aplica filtros.
-     */
+
     public function index(Request $request)
     {
-        // 1. Obtener los parámetros de filtro de la URL
         $tipo = $request->get('tipo');
         $fechaDesde = $request->get('fecha_desde');
         $fechaHasta = $request->get('fecha_hasta');
         $tiendaId = $request->get('tienda_id'); 
-
-        // 2. Construir la consulta base con relaciones
         $query = MovimientoInventario::with(['inventario.marca.producto', 'inventario.tienda', 'usuario']);
 
-        // 3. Aplicar Filtros
         if ($tipo) {
             $query->where('tipo_movimiento', $tipo);
         }
@@ -42,23 +36,16 @@ class MovimientoInventarioController extends Controller
             $query->whereDate('created_at', '<=', $fechaHasta);
         }
 
-        // APLICAR FILTRO POR TIENDA
         if ($tiendaId) {
             $query->whereHas('inventario', function ($q) use ($tiendaId) {
                 $q->where('tienda_id', $tiendaId);
             });
         }
 
-        // 4. Clonar la consulta para el resumen ANTES de añadir el 'latest()'
         $resumenQuery = clone $query; 
-
-        // 5. Ejecutar consulta de paginación
         $movimientos = $query->latest()->paginate(20);
-
-        // Aseguramos que los links de paginación mantengan los filtros
         $movimientos->appends($request->all());
 
-        // 6. Calcular Resumen:
         $resumen = $resumenQuery
             ->select('tipo_movimiento', DB::raw('SUM(cantidad) as total_cantidad'))
             ->groupBy('tipo_movimiento')
@@ -71,11 +58,8 @@ class MovimientoInventarioController extends Controller
             'total' => ($resumen['ENTRADA'] ?? 0) + ($resumen['SALIDA'] ?? 0),
         ];
 
-        // Cargar todas las tiendas para el dropdown de la vista
         $tiendas = Tienda::all(['id', 'nombre']);
 
-
-        // 7. Devolver la vista con los datos, el resumen y las tiendas
         return view('movimientos.index', [
             'movimientos' => $movimientos,
             'resumen' => $resumenData,
@@ -83,13 +67,10 @@ class MovimientoInventarioController extends Controller
         ]);
     }
 
-    /**
-     * Muestra el formulario para registrar un nuevo movimiento (Ajuste/Ingreso/Descarte).
-     */
     public function create()
     {
         $tiendas = Tienda::all(['id', 'nombre']);
-        $empresas = Empresa::all(['id', 'nombre_negocio']); // 🔑 Cargar Empresas
+        $empresas = Empresa::all(['id', 'nombre_negocio']); 
         
         $inventarios = Inventario::with(['marca.producto', 'tienda', 'marca.empresa'])
             ->get()
@@ -97,7 +78,6 @@ class MovimientoInventarioController extends Controller
                 return [
                     'id' => $item->id,
                     'tienda_id' => $item->tienda_id,
-                    // 🔑 Añadir empresa_id
                     'empresa_id' => $item->marca->empresa_id ?? null, 
                     'nombre_completo' => ($item->marca->producto->nombre ?? 'N/A') . 
                                          ' (' . ($item->marca->codigo_marca ?? 'N/A') . ')' .
@@ -111,15 +91,11 @@ class MovimientoInventarioController extends Controller
             'SALIDA'  => ['Descarte por Daño', 'Ajuste Negativo', 'Muestra', 'Transferencia Enviada']
         ];
         
-        return view('movimientos.create', compact('tiendas', 'inventarios', 'razones', 'empresas')); // 🔑 Pasar Empresas
+        return view('movimientos.create', compact('tiendas', 'inventarios', 'razones', 'empresas')); 
     }
 
-    /**
-     * Almacena un nuevo movimiento de inventario en la base de datos y actualiza el stock.
-     */
     public function store(Request $request)
     {
-        // 1. Validación de los datos
         $validated = $request->validate([
             'inventario_id' => ['required', 'exists:inventarios,id'],
             'tipo_movimiento' => ['required', Rule::in(['ENTRADA', 'SALIDA'])],
@@ -135,8 +111,6 @@ class MovimientoInventarioController extends Controller
 
         $cantidad = $validated['cantidad'];
         $tipoMovimiento = $validated['tipo_movimiento'];
-
-        // ⭐ Aseguramos ID de usuario y valores por defecto
         $userId = auth()->id() ?: 1; 
         $movibleType = 'Ajuste Manual'; 
         $movibleId = 0; 
@@ -144,13 +118,11 @@ class MovimientoInventarioController extends Controller
         DB::beginTransaction();
 
         try {
-            // 2. Validación de Stock
             if ($tipoMovimiento === 'SALIDA' && $inventario->stock < $cantidad) {
                 DB::rollBack();
                 throw ValidationException::withMessages(['cantidad' => 'Stock insuficiente para esta salida. Stock actual: ' . $inventario->stock]);
             }
             
-            // 3. Registrar el Movimiento en la tabla de historial
             MovimientoInventario::create([
                 'inventario_id' => $validated['inventario_id'],
                 'tipo_movimiento' => $tipoMovimiento,
@@ -161,7 +133,6 @@ class MovimientoInventarioController extends Controller
                 'movible_type' => $movibleType, 
             ]);
 
-            // 4. Actualizar el Stock
             if ($tipoMovimiento === 'ENTRADA') {
                 $inventario->increment('stock', $cantidad); 
             } else { 

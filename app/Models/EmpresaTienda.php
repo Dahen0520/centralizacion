@@ -10,18 +10,8 @@ class EmpresaTienda extends Pivot
 {
     use HasFactory;
 
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
     protected $table = 'empresa_tienda';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'empresa_id',
         'tienda_id',
@@ -34,7 +24,6 @@ class EmpresaTienda extends Pivot
         return $this->belongsTo(Empresa::class);
     }
     
-    // **NUEVO**: Define la relación con el modelo Tienda
     public function tienda(): BelongsTo
     {
         return $this->belongsTo(Tienda::class);

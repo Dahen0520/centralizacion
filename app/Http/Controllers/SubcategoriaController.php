@@ -13,14 +13,12 @@ class SubcategoriaController extends Controller
     {
         $query = Subcategoria::with('categoria');
 
-        // Lógica de búsqueda
         if ($request->has('search')) {
             $query->where('nombre', 'like', '%' . $request->search . '%');
         }
 
         $subcategorias = $query->paginate(10);
 
-        // Si la solicitud es AJAX, devuelve solo las filas de la tabla y los enlaces de paginación
         if ($request->ajax()) {
             $table_rows = view('subcategorias.partials.subcategorias_table_rows', compact('subcategorias'))->render();
             $pagination_links = $subcategorias->links()->toHtml();
@@ -31,7 +29,6 @@ class SubcategoriaController extends Controller
             ]);
         }
 
-        // Para una solicitud HTTP normal, devuelve la vista completa
         return view('subcategorias.index', compact('subcategorias'));
     }
 

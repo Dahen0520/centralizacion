@@ -17,54 +17,45 @@ class EmpresaController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Obtener el estado, por defecto 'aprobado'
         $currentStatus = $request->input('estado', 'aprobado');
 
         $query = Empresa::query();
 
-        // 2. Aplicar filtro de estado (excepto si es 'todos')
         if ($currentStatus !== 'todos' && in_array($currentStatus, ['aprobado', 'pendiente', 'rechazado'])) {
             $query->where('estado', $currentStatus);
         }
 
-        // Aplicar filtro de búsqueda
         if ($request->has('search')) {
             $query->where('nombre_negocio', 'like', '%' . $request->search . '%');
         }
         
-        // 3. Obtener los conteos de empresas para todos los estados
         $statusCounts = Empresa::selectRaw('estado, count(*) as count')
                                ->groupBy('estado')
                                ->pluck('count', 'estado')
                                ->toArray();
         
-        // Agregar el conteo total
         $statusCounts['todos'] = array_sum($statusCounts);
-        // Asegurarse de que los otros estados existan si no hay registros
+
         $statusCounts['aprobado'] = $statusCounts['aprobado'] ?? 0;
         $statusCounts['pendiente'] = $statusCounts['pendiente'] ?? 0;
         $statusCounts['rechazado'] = $statusCounts['rechazado'] ?? 0;
 
-
-        // Carga las relaciones y pagina
         $empresas = $query->with(['afiliado', 'rubro', 'tipoOrganizacion'])->paginate(10);
         
-        // 4. Calcular el índice inicial de paginación para la numeración de filas
         $start_index = ($empresas->currentPage() - 1) * $empresas->perPage() + 1;
 
 
         if ($request->ajax()) {
             return response()->json([
-                // Pasa el índice inicial y los conteos a las filas
+     
                 'table_rows' => view('empresas.partials.empresas_table_rows', compact('empresas', 'start_index'))->render(),
                 'pagination_links' => $empresas->appends(['estado' => $currentStatus, 'search' => $request->search])->links()->toHtml(),
                 'empresas_count' => $empresas->total(), 
-                // Pasa los conteos para actualizar los filtros en el frontend
+          
                 'status_counts' => $statusCounts, 
             ]);
         }
 
-        // Pasa los conteos y el índice a la vista principal
         return view('empresas.index', compact('empresas', 'currentStatus', 'statusCounts', 'start_index'));
     }
 
@@ -95,16 +86,13 @@ class EmpresaController extends Controller
             'rubro_id'             => 'required|exists:rubros,id',
             'tipo_organizacion_id' => 'required|exists:tipo_organizacions,id',
             'pais_exportacion_id'  => 'nullable|exists:paises,id',
-            'facturacion'          => 'nullable|boolean', // <-- NUEVA REGLA DE VALIDACIÓN
+            'facturacion'          => 'nullable|boolean', 
         ]);
         
-        // Manejo explícito del campo booleano 'facturacion'.
-        // Si el checkbox no viene en la solicitud (desmarcado), has('facturacion') será false (0).
-        // Si viene (marcado), será true (1).
         $data = $request->all();
         $data['facturacion'] = $request->has('facturacion');
 
-        $empresa->update($data); // Usamos $data en lugar de $request->all() para asegurar que 'facturacion' esté siempre presente (true/false)
+        $empresa->update($data); 
 
         return redirect()->route('empresas.index')
                          ->with('success', 'Empresa actualizada exitosamente.');

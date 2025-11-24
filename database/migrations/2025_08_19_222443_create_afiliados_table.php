@@ -6,9 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+
     public function up(): void
     {
         Schema::create('afiliados', function (Blueprint $table) {
@@ -23,12 +21,8 @@ return new class extends Migration
             $table->string('rtn')->nullable();
             $table->string('numero_cuenta')->nullable();
             $table->tinyInteger('status')->default(0);
-
-            // Clave foránea para el municipio
             $table->foreignId('municipio_id')->constrained('municipios');
 
-
-            
             $table->timestamps();
         });
     }

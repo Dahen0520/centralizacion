@@ -2,18 +2,16 @@
     <x-slot name="header">
     </x-slot>
 
-    {{-- INCLUSIÓN DE SWEETALERT2 PARA NOTIFICACIONES --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
 
     <div class="py-6 flex justify-center">
-        <div class="w-full max-w-4xl mx-auto"> {{-- Ancho un poco más grande --}}
+        <div class="w-full max-w-4xl mx-auto">
             <div class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 
                         rounded-2xl shadow-3xl p-10 lg:p-12 
                         border-t-4 border-b-4 border-emerald-500 dark:border-emerald-600 
                         transform hover:shadow-4xl transition-all duration-300 ease-in-out">
                 
-                {{-- Bloque de Encabezado Elegante --}}
                 <div class="text-center mb-10">
                     <div class="inline-flex items-center justify-center w-20 h-20 rounded-full 
                                 bg-gradient-to-br from-emerald-500 to-emerald-700 text-white 
@@ -38,7 +36,6 @@
                     </a>
                 </div>
 
-                {{-- Manejo de Errores de Validación Estilizado --}}
                 @if ($errors->any())
                     <div class="bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-200 
                                 px-6 py-4 rounded-lg relative mb-8 shadow-inner" role="alert">
@@ -59,7 +56,6 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
                         
-                        {{-- CAMPO TIENDA (Select) - PASO 1 --}}
                         <div>
                             <label for="tienda_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">1. Tienda / Punto de Venta <span class="text-red-500">*</span></label>
                             <select name="tienda_id" id="tienda_id" required 
@@ -76,7 +72,6 @@
                             @enderror
                         </div>
 
-                        {{-- CAMPO EMPRESA (Select DINÁMICO) - PASO 2 --}}
                         <div>
                             <label for="empresa_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">2. Empresa Asociada <span class="text-red-500">*</span></label>
                             <select name="empresa_id" id="empresa_id" required disabled
@@ -88,7 +83,6 @@
                             @enderror
                         </div>
 
-                        {{-- CAMPO PRODUCTO/MARCA (Select DINÁMICO) - PASO 3 --}}
                         <div class="md:col-span-2">
                             <label for="marca_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">3. Producto (Marca) <span class="text-red-500">*</span></label>
                             <select name="marca_id" id="marca_id" required disabled
@@ -101,7 +95,6 @@
                             @enderror
                         </div>
 
-                        {{-- Campo Precio --}}
                         <div>
                             <label for="precio" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Precio (L) <span class="text-red-500">*</span></label>
                             <input type="number" id="precio" name="precio" value="{{ old('precio') }}" required 
@@ -112,7 +105,6 @@
                             @enderror
                         </div>
 
-                        {{-- Campo Stock --}}
                         <div>
                             <label for="stock" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stock Inicial <span class="text-red-500">*</span></label>
                             <input type="number" id="stock" name="stock" value="{{ old('stock') }}" required 
@@ -141,145 +133,19 @@
         </div>
     </div>
 
-    {{-- SCRIPT PARA LÓGICA DINÁMICA DE SELECCIÓN EN CASCADA --}}
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const tiendaSelect = document.getElementById('tienda_id');
-            const empresaSelect = document.getElementById('empresa_id');
-            const marcaSelect = document.getElementById('marca_id');
-
-            // --- Funciones de Utilidad ---
-            function resetSelect(selectElement, defaultMessage) {
-                selectElement.innerHTML = `<option value="">${defaultMessage}</option>`;
-                selectElement.disabled = true;
-                selectElement.classList.remove('bg-white', 'text-gray-900', 'dark:bg-gray-700', 'dark:text-gray-100');
-                selectElement.classList.add('bg-gray-100', 'text-gray-500', 'dark:bg-gray-700', 'dark:text-gray-400');
+        window.AppConfig = {
+            oldTiendaId: "{{ old('tienda_id') }}",
+            oldEmpresaId: "{{ old('empresa_id') }}",
+            oldMarcaId: "{{ old('marca_id') }}",
+            sessionSuccess: "{{ session('success') }}",
+            
+            apiEndpoints: {
+                fetchEmpresas: (tiendaId) => `/api/tiendas/${tiendaId}/empresas`,
+                fetchMarcas: (empresaId, tiendaId) => `/api/empresas/${empresaId}/marcas-disponibles/${tiendaId}`
             }
-
-            function enableSelect(selectElement, message) {
-                 selectElement.disabled = false;
-                 selectElement.classList.remove('bg-gray-100', 'text-gray-500', 'dark:bg-gray-700', 'dark:text-gray-400');
-                 selectElement.classList.add('bg-white', 'text-gray-900', 'dark:bg-gray-700', 'dark:text-gray-100');
-                 if (message) {
-                    selectElement.innerHTML = `<option value="">${message}</option>` + selectElement.innerHTML;
-                 }
-            }
-
-            // --- Lógica del Paso 1: Obtener Empresas ---
-            async function fetchEmpresas(tiendaId) {
-                resetSelect(empresaSelect, 'Cargando Empresas...');
-                resetSelect(marcaSelect, 'Seleccione la Tienda y Empresa');
-
-                if (!tiendaId) {
-                    resetSelect(empresaSelect, '2. Seleccione la Tienda primero');
-                    return;
-                }
-
-                try {
-                    // Endpoint para obtener empresas asociadas a la tienda
-                    const url = `/api/tiendas/${tiendaId}/empresas`;
-                    const response = await fetch(url);
-                    
-                    if (!response.ok) {
-                        throw new Error('Error al cargar las empresas. Código: ' + response.status);
-                    }
-                    
-                    const empresas = await response.json();
-                    let options = '';
-                    
-                    if (empresas.length === 0) {
-                        resetSelect(empresaSelect, 'No hay Empresas asociadas a esta Tienda');
-                    } else {
-                        empresas.forEach(empresa => {
-                            // Usamos .nombre_negocio que es la columna correcta en tu modelo Empresa
-                            const isSelected = "{{ old('empresa_id') }}" == empresa.id ? 'selected' : '';
-                            options += `<option value="${empresa.id}" ${isSelected}>${empresa.nombre_negocio}</option>`;
-                        });
-                        empresaSelect.innerHTML = options;
-                        enableSelect(empresaSelect, '2. Seleccione una Empresa');
-                        
-                        // Si old('empresa_id') tiene un valor, forzar la carga del paso 3
-                        if ("{{ old('empresa_id') }}" && "{{ old('empresa_id') }}" == empresaSelect.value) {
-                           fetchMarcas(empresaSelect.value, tiendaId);
-                        }
-                    }
-                    
-                } catch (error) {
-                    console.error('Fetch Error Empresas:', error);
-                    resetSelect(empresaSelect, 'Error al cargar: Intente recargar.');
-                }
-            }
-
-            // --- Lógica del Paso 2: Obtener Marcas ---
-            async function fetchMarcas(empresaId, tiendaId) {
-                resetSelect(marcaSelect, 'Cargando Productos...');
-
-                if (!empresaId || !tiendaId) {
-                    resetSelect(marcaSelect, '3. Seleccione la Empresa primero');
-                    return;
-                }
-                
-                try {
-                    // Endpoint para obtener marcas de la empresa y filtrar por tienda
-                    const url = `/api/empresas/${empresaId}/marcas-disponibles/${tiendaId}`;
-                    const response = await fetch(url);
-                    
-                    if (!response.ok) {
-                        throw new Error('Error al cargar los productos. Código: ' + response.status);
-                    }
-                    
-                    const marcas = await response.json();
-                    let options = '';
-                    
-                    if (marcas.length === 0) {
-                        resetSelect(marcaSelect, 'No hay productos nuevos disponibles de esta Empresa para esta Tienda');
-                    } else {
-                        marcas.forEach(marca => {
-                            const productoNombre = marca.producto ? marca.producto.nombre : 'Producto sin nombre';
-                            const isSelected = "{{ old('marca_id') }}" == marca.id ? 'selected' : '';
-                            options += `<option value="${marca.id}" ${isSelected}>${productoNombre} (Código: ${marca.codigo_marca})</option>`;
-                        });
-                        marcaSelect.innerHTML = options;
-                        enableSelect(marcaSelect, '3. Seleccione un Producto (Marca)');
-                    }
-                    
-                } catch (error) {
-                    console.error('Fetch Error Marcas:', error);
-                    resetSelect(marcaSelect, 'Error al cargar. Intente recargar.');
-                }
-            }
-
-            // --- Event Listeners ---
-            tiendaSelect.addEventListener('change', (e) => {
-                // Reiniciar el select de Marcas siempre que se cambie la Tienda
-                resetSelect(marcaSelect, 'Seleccione la Empresa primero'); 
-                fetchEmpresas(e.target.value);
-            });
-
-            empresaSelect.addEventListener('change', (e) => {
-                const tiendaId = tiendaSelect.value;
-                const empresaId = e.target.value;
-                fetchMarcas(empresaId, tiendaId);
-            });
-
-            // --- Manejo de old() para errores de validación ---
-            // Esto garantiza que la cascada se cargue de nuevo si la validación falla
-            if (tiendaSelect.value) {
-                fetchEmpresas(tiendaSelect.value);
-            }
-
-            {{-- SCRIPT PARA NOTIFICACIÓN DE SESIÓN --}}
-            @if (session('success'))
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Creación Exitosa!',
-                    text: '{{ session('success') }}',
-                    showConfirmButton: false,
-                    timer: 3000,
-                    toast: true,
-                    position: 'top-end'
-                });
-            @endif
-        });
+        };
     </script>
+
+    <script src="{{ asset('js/inventario/create.js') }}"></script>
 </x-app-layout>

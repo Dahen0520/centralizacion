@@ -13,9 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class RangoCaiController extends Controller
 {
-    /**
-     * Función auxiliar para extraer el Prefijo y la Secuencia.
-     */
+
     private function parseRangoSar(string $formattedNumber): array
     {
         $length = strlen($formattedNumber);
@@ -28,10 +26,6 @@ class RangoCaiController extends Controller
         ];
     }
     
-    /**
-     * Display a listing of the resource.
-     * Implementa el filtro por estado: 'activo' o 'expirado'.
-     */
     public function index(Request $request)
     {
         $query = RangoCai::with('tienda')->orderBy('fecha_limite_emision', 'desc');
@@ -39,7 +33,6 @@ class RangoCaiController extends Controller
 
         $today = Carbon::today();
 
-        // LÓGICA DE FILTRO POR ESTADO (Correcta)
         if ($filterStatus) {
             
             if ($filterStatus === 'activo') {
@@ -53,7 +46,6 @@ class RangoCaiController extends Controller
 
         $rangos = $query->paginate(10);
         
-        // Devolver la vista parcial de la tabla si es una solicitud AJAX
         if ($request->ajax()) {
             return view('rangos-cai.partials.rangos_table_rows', compact('rangos'))->render();
         }
@@ -61,26 +53,18 @@ class RangoCaiController extends Controller
         return view('rangos-cai.index', compact('rangos'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $tiendas = Tienda::all();
         return view('rangos-cai.create', compact('tiendas'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     * **CORREGIDO: Se eliminó la regla 'unique' del campo CAI.**
-     */
     public function store(Request $request)
     {
         $rangoRegex = 'regex:/^\d{3}-\d{3}-\d{2}-\d{7,10}$/'; 
 
         $validated = $request->validate([
             'tienda_id' => 'required|exists:tiendas,id',
-            // El CAI ya NO es único, permitiendo múltiples rangos bajo el mismo código.
             'cai' => 'required|string|max:100', 
             'rango_inicial_full' => ['required', 'string', 'max:50', $rangoRegex],
             'rango_final_full' => ['required', 'string', 'max:50', $rangoRegex],
@@ -106,7 +90,6 @@ class RangoCaiController extends Controller
             ]);
         }
         
-        // Desactiva cualquier otro rango activo para la misma tienda
         RangoCai::where('tienda_id', $validated['tienda_id'])
                 ->where('esta_activo', true)
                 ->update(['esta_activo' => false]);
@@ -127,27 +110,18 @@ class RangoCaiController extends Controller
                          ->with('success', 'Rango CAI registrado y activado correctamente.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(RangoCai $rangoCai)
     {
         $rangoCai->load('tienda');
         return view('rangos-cai.show', compact('rangoCai'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(RangoCai $rangoCai)
     {
         $tiendas = Tienda::all();
         return view('rangos-cai.edit', compact('rangoCai', 'tiendas'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, RangoCai $rangoCai)
     {
         $validated = $request->validate([
@@ -167,40 +141,29 @@ class RangoCaiController extends Controller
                          ->with('success', 'Rango CAI actualizado correctamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     * Mantiene la implementación de Transacciones y manejo de errores.
-     */
     public function destroy(RangoCai $rangoCai)
     {
         $rangoId = $rangoCai->id; 
 
         try {
-            // Utilizamos una transacción de DB para asegurar el commit
+
             DB::beginTransaction();
-
-            // Intenta eliminar el registro
             $rangoCai->delete();
-            
-            DB::commit(); // Confirma la eliminación si todo salió bien
+            DB::commit(); 
 
-            // Respuesta de éxito
             return response()->json(['success' => true, 'message' => 'Rango CAI eliminado exitosamente.'], 200); 
         
         } catch (\Illuminate\Database\QueryException $e) {
-            DB::rollBack(); // Revierte si algo falla
-
-            // ⚠️ Error de Integridad Referencial (Clave Foránea)
+            DB::rollBack();
             if (strpos($e->getMessage(), 'Integrity constraint violation') !== false) {
                  Log::warning("Intento fallido de eliminar rango CAI #{$rangoId}: Clave foránea. Mensaje: " . $e->getMessage());
                  
                  return response()->json([
                     'success' => false, 
                     'message' => 'El rango no se puede eliminar porque ya tiene documentos fiscales asociados.'
-                ], 409); // 409 Conflict
+                ], 409); 
             }
             
-            // Otros errores de Query
             Log::error("Error Query al eliminar rango CAI #{$rangoId}: " . $e->getMessage());
             return response()->json([
                 'success' => false, 
@@ -208,9 +171,7 @@ class RangoCaiController extends Controller
             ], 500); 
             
         } catch (\Exception $e) {
-            DB::rollBack(); // Revierte si algo falla
-
-            // Error General
+            DB::rollBack(); 
             Log::error("Error general al eliminar rango CAI #{$rangoId}: " . $e->getMessage());
             return response()->json([
                 'success' => false, 

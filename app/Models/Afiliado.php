@@ -9,18 +9,8 @@ class Afiliado extends Model
 {
     use HasFactory;
 
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
     protected $table = 'afiliados';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
         'dni',
         'nombre',
@@ -35,9 +25,6 @@ class Afiliado extends Model
         'status',
     ];
 
-    /**
-     * Get the municipio associated with the afiliado.
-     */
     public function municipio()
     {
         return $this->belongsTo(Municipio::class);
